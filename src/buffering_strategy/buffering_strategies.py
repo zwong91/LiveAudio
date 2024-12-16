@@ -141,7 +141,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     #         await websocket.send_bytes(chunk)
                     # Send stop signal
                     #await websocket.send_bytes(ormsgpack.packb({"event": "stop"}))
-                    await websocket.send_bytes(chunk)
+                    await websocket.send_bytes(audio)
                     #TODO: 异步等待 1 秒，防止音频重叠
                     #await asyncio.sleep(1)
                 except Exception as e:
