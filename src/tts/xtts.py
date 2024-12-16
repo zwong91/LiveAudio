@@ -236,6 +236,7 @@ class XTTS_v2(TTSInterface):
             # Using a buffer to save the audio data as bytes
             buffer = BytesIO()
             torchaudio.save(buffer, wav_audio, 22050, format="wav")  # Adjust sample rate if needed
+            buffer.seek(0)
             audio_data = buffer.read()
 
         end_time = time.time()

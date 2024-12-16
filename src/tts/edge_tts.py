@@ -75,6 +75,7 @@ class EdgeTTS(TTSInterface):
             if chunk["type"] == "audio":
                 audio_buffer.write(chunk["data"])
 
+        audio_buffer.seek(0)
         audio_data = audio_buffer.read()
         print(f"音频数据大小: {len(audio_data)} 字节")
         end_time = time.time()
