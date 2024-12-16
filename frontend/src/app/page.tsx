@@ -187,12 +187,12 @@ export default function Home() {
                     const reader = new FileReader();
                     reader.onloadend = () => {
                       if (reader.result) {
-                        const chunk = reader.result as ArrayBuffer;
+                        const base64data = arrayBufferToBase64(reader.result as ArrayBuffer);
 
                         const message = {
                           event: "request",
                           request: {
-                            audio: chunk,  // Audio data as a binary array or ArrayBuffer
+                            audio: base64data,  // Audio data as a binary array or ArrayBuffer
                             latency: "normal",       // Latency type
                             format: "opus",          // Audio format (opus, mp3, or wav)
                             prosody: {               // Optional prosody settings

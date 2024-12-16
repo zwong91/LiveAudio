@@ -209,16 +209,17 @@ class Server:
                 if data.get('event') == 'start':
                     request_data = data.get('request', {})
                     chunk = request_data.get('audio')
+                    bytes = base64.b64decode(chunk)
                     latency = request_data.get('latency')
                     format = request_data.get('format')
                     prosody = request_data.get('prosody', {})
                     reference_id = request_data.get('reference_id')
 
                     # Print or process the extracted data
-                    print(f"Audio Data: {chunk}, Latency: {latency}, Format: {format}")
+                    print(f"Audio Data: {bytes}, Latency: {latency}, Format: {format}")
                     print(f"Prosody: {prosody}, Reference ID: {reference_id}")
 
-                    client.append_audio_data(chunk)
+                    client.append_audio_data(bytes)
                     # 异步task处理音频
                     self._process_audio(client, websocket)
 
