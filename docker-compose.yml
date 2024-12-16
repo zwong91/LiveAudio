@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "19999:19999"
+    environment:
+      - PYANNOTE_AUTH_TOKEN=${PYANNOTE_AUTH_TOKEN}
+      - SSL_DOMAIN_NAME=${SSL_DOMAIN_NAME}
+      - SSL_EMAIL=${SSL_EMAIL}
+      - SSL_HTTP_PORT=${SSL_HTTP_PORT}
+    volumes:
+      - huggingface:/root/.cache/huggingface
+      - /etc/letsencrypt:/etc/letsencrypt
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - /etc/letsencrypt:/etc/letsencrypt
+    depends_on:
+      - app
+
+volumes:
+  huggingface:
