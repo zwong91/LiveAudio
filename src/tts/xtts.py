@@ -110,8 +110,19 @@ class XTTS_v2(TTSInterface):
         target_wav_files = glob.glob(target_wav_pattern)  # 使用 glob 扩展通配符
 
         if not target_wav_files:
-            target_wav_files = [os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "dayang*.wav")]
+            target_wav_pattern = [os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "dayang*.wav")]
+            target_wav_files = glob.glob(target_wav_pattern)
             print(f"No WAV files found matching pattern, use default: {target_wav_files}")
+        else:
+             target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "../tts-tools/output/vc_uvr5_result")), f"vocal_{vc_uid}*.wav")
+             pure_target_wav_files = glob.glob(target_wav_pattern)  # vc_uvr5_result
+             if pure_target_wav_files:
+                    target_wav_files = pure_target_wav_files
+             else:
+                target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "../tts-tools/output/uvr5_opt")), f"{vc_uid}*.wav_main_vocal.wav")
+                pure_target_wav_files = glob.glob(target_wav_pattern)  # uvr5_opt 没有echo
+                if pure_target_wav_files:
+                    target_wav_files = pure_target_wav_files
 
         print("Computing speaker latents...")
 

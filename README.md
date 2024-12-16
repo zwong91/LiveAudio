@@ -40,7 +40,7 @@ pip install -r requirements.txt
 
 #3 xtts
 cd /workspace/rt-audio/src/xtts
-pip install -e .[all,dev,notebooks]  # Select the relevant extras
+pip install -e .[all,dev,notebooks]  -i https://pypi.tuna.tsinghua.edu.cn/simple # Select the relevant extras
 
 ```
 
