@@ -67,7 +67,18 @@ class EdgeTTS(TTSInterface):
             volume=volume_str
         )
 
+        audio_buffer = BytesIO()
+        # async for chunk in communicate.stream():
+        #     if chunk["type"] == "audio":
+        #         print(f"EdgeTTS 音频chunk大小: {len(chunk['data'])} 字节")
+        #         yield chunk["data"]
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
-                print(f"EdgeTTS 音频chunk大小: {len(chunk['data'])} 字节")
-                yield chunk["data"]
+                audio_buffer.write(chunk["data"])
+
+        audio_data = audio_buffer.read()
+        print(f"音频数据大小: {len(audio_data)} 字节")
+        end_time = time.time()
+        print(f"EdgeTTS text_to_speech time: {end_time - start_time:.4f} seconds")
+        # 返回音频数据的字节流
+        return audio_data
