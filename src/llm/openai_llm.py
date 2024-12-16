@@ -91,7 +91,7 @@ class OpenAILLM(LLMInterface):
         ]
         messages.extend(history)
         response = await aclient.chat.completions.create(
-            model="gpt-4o-mini",
+            model=self.model,
             messages=[{"role": "user", "content": query}],
             max_tokens=512,
             temperature=1,
