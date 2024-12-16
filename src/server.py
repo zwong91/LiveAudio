@@ -18,7 +18,7 @@ import torch
 import torchaudio
 
 from src.client import Client
-import orbmsgpack
+import ormsgpack
 
 from pydantic import BaseModel
 from typing import List
