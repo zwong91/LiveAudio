@@ -69,5 +69,5 @@ class EdgeTTS(TTSInterface):
 
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
-                print(f"EdgeTTS 音频chunk大小: {len(chunk["data"])} 字节")
+                print(f"EdgeTTS 音频chunk大小: {len(chunk['data'])} 字节")
                 yield chunk["data"]
