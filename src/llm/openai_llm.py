@@ -32,11 +32,11 @@ default_system = """
 """
 
 class OpenAILLM(LLMInterface):
-    def __init__(self, model: str = "gpt-4o-mini"):
-        self.model = model
+    def __init__(self, model: str = "grok-2-1212"):
+        self.model = model #gpt-4o-mini
         aclient.api_key = OPENAI_API_KEY
-        aclient.base_url = "https://xyz-api.jongun2038.win/v1/"
-        
+        #aclient.base_url = "https://xyz-api.jongun2038.win/v1/"
+        aclient.base_url = "https://api.x.ai/v1/"
         # self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
         # # Load initial content from vault.txt
         # self.vault_content = []
