@@ -13,7 +13,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "typeRoots": ["./node_modules/@types", "./src"],  // Added missing comma here
+    "typeRoots": ["./node_modules/@types", "./src/app"],  // Added missing comma here
     "plugins": [
       {
         "name": "next"
