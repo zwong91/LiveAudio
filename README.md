@@ -93,7 +93,7 @@ sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE
 [pem file](https://blog.csdn.net/liuchenbaidu/article/details/136722001)
 
 ``` sh
-python3 -m src.main --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}'
+python3 -m src.main --port 19998 --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}'
 ```
 
 ***test***
