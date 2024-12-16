@@ -232,7 +232,7 @@ export default function Home() {
                 // First, handle msgpack decoding
                 let data;
                 if (event.data instanceof ArrayBuffer) {
-                  // If the data is an ArrayBuffer, we decode it as MsgPack
+                  // If the data is an ArrayBuffer, decode it as MsgPack
                   data = msgpack.decode(new Uint8Array(event.data));
                 } else if (event.data instanceof Blob) {
                   // If the data is a Blob, use FileReader to convert it into ArrayBuffer first
@@ -244,14 +244,14 @@ export default function Home() {
                       const decodedData = msgpack.decode(new Uint8Array(audioData));
                       if (decodedData.event === 'audio') {
                         console.log('Received audio data:', decodedData.audio);
-                        bufferAudio(decodedData.audio);
+                        bufferAudio(decodedData.audio); // Pass the audio data to bufferAudio
                       }
                     } catch (error) {
                       console.error("Error decoding MsgPack from Blob:", error);
                     }
                   };
                   reader.readAsArrayBuffer(event.data);
-                  return; // exit early because the decoding happens asynchronously
+                  return; // Exit early because the decoding happens asynchronously
                 } else {
                   throw new Error("Received unexpected data type from WebSocket");
                 }
@@ -259,12 +259,19 @@ export default function Home() {
                 // Now handle the decoded msgpack data
                 if (data && data.event === 'audio') {
                   console.log('Received audio data:', data.audio);
-                  bufferAudio(data.audio); // Buffer the audio data
+            
+                  // Ensure the audio data is a valid ArrayBuffer
+                  if (data.audio instanceof ArrayBuffer) {
+                    bufferAudio(data.audio); // Buffer the audio data
+                  } else {
+                    console.error("Audio data is not of type ArrayBuffer", data.audio);
+                  }
                 }
               } catch (error) {
                 console.error("Error processing WebSocket message:", error);
               }
             };
+            
 
             websocket.onclose = () => {
               console.log("WebSocket connection closed...");
