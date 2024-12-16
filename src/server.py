@@ -204,7 +204,7 @@ class Server:
             try:
                 message = await websocket.receive_bytes()
                 # Decode the MessagePack data
-                data = ormsgpack.unpackb(message, raw=False)  # raw=False decodes byte strings as UTF-8
+                data = ormsgpack.unpackb(message)
 
                 if data.get('event') == 'start':
                     request_data = data.get('request', {})
