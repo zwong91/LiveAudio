@@ -1,6 +1,6 @@
-# rt-audio
+# Live-Audio
 
-Welcome to the rt-audio repository! This project hosts two exciting applications leveraging advanced audio understand and speech generation models to bring your audio experiences to life:
+Welcome to the Live-Audio repository! This project hosts two exciting applications leveraging advanced audio understand and speech generation models to bring your audio experiences to life:
 
 **Voice Chat** :  This application is designed to provide an interactive and natural chatting experience, making it easier to adopt sophisticated AI-driven dialogues in various settings.
 
@@ -19,8 +19,8 @@ For `SenseVoice`, visit [SenseVoice repo](https://github.com/FunAudioLLM/SenseVo
 apt update
 apt-get install vim  ffmpeg  git-lfs -y
 
-git clone https://github.com/zwong91/rt-audio.git
-cd /workspace/rt-audio
+git clone https://github.com/zwong91/Live-Audio.git
+cd /workspace/Live-Audio
 git pull
 
 #1 pre_install.sh
@@ -34,12 +34,12 @@ conda config --set auto_activate_base false
 conda create -n rt python=3.10  -y
 conda activate rt
 
-#2  rt-audio
-cd /workspace/rt-audio
+#2  Live-Audio
+cd /workspace/Live-Audio
 pip install -r requirements.txt
 
 #3 xtts
-cd /workspace/rt-audio/src/xtts
+cd /workspace/Live-Audio/src/xtts
 pip install -e .[all,dev,notebooks]  -i https://pypi.tuna.tsinghua.edu.cn/simple # Select the relevant extras
 
 ```
@@ -66,7 +66,7 @@ sudo systemctl restart docker
 You can build the container image with:
 
 ```bash
-sudo docker build -t rt-audio .
+sudo docker build -t Live-Audio .
 ```
 
 After getting your VAD token (see next sections) run:
@@ -74,14 +74,14 @@ After getting your VAD token (see next sections) run:
 ```bash
 sudo docker volume create huggingface
 
-sudo docker run --gpus all -p 8765:8765 -v huggingface:/root/.cache/huggingface  -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' rt-audio
+sudo docker run --gpus all -p 8765:8765 -v huggingface:/root/.cache/huggingface  -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' Live-Audio
 ```
 
 The "volume" stuff will allow you not to re-download the huggingface models each
 time you re-run the container. If you don't need this, just use:
 
 ```bash
-sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' rt-audio
+sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' Live-Audio
 ```
 
 ## Usage
