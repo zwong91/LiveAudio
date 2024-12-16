@@ -216,8 +216,8 @@ class Server:
                     reference_id = request_data.get('reference_id')
 
                     # Print or process the extracted data
-                    print(f"Audio Data: {bytes}, Latency: {latency}, Format: {format}")
-                    print(f"Prosody: {prosody}, Reference ID: {reference_id}")
+                    #logging.debug(f"Audio Data: {bytes}, Latency: {latency}, Format: {format}")
+                    logging.debug(f"Prosody: {prosody}, Reference ID: {reference_id}")
 
                     client.append_audio_data(bytes)
                     # 异步task处理音频
