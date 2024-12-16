@@ -225,53 +225,31 @@ export default function Home() {
             websocket.onmessage = (event) => {
               setIsRecording(false);
               setIsPlayingAudio(true);
-            
+
               try {
                 let audioData: ArrayBuffer;
-            
-                // First, handle msgpack decoding
-                let data;
+
+                // 如果 event.data 是 ArrayBuffer，直接处理
                 if (event.data instanceof ArrayBuffer) {
-                  // If the data is an ArrayBuffer, decode it as MsgPack
-                  data = msgpack.decode(new Uint8Array(event.data));
+                  audioData = event.data;
                 } else if (event.data instanceof Blob) {
-                  // If the data is a Blob, use FileReader to convert it into ArrayBuffer first
+                  // 如果是 Blob 类型，使用 FileReader 将其转换为 ArrayBuffer
                   const reader = new FileReader();
                   reader.onloadend = () => {
                     audioData = reader.result as ArrayBuffer;
-                    // Decode msgpack if the Blob is valid MsgPack data
-                    try {
-                      const decodedData = msgpack.decode(new Uint8Array(audioData));
-                      if (decodedData.event === 'audio') {
-                        console.log('Received audio data:', decodedData.audio);
-                        bufferAudio(decodedData.audio); // Pass the audio data to bufferAudio
-                      }
-                    } catch (error) {
-                      console.error("Error decoding MsgPack from Blob:", error);
-                    }
+                    bufferAudio(audioData); // Buffer the audio
                   };
                   reader.readAsArrayBuffer(event.data);
-                  return; // Exit early because the decoding happens asynchronously
+                  return;
                 } else {
                   throw new Error("Received unexpected data type from WebSocket");
                 }
-            
-                // Now handle the decoded msgpack data
-                if (data && data.event === 'audio') {
-                  console.log('Received audio data:', data.audio);
-            
-                  // Ensure the audio data is a valid ArrayBuffer
-                  if (data.audio instanceof ArrayBuffer) {
-                    bufferAudio(data.audio); // Buffer the audio data
-                  } else {
-                    console.error("Audio data is not of type ArrayBuffer", data.audio);
-                  }
-                }
+
+                bufferAudio(audioData);
               } catch (error) {
                 console.error("Error processing WebSocket message:", error);
               }
             };
-            
 
             websocket.onclose = () => {
               console.log("WebSocket connection closed...");

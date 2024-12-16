@@ -136,7 +136,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     # Stream audio chunks
                     async for chunk in chunk_iterator:
                         if chunk:
-                            await websocket.send_bytes(ormsgpack.packb({"event": "audio", "audio": chunk}))
+                            #await websocket.send_bytes(ormsgpack.packb({"event": "audio", "audio": chunk}))
+                            await websocket.send_bytes(chunk)
                     # Send stop signal
                     await websocket.send_bytes(ormsgpack.packb({"event": "stop"}))
                     #TODO: 异步等待 1 秒，防止音频重叠
