@@ -18,6 +18,7 @@ import torch
 import torchaudio
 
 from src.client import Client
+import orbmsgpack
 
 from pydantic import BaseModel
 from typing import List
@@ -46,7 +47,7 @@ class TTSManager:
         处理队列中的每个 TTS 任务。
         """
         try:
-            _, audio_path = await self.tts_pipeline.text_to_speech(text, vc_uid, True)
+            audio_path = await self.tts_pipeline.text_to_speech(text, vc_uid)
             # 将生成的文件返回给调用者
             self.processing_tasks[task_id] = {'status': 'completed', 'file_path': audio_path, 'media_type': 'audio/wav'}
         except Exception as e:
@@ -201,12 +202,25 @@ class Server:
     async def handle_audio(self, client, websocket):
         while True:
             try:
-                payload = await websocket.receive_text()
-                message = json.loads(payload)
-                bytes = base64.b64decode(message[2])
-                client.append_audio_data(bytes)
-                # 异步处理音频
-                self._process_audio(client, websocket)
+                message = await websocket.receive_bytes()
+                # Decode the MessagePack data
+                data = orbmsgpack.unpackb(message, raw=False)  # raw=False decodes byte strings as UTF-8
+
+                if data.get('event') == 'start':
+                    request_data = data.get('request', {})
+                    chunk = request_data.get('audio')
+                    latency = request_data.get('latency')
+                    format = request_data.get('format')
+                    prosody = request_data.get('prosody', {})
+                    reference_id = request_data.get('reference_id')
+
+                    # Print or process the extracted data
+                    print(f"Audio Data: {chunk}, Latency: {latency}, Format: {format}")
+                    print(f"Prosody: {prosody}, Reference ID: {reference_id}")
+
+                    client.append_audio_data(chunk)
+                    # 异步task处理音频
+                    self._process_audio(client, websocket)
 
             except WebSocketDisconnect as e:
                 logging.error(f"Connection with {client.client_id} closed: {e}")

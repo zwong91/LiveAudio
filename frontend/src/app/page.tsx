@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
+import msgpack from 'msgpack-lite';
 
 export default function Home() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -48,15 +49,12 @@ export default function Home() {
         setIsPlayingAudio(false);
         setIsRecording(true);
 
-        // 延迟 0.1 秒再进行操作
-        setTimeout(() => {
-          if (audioQueue.length > 0) {
-            const nextAudioBlob = audioQueue.shift();
-            if (nextAudioBlob) {
-              audioManager.playNewAudio(nextAudioBlob); // Play next audio in the queue
-            }
+        if (audioQueue.length > 0) {
+          const nextAudioBlob = audioQueue.shift();
+          if (nextAudioBlob) {
+            audioManager.playNewAudio(nextAudioBlob); // Play next audio in the queue
           }
-        }, 100); // 延迟 0.1 秒再进行操作
+        }
       };
 
       try {
@@ -191,15 +189,24 @@ export default function Home() {
                       if (reader.result) {
                         const base64data = arrayBufferToBase64(reader.result as ArrayBuffer);
 
-                        const dataToSend = [
-                          [],
-                          "xiaoxiao",
-                          base64data
-                        ];
-                        const jsonData = JSON.stringify(dataToSend);
+                        const message = {
+                          event: "request",
+                          request: {
+                            audio: base64data,  // Audio data as a binary array or ArrayBuffer
+                            latency: "normal",       // Latency type
+                            format: "opus",          // Audio format (opus, mp3, or wav)
+                            prosody: {               // Optional prosody settings
+                              speed: 1.0,            // Speech speed
+                              volume: 0              // Volume adjustment in dB
+                            },
+                            reference_id: "vc_uid"   // A unique reference ID
+                          }
+                        };
+                        // Encode the data using MessagePack
+                        const encodedData = msgpack.encode(message);
 
                         if (websocket) {
-                          websocket.send(jsonData);
+                          websocket.send(encodedData);
                         } else {
                           console.error("WebSocket is null, cannot send data.");
                         }
@@ -218,27 +225,42 @@ export default function Home() {
             websocket.onmessage = (event) => {
               setIsRecording(false);
               setIsPlayingAudio(true);
-
+            
               try {
                 let audioData: ArrayBuffer;
-
-                // 如果 event.data 是 ArrayBuffer，直接处理
+            
+                // First, handle msgpack decoding
+                let data;
                 if (event.data instanceof ArrayBuffer) {
-                  audioData = event.data;
+                  // If the data is an ArrayBuffer, we decode it as MsgPack
+                  data = msgpack.decode(new Uint8Array(event.data));
                 } else if (event.data instanceof Blob) {
-                  // 如果是 Blob 类型，使用 FileReader 将其转换为 ArrayBuffer
+                  // If the data is a Blob, use FileReader to convert it into ArrayBuffer first
                   const reader = new FileReader();
                   reader.onloadend = () => {
                     audioData = reader.result as ArrayBuffer;
-                    bufferAudio(audioData); // Buffer the audio
+                    // Decode msgpack if the Blob is valid MsgPack data
+                    try {
+                      const decodedData = msgpack.decode(new Uint8Array(audioData));
+                      if (decodedData.event === 'audio') {
+                        console.log('Received audio data:', decodedData.audio);
+                        bufferAudio(decodedData.audio);
+                      }
+                    } catch (error) {
+                      console.error("Error decoding MsgPack from Blob:", error);
+                    }
                   };
                   reader.readAsArrayBuffer(event.data);
-                  return;
+                  return; // exit early because the decoding happens asynchronously
                 } else {
                   throw new Error("Received unexpected data type from WebSocket");
                 }
-
-                bufferAudio(audioData);
+            
+                // Now handle the decoded msgpack data
+                if (data && data.event === 'audio') {
+                  console.log('Received audio data:', data.audio);
+                  bufferAudio(data.audio); // Buffer the audio data
+                }
               } catch (error) {
                 console.error("Error processing WebSocket message:", error);
               }

@@ -30,7 +30,7 @@ class OpenVoice_v2(TTSInterface):
         self.tone_color_converter = ToneColorConverter(f'{ckpt_converter}/config.json', device=self.device)
         self.tone_color_converter.load_ckpt(f'{ckpt_converter}/checkpoint.pth')
 
-    async def text_to_speech(self, text: str, vc_uid: str, gen_file: bool) -> Tuple[bytes, str]:
+    async def text_to_speech(self, text: str, vc_uid: str) -> Tuple[str]:
         audio_buffer = BytesIO()
         """使用 x_tts 库将文本转语音"""
         start_time = time.time()
@@ -68,15 +68,18 @@ class OpenVoice_v2(TTSInterface):
                 output_path=output_path,
                 message=encode_message)
 
-        # 将生成的音频文件读入内存缓冲区
-        with open(output_path, 'rb') as f:
-            audio_buffer.write(f.read())
+        # # 将生成的音频文件读入内存缓冲区
+        # with open(output_path, 'rb') as f:
+        #     audio_buffer.write(f.read())
 
-        audio_buffer.seek(0)
-        audio_data = audio_buffer.read()
+        # audio_buffer.seek(0)
+        # audio_data = audio_buffer.read()
 
         end_time = time.time()
         print(f"OpenVice-V2 text_to_speech time: {end_time - start_time:.4f} seconds")
 
-        return audio_data, output_path
+        return output_path
 
+
+    async def text_to_speech_stream(self, text: str, vc_uid: str) -> Tuple[bytes]:
+        pass
