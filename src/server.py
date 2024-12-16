@@ -202,9 +202,11 @@ class Server:
     async def handle_audio(self, client, websocket):
         while True:
             try:
-                message = await websocket.receive_bytes()
+                message = await websocket.receive_text()
+                data = json.loads(message)
+                #message = await websocket.receive_bytes()
                 # Decode the MessagePack data
-                data = ormsgpack.unpackb(message)
+                #data = ormsgpack.unpackb(message)
 
                 if data.get('event') == 'start':
                     request_data = data.get('request', {})

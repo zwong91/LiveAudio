@@ -203,8 +203,8 @@ export default function Home() {
                           }
                         };
                         // Encode the data using MessagePack
-                        const encodedData = msgpack.encode(message);
-
+                        //const encodedData = msgpack.encode(message);
+                        const encodedData = JSON.stringify(message);
                         if (websocket) {
                           websocket.send(encodedData);
                         } else {
