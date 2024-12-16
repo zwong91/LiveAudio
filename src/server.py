@@ -260,8 +260,11 @@ class Server:
         # 为每个文件生成一个8位 UUID 前缀
         file_uuid = uuid.uuid4().hex[:8]
         for file in files:
+            # 获取文件名和扩展名
+            filename = file.filename
+            file_name_without_ext, file_extension = os.path.splitext(filename)
             # Save each file to disk
-            file_location = os.path.join("vc", f"{file_uuid}_{vc_name}")
+            file_location = os.path.join("vc", f"{file_uuid}_{vc_name}{file_extension}")
             file_paths.append(file_location)
             with open(file_location, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
