@@ -75,6 +75,7 @@ class OpenAILLM(LLMInterface):
         # vault_content = open("vault.txt", "r", encoding="utf-8").readlines()
         # vault_embeddings = self.embedding_model.encode(vault_content)
         # print(f"Length of vault_content: {len(vault_content)}")
+
         # relevant_context = self.get_relevant_context(vault_input, self.vault_embeddings)
         # query = vault_input
         # if relevant_context:
