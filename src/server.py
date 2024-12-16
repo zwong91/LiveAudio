@@ -261,7 +261,7 @@ class Server:
         file_uuid = uuid.uuid4().hex[:8]
         for file in files:
             # Save each file to disk
-            file_location = os.path.join("vc", f"{file_uuid}_{vc_name}_{file.filename}")
+            file_location = os.path.join("vc", f"{file_uuid}_{vc_name}")
             file_paths.append(file_location)
             with open(file_location, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
