@@ -38,11 +38,11 @@ conda activate rt
 
 #2  Live-Audio
 cd /workspace/Live-Audio
-pip install -r requirements.txt
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 #3 xtts
 cd /workspace/Live-Audio/src/xtts
-pip install -e .[all,dev,notebooks]  -i https://pypi.tuna.tsinghua.edu.cn/simple # Select the relevant extras
+pip install -e .[all,dev,notebooks]  -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 #4. download xtts-v2 
 HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2  --local-dir  XTTS-v2
@@ -107,7 +107,7 @@ sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE
 [pem file](https://blog.csdn.net/liuchenbaidu/article/details/136722001)
 
 ``` sh
-python3 -m src.main --port 19998 --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}'
+python3 -m src.main --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}'
 ```
 
 ***test***
