@@ -88,9 +88,8 @@ class XTTS_v2(TTSInterface):
         config = XttsConfig()
         config.load_json(os.path.join(model_path, "config.json"))
         self.model = Xtts.init_from_config(config)
-        #self.model.load_checkpoint(config, checkpoint_dir=model_path, use_deepspeed=True)
-        self.model.load_checkpoint(config, checkpoint_dir=model_path)
-        #self.model.to(device)
+        self.model.load_checkpoint(config, checkpoint_dir=model_path, use_deepspeed=True)
+        self.model.to(device)
 
         print("Computing speaker latents...")
         gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(audio_path=[target_wav])

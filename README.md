@@ -19,6 +19,8 @@ For `SenseVoice`, visit [SenseVoice repo](https://github.com/FunAudioLLM/SenseVo
 apt update
 apt-get install vim  ffmpeg  git-lfs -y
 
+mkdir /asset
+chmod 777 /asset/
 git clone https://github.com/zwong91/Live-Audio.git
 cd /workspace/Live-Audio
 git pull
@@ -97,6 +99,7 @@ python3 -m src.main --port 19998 --certfile cf.pem --keyfile cf.key --tts-type x
 ```
 
 ***test***
+
 ```
 export PYANNOTE_AUTH_TOKEN=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
 ASR_TYPE=sensevoice python -m unittest test.server.test_server
