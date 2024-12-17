@@ -44,6 +44,18 @@ pip install -r requirements.txt
 cd /workspace/Live-Audio/src/xtts
 pip install -e .[all,dev,notebooks]  -i https://pypi.tuna.tsinghua.edu.cn/simple # Select the relevant extras
 
+#4. download xtts-v2 
+HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2  --local-dir  XTTS-v2
+
+(rt) root@enty03:~/rt-audio# nvidia-smi
+(rt) root@enty03:~/rt-audio# nvcc --version
+(rt) root@enty03:~/rt-audio# pip show torch
+```
+
+## Q
+***"`GLIBCXX_3.4.32' not found" error at runtime. GCC 13.2.0***
+```
+https://stackoverflow.com/questions/76974555/glibcxx-3-4-32-not-found-error-at-runtime-gcc-13-2-0
 ```
 
 ## Running with Docker
