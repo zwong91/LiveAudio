@@ -71,25 +71,25 @@ class XTTS_v2(TTSInterface):
         device = "cuda"
         # 使用 os.path 确保路径正确拼接
         target_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "liuyifei.wav")
-        # print("Loading model...")
-        # config = XttsConfig()
-        # config.load_json("XTTS-v2/config.json")
-        # self.model = Xtts.init_from_config(config)
-        # self.model.load_checkpoint(config, checkpoint_dir="XTTS-v2", use_deepspeed=True)
-        # self.model.to(device)
-        
-        model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
-        logging.info("⏳Downloading model")
-        ModelManager().download_model(model_name)
-        model_path = os.path.join(
-            get_user_data_dir("tts"), model_name.replace("/", "--")
-        )
-
+        print("Loading model...")
         config = XttsConfig()
-        config.load_json(os.path.join(model_path, "config.json"))
+        config.load_json("XTTS-v2/config.json")
         self.model = Xtts.init_from_config(config)
-        self.model.load_checkpoint(config, checkpoint_dir=model_path, use_deepspeed=True)
+        self.model.load_checkpoint(config, checkpoint_dir="XTTS-v2", use_deepspeed=True)
         self.model.to(device)
+        
+        # model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
+        # logging.info("⏳Downloading model")
+        # ModelManager().download_model(model_name)
+        # model_path = os.path.join(
+        #     get_user_data_dir("tts"), model_name.replace("/", "--")
+        # )
+
+        # config = XttsConfig()
+        # config.load_json(os.path.join(model_path, "config.json"))
+        # self.model = Xtts.init_from_config(config)
+        # self.model.load_checkpoint(config, checkpoint_dir=model_path, use_deepspeed=True)
+        # self.model.to(device)
 
         print("Computing speaker latents...")
         gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(audio_path=[target_wav])
