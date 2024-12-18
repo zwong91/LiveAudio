@@ -217,7 +217,7 @@ class XTTS_v2(TTSInterface):
             wav_chunks.append(chunk)
 
         wav = torch.cat(wav_chunks, dim=0)
-        wav_audio = wav.squeeze().unsqueeze(0)
+        wav_audio = wav.squeeze().unsqueeze(0).cpu()
 
         with torch.no_grad():
             # Use torchaudio to save the tensor to a buffer (or file)
