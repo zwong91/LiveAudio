@@ -14,6 +14,7 @@ import asyncio
 # 初始化模型
 from openai import AsyncOpenAI
 aclient = AsyncOpenAI()
+MODEL = os.getenv('MODEL')
 BASE_URL = os.getenv('BASE_URL')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
@@ -34,7 +35,7 @@ default_system = """
 
 class OpenAILLM(LLMInterface):
     def __init__(self, model: str = "gpt-4o-mini"):
-        self.model = model
+        self.model = MODEL
         aclient.api_key = OPENAI_API_KEY
         #aclient.base_url = "https://xyz-api.jongun2038.win/v1/"
         aclient.base_url = BASE_URL
