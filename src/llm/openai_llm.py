@@ -14,6 +14,7 @@ import asyncio
 # 初始化模型
 from openai import AsyncOpenAI
 aclient = AsyncOpenAI()
+BASE_URL = os.getenv('BASE_URL')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # 定义默认系统消息
@@ -32,11 +33,12 @@ default_system = """
 """
 
 class OpenAILLM(LLMInterface):
-    def __init__(self, model: str = "grok-2-1212"):
-        self.model = model #gpt-4o-mini
+    def __init__(self, model: str = "gpt-4o-mini"):
+        self.model = model
         aclient.api_key = OPENAI_API_KEY
         #aclient.base_url = "https://xyz-api.jongun2038.win/v1/"
-        aclient.base_url = "https://api.x.ai/v1/"
+        aclient.base_url = BASE_URL
+        aclient.default_headers = {"x-foo": "true"}
         # self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
         # # Load initial content from vault.txt
         # self.vault_content = []
