@@ -130,7 +130,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 #     audio_data = chunk[0]  # 获取音频数据，chunk[0] 是音频数据
                 #     await websocket.send_bytes(audio_data)
                 #chunk_iterator =  tts_pipeline.text_to_speech_stream(tts_text, "liuyifei")
-                audio = await tts_pipeline.text_to_speech_stream(tts_text, "liuyifei")
+                audio = await tts_pipeline.text_to_speech_stream(tts_text, "c9cf4e49")
                 end = time.time()
                 logging.debug(f"processing_time: {end - start}, text: {tts_text}")
                 try:
