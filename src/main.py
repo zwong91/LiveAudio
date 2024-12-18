@@ -13,7 +13,7 @@ import asyncio
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Audio AI Server: Real-time audio transcription "
+        description="Audio AI Server: Real-time audio conversation "
                     "using self-hosted Sensevoice and WebSocket."
     )
     parser.add_argument("--vad-type", type=str, default="webrtc", help="VAD pipeline type")

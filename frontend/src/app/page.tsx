@@ -110,7 +110,7 @@ export default function Home() {
     }
   }
 
-  const SOCKET_URL = "wss://audio.enty.services/stream-vc";
+  const SOCKET_URL = "wss://audio.enty.services/stream";
   let manualDisconnect = false; // 标志位
 
   // Initialize WebSocket and media devices
@@ -199,7 +199,7 @@ export default function Home() {
                               speed: 1.0,            // Speech speed
                               volume: 0              // Volume adjustment in dB
                             },
-                            reference_id: "c9cf4e49"   // A unique reference ID
+                            vc_uid: "c9cf4e49"   // A unique reference ID
                           }
                         };
                         // Encode the data using MessagePack
