@@ -93,7 +93,7 @@ class OpenAILLM(LLMInterface):
         response = await aclient.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": query}],
-            max_tokens=512,
+            max_tokens=32,
             temperature=1,
         )
 
