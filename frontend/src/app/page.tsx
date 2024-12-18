@@ -199,7 +199,7 @@ export default function Home() {
                               speed: 1.0,            // Speech speed
                               volume: 0              // Volume adjustment in dB
                             },
-                            reference_id: "vc_uid"   // A unique reference ID
+                            reference_id: "c9cf4e49"   // A unique reference ID
                           }
                         };
                         // Encode the data using MessagePack
