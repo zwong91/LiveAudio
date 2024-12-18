@@ -64,8 +64,8 @@ class XTTS_v2(TTSInterface):
             target_wav_files = [target_wav_files]
         # 使用 vc_uid 和 文件MD5 作为缓存的键
         # 获取文件名并进行 Base64 编码
-        file_names = ''.join(os.path.basename(f) for f in target_wav_files)
-        bs64 = base64.b64encode(file_names.encode('utf-8')).decode('utf-8')
+        filenames = ''.join(os.path.basename(f) for f in target_wav_files)
+        bs64 = base64.b64encode(filenames.encode('utf-8')).decode('utf-8')
         cache_key = f"{vc_uid}_{bs64}"
         if cache_key in self.latent_cache:
             print(f"Cache hit for {vc_uid} with encoded file names {bs64}")
