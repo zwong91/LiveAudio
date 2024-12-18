@@ -24,13 +24,6 @@ from pydantic import BaseModel
 from typing import List
 import shutil
 
-path = '/asset'
-
-# 检查路径是否存在
-if not os.path.exists(path):
-    os.makedirs(path)
-    print(f"目录 {path} 已创建")
-
 class TTSRequest(BaseModel):
     tts_text: str
     vc_uid: str
@@ -215,13 +208,13 @@ class Server:
                     latency = request_data.get('latency')
                     format = request_data.get('format')
                     prosody = request_data.get('prosody', {})
-                    reference_id = request_data.get('reference_id')
+                    vc_uid = request_data.get('vc_uid')
 
                     # Print or process the extracted data
                     #logging.debug(f"Audio Data: {bytes}, Latency: {latency}, Format: {format}")
-                    logging.debug(f"Prosody: {prosody}, Reference ID: {reference_id}")
+                    logging.debug(f"Prosody: {prosody}, VC UID: {vc_uid}")
 
-                    client.append_audio_data(bytes)
+                    client.append_audio_data(bytes, vc_uid)
                     # 异步task处理音频
                     self._process_audio(client, websocket)
 
