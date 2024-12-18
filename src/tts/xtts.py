@@ -112,7 +112,7 @@ class XTTS_v2(TTSInterface):
         print("Computing speaker latents...")
 
         # 调用模型函数，传递匹配的文件列表
-        gpt_cond_latent, speaker_embedding = self.get_cached_latents(vc_uid=vc_uid, audio_path=target_wav_files)
+        gpt_cond_latent, speaker_embedding = self.get_cached_latents(vc_uid, target_wav_files)
         print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
 
         chunks = self.model.inference_stream(
