@@ -38,7 +38,6 @@ class OpenAILLM(LLMInterface):
         aclient.api_key = OPENAI_API_KEY
         #aclient.base_url = "https://xyz-api.jongun2038.win/v1/"
         aclient.base_url = BASE_URL
-        aclient.default_headers = {"x-foo": "true"}
         # self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
         # # Load initial content from vault.txt
         # self.vault_content = []
