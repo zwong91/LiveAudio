@@ -50,6 +50,7 @@ class Client:
                 **self.config["processing_args"],
             )
         )
+        self.vc_uid = "c9cf4e49"
 
     def update_config(self, config_data):
         self.config.update(config_data)
@@ -61,9 +62,11 @@ class Client:
             )
         )
 
-    def append_audio_data(self, audio_data):
+    def append_audio_data(self, audio_data, vc_uid):
         self.buffer.extend(audio_data)
         self.total_samples += len(audio_data) / self.samples_width
+        
+        self.vc_uid = vc_uid
 
     def clear_buffer(self):
         self.buffer.clear()
