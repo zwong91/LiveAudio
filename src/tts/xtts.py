@@ -89,6 +89,10 @@ class XTTS_v2(TTSInterface):
         language = langid.classify(text)[0].strip()
         if language == 'zh':
             language = 'zh-cn'
+
+        if language not in self.supported_languages:
+            print(f"Language you put {language} in is not in our Supported Languages, please choose from {self.supported_languages}")
+        
         # 构造目标路径，获取匹配的 .wav 文件
         supported_extensions = ["wav", "m4a", "flac", "mp3"]
 
@@ -171,6 +175,9 @@ class XTTS_v2(TTSInterface):
         language = langid.classify(text)[0].strip()
         if language == 'zh':
             language = 'zh-cn'
+        if language not in self.supported_languages:
+            print(f"Language you put {language} in is not in our Supported Languages, please choose from {self.supported_languages}")
+
         # 构造目标路径，获取匹配的 .wav 文件
         target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), f"{vc_uid}*.wav")
         target_wav_files = glob.glob(target_wav_pattern)  # 使用 glob 扩展通配符
