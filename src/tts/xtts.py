@@ -50,9 +50,15 @@ class XTTS_v2(TTSInterface):
         self.model = Xtts.init_from_config(config)
         self.model.load_checkpoint(config, checkpoint_dir=model_path, use_deepspeed=True)
         self.model.to(device)
+        
+        self.supported_languages = config.languages
 
         print("Computing speaker latents...")
-        gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(audio_path=[target_wav])
+        t_latent = time.time()
+        ## note diffusion_conditioning not used on hifigan (default mode), it will be empty but need to pass it to model.inference
+        gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(audio_path=[target_wav], gpt_cond_len=30, gpt_cond_chunk_len=4, max_ref_length=60)
+        latent_calculation_time = time.time() - t_latent
+        prinf(f"Embedding speaker latents computed in {latent_calculation_time:.4f} seconds")
         self.gpt_cond_latent = gpt_cond_latent
         self.speaker_embedding = speaker_embedding
         
@@ -64,8 +70,8 @@ class XTTS_v2(TTSInterface):
             target_wav_files = [target_wav_files]
         # 使用 vc_uid 和 文件MD5 作为缓存的键
         # 获取文件名并进行 Base64 编码
-        filenames = ''.join(os.path.basename(f) for f in target_wav_files)
-        bs64 = base64.b64encode(filenames.encode('utf-8')).decode('utf-8')
+        last_filename = os.path.basename(target_wav_files[-1])
+        bs64 = base64.b64encode(last_filename.encode('utf-8')).decode('utf-8')
         cache_key = f"{vc_uid}_{bs64}"
         if cache_key in self.latent_cache:
             print(f"Cache hit for {vc_uid} with encoded file names {bs64}")
@@ -80,7 +86,7 @@ class XTTS_v2(TTSInterface):
 
     async def text_to_speech(self, text: str, vc_uid: str) -> Tuple[str]: 
         start_time = time.time()
-        language, _ = langid.classify(text)
+        language = langid.classify(text)[0].strip()
         if language == 'zh':
             language = 'zh-cn'
         # 构造目标路径，获取匹配的 .wav 文件
@@ -114,7 +120,7 @@ class XTTS_v2(TTSInterface):
         # 调用模型函数，传递匹配的文件列表
         gpt_cond_latent, speaker_embedding = self.get_cached_latents(vc_uid, target_wav_files)
         print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
-
+        t0 = time.time()
         chunks = self.model.inference_stream(
             text,
             language,
@@ -139,6 +145,8 @@ class XTTS_v2(TTSInterface):
             wav_chunks.append(chunk)
 
         wav = torch.cat(wav_chunks, dim=0)
+        real_time_factor= (time.time() - t0) / wav.shape[0] * 24000
+        print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
         wav_audio = wav.squeeze().unsqueeze(0).cpu()
 
         # Saving to a file on disk
@@ -160,7 +168,7 @@ class XTTS_v2(TTSInterface):
 
     async def text_to_speech_stream(self, text: str, vc_uid: str) -> Tuple[bytes]: 
         start_time = time.time()
-        language, _ = langid.classify(text)
+        language = langid.classify(text)[0].strip()
         if language == 'zh':
             language = 'zh-cn'
         # 构造目标路径，获取匹配的 .wav 文件
@@ -188,6 +196,7 @@ class XTTS_v2(TTSInterface):
         gpt_cond_latent, speaker_embedding = self.get_cached_latents(vc_uid, target_wav_files)
         print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
 
+        t0 = time.time()
         chunks = self.model.inference_stream(
             text,
             language,
@@ -215,10 +224,11 @@ class XTTS_v2(TTSInterface):
         wav_chunks = []
         for i, chunk in enumerate(chunks):
             wav_chunks.append(chunk)
-
+        
         wav = torch.cat(wav_chunks, dim=0)
+        real_time_factor= (time.time() - t0) / wav.shape[0] * 24000
+        print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
         wav_audio = wav.squeeze().unsqueeze(0).cpu()
-
         with torch.no_grad():
             # Use torchaudio to save the tensor to a buffer (or file)
             # Using a buffer to save the audio data as bytes
