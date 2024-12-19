@@ -162,7 +162,7 @@ class Server:
         #self.app.mount("/assets", StaticFiles(directory=static_dir), name="assets")
 
         self.app.get("/asset/{filename}")(self.get_asset_file)
-        self.app.post("/generate_accent/{vc_name}")(self.upload_mp3_files)
+        self.app.post("/generate_accent/{vc_name}")(self.upload_audio_files)
         self.app.post("/generate_tts")(self.generate_tts)
         self.app.get("/get_task_result/{task_id}")(self.get_task_result)
         self.app.get("/health")(self.health)
@@ -265,7 +265,7 @@ class Server:
             }
         )
 
-    async def upload_mp3_files(self, vc_name: str, files: List[UploadFile] = File(...)):
+    async def upload_audio_files(self, vc_name: str, files: List[UploadFile] = File(...)):
         file_paths = []
         # 为每个文件生成一个8位 UUID 前缀
         file_uuid = uuid.uuid4().hex[:8]
@@ -279,8 +279,60 @@ class Server:
             with open(file_location, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
 
-        # After saving, you can process the files, send them to TTS, etc.
-        return {"vc_uid": file_uuid, "file_paths": file_paths}
+        # After saving the files, process the audio files with ffmpeg for voice cleaning
+        cleaned_file_paths = []
+        for file_path in file_paths:
+            # Perform voice cleanup using ffmpeg
+            cleaned_file_path = await self.clean_audio(file_path, False)
+            cleaned_file_paths.append(cleaned_file_path)
+
+        # Return the cleaned files paths and vc_uid
+        return {"vc_uid": file_uuid, "file_paths": cleaned_file_paths}
+
+    async def clean_audio(self, speaker_wav: str, voice_cleanup: bool) -> str:
+        """
+        使用ffmpeg进行音频清理, 包括低通、高通滤波、去除静音等
+        针对麦克风输入进行过滤，因为麦克风通常会有背景噪音，可能会在开始和结束时有静音。快速过滤，效果一般
+        """
+        lowpassfilter = True
+        trim = True
+
+        # Apply all on demand
+        if lowpassfilter:
+            lowpass_highpass = "lowpass=8000,highpass=75,"
+        else:
+            lowpass_highpass = ""
+
+        if trim:
+            # better to remove silence in beginning and end for microphone
+            trim_silence = "areverse,silenceremove=start_periods=1:start_silence=0:start_threshold=0.02,areverse,silenceremove=start_periods=1:start_silence=0:start_threshold=0.02,"
+        else:
+            trim_silence = ""
+
+        if voice_cleanup:
+            try:
+                # Generate a unique filename for the cleaned audio
+                out_filename = f"{speaker_wav}_{str(uuid.uuid4())}.cleaned.wav"
+
+                # ffmpeg command for filtering the audio
+                shell_command = f"ffmpeg -y -i {speaker_wav} -af {lowpass_highpass}{trim_silence} {out_filename}".split(" ")
+
+                # Run the ffmpeg command
+                command_result = subprocess.run(
+                    [item for item in shell_command],
+                    capture_output=False,
+                    text=True,
+                    check=True,
+                )
+                print(f"Filtered audio saved to: {out_filename}")
+                return out_filename
+            except subprocess.CalledProcessError:
+                # There was an error in the ffmpeg command
+                print("Error: failed to filter audio, returning original file")
+                return speaker_wav
+        else:
+            # If no cleanup is requested, return the original file
+            return speaker_wav
 
     async def generate_tts(self, request: TTSRequest):
         task_id = await self.tts_manager.gen_tts(request.tts_text, request.vc_uid)
