@@ -112,10 +112,13 @@ language_codes = {
 
 class FasterWhisperASR(ASRInterface):
     def __init__(self, **kwargs):
-        model_size = kwargs.get("model_size", "large-v3")
-        # Run on GPU with FP16
+        model_size = kwargs.get("model_size", "distil-large-v3")
+        
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # Run on GPU with FP16 if available, otherwise on CPU with INT8
         self.asr_pipeline = WhisperModel(
-            model_size, device="cuda", compute_type="float16"
+            model_size, device=device, compute_type="float16" if device == "cuda" else "int8"
         )
 
     async def transcribe(self, client):
@@ -129,10 +132,15 @@ class FasterWhisperASR(ASRInterface):
             else language_codes.get(client.config["language"].lower())
         )
         segments, info = self.asr_pipeline.transcribe(
-            file_path, word_timestamps=True, language=language
+            file_path, beam_size=5, word_timestamps=True,
+            vad_filter=True,
+            vad_parameters=dict(min_silence_duration_ms=500),
         )
 
+        print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
+
         segments = list(segments)  # The transcription will actually run here.
+        
         os.remove(file_path)
 
         flattened_words = [
