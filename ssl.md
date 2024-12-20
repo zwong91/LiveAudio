@@ -32,7 +32,7 @@ CF_ZONE_ID="YOUR_ZONE_ID"
 CERTBOT_DOMAIN=$1
 CERTBOT_VALIDATION=$2
 
-# 添加 TXT 记录
+# 添加 TXT 记录 https://developers.cloudflare.com/api/resources/dns/subresources/records/methods/create/
 curl -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records" \
      -H "Authorization: Bearer $CF_API_TOKEN" \
      -H "Content-Type: application/json" \
