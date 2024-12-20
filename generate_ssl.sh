@@ -20,8 +20,10 @@ exec "$@"
 #    ssl_certificate_key privkey.pem;
 certbot certonly \
     --manual \
+    --manual-auth-hook auth-hook.sh \
     --preferred-challenges dns \
     -d xyz666.org \
     --config-dir ~/certbot/config \
     --work-dir ~/certbot/work \
     --logs-dir ~/certbot/logs
+
