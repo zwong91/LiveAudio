@@ -42,7 +42,7 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records
          "content": "'$CERTBOT_VALIDATION'",
          "ttl": 120
      }'
-
+```
 
 ## 4. 保存并使脚本可执行
 
@@ -59,7 +59,6 @@ crontab -e
 
 # 验证更新是否成功
 certbot renew --dry-run
-
 
 ```
 
