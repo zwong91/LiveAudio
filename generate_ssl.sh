@@ -15,6 +15,9 @@ exec "$@"
 
 
 # manual https://juejin.cn/post/7205839782381928508
+# ~/certbot/config/live/xyz666.org/
+#    ssl_certificate fullchain.pem;
+#    ssl_certificate_key privkey.pem;
 certbot certonly \
     --manual \
     --preferred-challenges dns \
