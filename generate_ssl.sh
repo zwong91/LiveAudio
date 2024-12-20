@@ -10,5 +10,15 @@ else
     echo "certbot 已安装"
 fi
 
-/home/ubuntu/miniconda3/envs/rt/bin/python /home/ubuntu/front/rt-audio/generate_ssl_certificates.py
+python generate_ssl_certificates.py
 exec "$@"
+
+
+# manual https://juejin.cn/post/7205839782381928508
+certbot certonly \
+    --manual \
+    --preferred-challenges dns \
+    -d xyz666.org \
+    --config-dir ~/certbot/config \
+    --work-dir ~/certbot/work \
+    --logs-dir ~/certbot/logs
