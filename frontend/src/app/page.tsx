@@ -167,9 +167,9 @@ export default function Home() {
       console.log(frequencyData);
 
       // If playback is interrupted, restart it by adding more PCM data
-      wavStreamPlayer.interrupt().then((trackOffset) => {
-        console.log(trackOffset);
-      });
+      // wavStreamPlayer.interrupt().then((trackOffset) => {
+      //   console.log(trackOffset);
+      // });
     }
   }
 
