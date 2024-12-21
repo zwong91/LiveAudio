@@ -143,7 +143,7 @@ export default function Home() {
             websocket.onmessage = (event) => {
               setIsRecording(false);
               setIsPlayingAudio(true);
-              const arr = Uint8Array.from(event.data, (m) => m.codePointAt(0));
+              const arr = new Uint8Array(event.data);
               const bytes = new Int16Array(arr.buffer);
               wavStreamPlayer.add16BitPCM(bytes, "tracker_id");
             };
