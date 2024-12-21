@@ -18,9 +18,22 @@ export default function Home() {
 
   const SOCKET_URL = "wss://audio.enty.services/stream-vc";
 
-  const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 22500 });
+  const [wavStreamPlayer] = useState(new WavStreamPlayer({ sampleRate: 22500 }));
+
   // Connect to audio output
-  await wavStreamPlayer.connect();
+  useEffect(() => {
+    const connectWavStreamPlayer = async () => {
+      try {
+        await wavStreamPlayer.connect();
+        console.log("WavStreamPlayer connected");
+      } catch (error) {
+        console.error("Failed to connect WavStreamPlayer", error);
+      }
+    };
+
+    connectWavStreamPlayer();
+  }, [wavStreamPlayer]);
+
   // Initialize WebSocket and media devices
   useEffect(() => {
     let wakeLock: WakeLockSentinel | null = null;
@@ -99,18 +112,16 @@ export default function Home() {
                         const message = {
                           event: "start",
                           request: {
-                            audio: base64data,  // Audio data as a binary array or ArrayBuffer
-                            latency: "normal",       // Latency type
-                            format: "opus",          // Audio format (opus, mp3, or wav)
-                            prosody: {               // Optional prosody settings
-                              speed: 1.0,            // Speech speed
-                              volume: 0              // Volume adjustment in dB
+                            audio: base64data,
+                            latency: "normal",
+                            format: "opus",
+                            prosody: {
+                              speed: 1.0,
+                              volume: 0
                             },
-                            reference_id: "c9cf4e49"   // A unique reference ID
+                            reference_id: "c9cf4e49"
                           }
                         };
-                        // Encode the data using MessagePack
-                        //const encodedData = msgpack.encode(message);
                         const encodedData = JSON.stringify(message);
                         if (websocket) {
                           websocket.send(encodedData);
@@ -135,16 +146,6 @@ export default function Home() {
               const arr = Uint8Array.from(event.data, (m) => m.codePointAt(0));
               const bytes = new Int16Array(arr.buffer);
               wavStreamPlayer.add16BitPCM(bytes, "tracker_id");
-
-              // // get data for visualization
-              // const frequencyData = wavStreamPlayer.getFrequencies();
-
-              // // Interrupt the audio (halt playback) at any time
-              // // To restart, need to call .add16BitPCM() again
-              // const trackOffset = await wavStreamPlayer.interrupt();
-              // trackOffset.trackId; // "my-track"
-              // trackOffset.offset; // sample number
-              // trackOffset.currentTime; // time in track
             };
 
             websocket.onclose = () => {
@@ -195,37 +196,28 @@ export default function Home() {
     return btoa(binary);
   }
 
-  function base64ToInt16Array(base64) {
-    const raw = atob(base64);
-    const bytes = Uint8Array.from(raw, (m) => m.codePointAt(0));
-    return new Int16Array(bytes.buffer);
-  }
-
-  // 添加状态来跟踪是否在通话中
   const [isInCall, setIsInCall] = useState(true);
 
-  // 定义结束通话的函数
-  function endCall() {
-    // 关闭 WebSocket 连接
+  function infiniteSleep(): Promise<void> {
+    return new Promise(() => {}); // 不调用 resolve 或 reject
+  }
+
+  async function endCall() {
     if (socket) {
       socket.close();
       setSocket(null);
     }
-
-    // 停止 MediaRecorder
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
       mediaRecorder.stream.getTracks().forEach(track => track.stop());
       setMediaRecorder(null);
     }
-
-    // 更新状态
     setIsInCall(false);
     setIsRecording(false);
     setIsPlayingAudio(false);
     setConnectionStatus("Closed");
 
-    sleep(100000000000000000000);
+    await infiniteSleep();
   }
 
   return (
@@ -240,7 +232,7 @@ export default function Home() {
           {connectionStatus}
         </div>
       </div>
-  
+
       <div className={styles.mainContent}>
         <div className={styles.avatarSection}>
           <div
@@ -251,27 +243,39 @@ export default function Home() {
             <img src="/ai-avatar.png" alt="AI" className={styles.avatar} />
           </div>
           <div className={styles.status}>
-            <span className={isInCall ? isPlayingAudio ? styles.speakingAnimation : styles.listeningAnimation : styles.offlineAnimation}>
-              {isInCall ? isPlayingAudio ? "AI正在说话" : "AI正在听" : "AI 离线"}
+            <span
+              className={
+                isInCall
+                  ? isPlayingAudio
+                    ? styles.speakingAnimation
+                    : styles.listeningAnimation
+                  : styles.offlineAnimation
+              }
+            >
+              {isInCall
+                ? isPlayingAudio
+                  ? "AI正在说话"
+                  : "AI正在听"
+                : "AI 离线"}
             </span>
           </div>
         </div>
       </div>
-  
+
       <div className={styles.controls}>
-          <button
-            className={isInCall ? styles.endCallButton : styles.startCallButton}
-            onClick={() => {
-              if (isInCall) {
-                endCall();
-              } else {
-                window.location.reload();
-              }
-            }}
-          >
-            {isInCall ? "结束通话" : "重新通话"}
-          </button>
-        </div>
+        <button
+          className={isInCall ? styles.endCallButton : styles.startCallButton}
+          onClick={() => {
+            if (isInCall) {
+              endCall();
+            } else {
+              window.location.reload();
+            }
+          }}
+        >
+          {isInCall ? "结束通话" : "重新通话"}
+        </button>
+      </div>
     </div>
   );
 }
