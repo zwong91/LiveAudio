@@ -19,112 +19,70 @@ export default function Home() {
 
   let audioContext: AudioContext | null = null;
   let audioBufferQueue: AudioBuffer[] = [];
-  let currentAudio: typeof Audio | null = null;  // Keep track of the currently playing audio
   
   // Check if AudioContext is available in the browser
   if (typeof window !== "undefined" && window.AudioContext) {
     audioContext = new AudioContext();
   }
   
-  const audioManager = {
-    stopCurrentAudio: () => {
-      // Stop and clear the current audio
-      if (currentAudio && !currentAudio.paused) {
-        currentAudio.pause();  // Pause the currently playing audio
-        currentAudio.currentTime = 0;  // Reset to the beginning
+  let currentAudio: HTMLAudioElement | null = null;  // Keep track of the currently playing audio
+
+const audioManager = {
+  stopCurrentAudio: () => {
+    // Stop and clear the current audio
+    if (currentAudio && !currentAudio.paused) {
+      currentAudio.pause();  // Pause the currently playing audio
+      currentAudio.currentTime = 0;  // Reset to the beginning
+    }
+
+    // Clear the audio buffer queue to prepare for new audio
+    audioBufferQueue = [];
+
+    // Stop playback
+    if (isPlayingAudio) {
+      setIsPlayingAudio(false);
+    }
+  },
+
+  playNewAudio: async (audioBlob: Blob) => {
+    // Stop and clear current audio before playing new one
+    audioManager.stopCurrentAudio();
+
+    // Create and play the new audio
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    currentAudio = audio;  // Track the current audio instance
+
+    // When the metadata of the audio is loaded, set its duration
+    audio.onloadedmetadata = () => {
+      setAudioDuration(audio.duration); // Set the audio duration after loading metadata
+    };
+
+    // Play the audio
+    setIsPlayingAudio(true);
+
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl);
+      setIsPlayingAudio(false);
+      setIsRecording(true);
+
+      if (audioQueue.length > 0) {
+        const nextAudioBlob = audioQueue.shift();
+        if (nextAudioBlob) {
+          audioManager.playNewAudio(nextAudioBlob); // Play next audio in the queue
+        }
       }
-      
-      // Clear the audio buffer queue to prepare for new audio
-      audioBufferQueue = [];
-      
-      // Stop playback
-      if (isPlayingAudio) {
-        setIsPlayingAudio(false);
-      }
-    },
-  
-    playNewAudio: async (audioBlob: Blob) => {
-      // Stop and clear current audio before playing new one
+    };
+
+    try {
+      await audio.play();
+    } catch (error) {
+      console.error("播放音频失败:", error);
       audioManager.stopCurrentAudio();
-      
-      // Create and play the new audio
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      currentAudio = audio;  // Track the current audio instance
-  
-      // When the metadata of the audio is loaded, set its duration
-      audio.onloadedmetadata = () => {
-        setAudioDuration(audio.duration); // Set the audio duration after loading metadata
-      };
-  
-      // Play the audio
-      setIsPlayingAudio(true);
-  
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-        setIsPlayingAudio(false);
-        setIsRecording(true);
-  
-        if (audioQueue.length > 0) {
-          const nextAudioBlob = audioQueue.shift();
-          if (nextAudioBlob) {
-            audioManager.playNewAudio(nextAudioBlob); // Play next audio in the queue
-          }
-        }
-      };
-  
-      try {
-        await audio.play();
-      } catch (error) {
-        console.error("播放音频失败:", error);
-        audioManager.stopCurrentAudio();
-      }
-    }
-  };
-  
-  // Buffer audio and add it to the queue
-  function bufferAudio(data: ArrayBuffer) {
-    if (audioContext) {
-      audioContext.decodeAudioData(data, (buffer) => {
-        // Buffer the audio chunk and push it to the queue
-        audioBufferQueue.push(buffer);
-  
-        // If we are not already playing, start playing the audio
-        if (!isPlayingAudio) {
-          playAudioBufferQueue();
-        }
-      });
     }
   }
-  
-  // Play the buffered audio chunks from the queue
-  function playAudioBufferQueue() {
-    if (audioBufferQueue.length === 0) {
-      setIsPlayingAudio(false); // Stop playback if queue is empty
-      setIsRecording(true); // Start recording again
-      return;
-    }
-  
-    const buffer = audioBufferQueue.shift(); // Get the next audio buffer
-    if (buffer && audioContext) {
-      const source = audioContext.createBufferSource();
-      source.buffer = buffer;
-  
-      // Connect the source to the audio context's output
-      source.connect(audioContext.destination);
-  
-      // When this audio ends, play the next one
-      source.onended = () => {
-        playAudioBufferQueue(); // Continue playing the next buffer
-      };
-  
-      // Start playing the audio
-      source.start();
-  
-      // Update the state to reflect the playing status
-      setIsPlayingAudio(true);
-    }
-  }
+};
+
   
 
   const SOCKET_URL = "wss://audio.enty.services/stream-vc";
