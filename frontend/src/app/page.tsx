@@ -18,6 +18,7 @@ export default function Home() {
 
   const [isInCall, setIsInCall] = useState(true);
 
+  const SOCKET_URL = "wss://audio.enty.services/stream-vc";
   let wavStreamPlayer: WavStreamPlayer | null = null;
 
   // Initialize WavStreamPlayer
