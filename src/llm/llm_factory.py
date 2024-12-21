@@ -2,7 +2,7 @@ from .gpt_llm import OpenAILLM
 from .hf_llm import HFLLM
 from .ollama_llm import OllamaLLM
 from .llama_llm import LlamaLLM
-from .workflow import WorkflowLLM
+from .dify_flow import WorkflowLLM
 class LLMFactory:
     @staticmethod
     def create_llm_pipeline(engine_type, **kwargs):
