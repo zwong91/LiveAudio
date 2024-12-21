@@ -19,7 +19,8 @@ export default function Home() {
   const SOCKET_URL = "wss://audio.enty.services/stream-vc";
 
   const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 22500 });
-
+  // Connect to audio output
+  await wavStreamPlayer.connect();
   // Initialize WebSocket and media devices
   useEffect(() => {
     let wakeLock: WakeLockSentinel | null = null;
@@ -76,8 +77,7 @@ export default function Home() {
             if (websocket) websocket.close();
             websocket = new WebSocket(SOCKET_URL);
             setSocket(websocket);
-            // Connect to audio output
-            await wavStreamPlayer.connect();
+
             websocket.onopen = () => {
               console.log("client connected to websocket");
               setConnectionStatus("Connected");
