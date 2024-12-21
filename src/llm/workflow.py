@@ -24,7 +24,7 @@ class WorkflowLLM(LLMInterface):
         # openai.api_key = OPENAI_API_KEY  # OpenAI API key seems unused here
         pass  # 这里的 `pass` 只是为了避免缩进错误
 
-    async def generate(self, history: List, query: str, max_tokens: int = 32) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate_response(self, history: List, query: str, stream: bool, max_tokens: int = 32) -> Tuple[str, List[Dict[str, str]]]:
         """根据对话历史生成回复"""
 
         if history is None:

@@ -123,7 +123,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             transcription = await asr_pipeline.transcribe(self.client)
             #TODO: repeated deealing with the same data
             if transcription["text"] != "":
-                tts_text, updated_history = await llm_pipeline.generate(
+                tts_text, updated_history = await llm_pipeline.generate_response(
                     self.client.history, transcription["text"]
                 )
                 # async for chunk in tts_pipeline.text_to_speech(tts_text, "liuyifei", False):
