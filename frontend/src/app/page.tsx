@@ -19,7 +19,7 @@ export default function Home() {
 
   let audioContext: AudioContext | null = null;
   let audioBufferQueue: AudioBuffer[] = [];
-  let currentAudio: Audio | null = null;  // Keep track of the currently playing audio
+  let currentAudio: typeof Audio | null = null;  // Keep track of the currently playing audio
   
   // Check if AudioContext is available in the browser
   if (typeof window !== "undefined" && window.AudioContext) {
