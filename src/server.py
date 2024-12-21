@@ -201,7 +201,7 @@ class Server:
                 # Decode the MessagePack data
                 #data = ormsgpack.unpackb(message)
 
-                if data.get('event') == 'start':
+                if data.get('type') == 'start':
                     request_data = data.get('request', {})
                     chunk = request_data.get('audio')
                     bytes = base64.b64decode(chunk)
