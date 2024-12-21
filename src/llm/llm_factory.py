@@ -1,6 +1,7 @@
 from .gpt_llm import OpenAILLM
 from .hf_llm import HFLLM
 from .ollama_llm import OllamaLLM
+from .llama_llm import LlamaLLM
 from .workflow import WorkflowLLM
 class LLMFactory:
     @staticmethod
@@ -11,6 +12,8 @@ class LLMFactory:
             return HFLLM(**kwargs)
         elif engine_type == "ollama":
             return OllamaLLM(**kwargs)
+        elif engine_type == "llama":
+            return LlamaLLM(**kwargs)
         elif engine_type == "dify":
             return WorkflowLLM(**kwargs)
         else:
