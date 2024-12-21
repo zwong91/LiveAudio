@@ -31,9 +31,6 @@ export default function Home() {
 
     return () => {
       if (wavStreamPlayer) {
-        wavStreamPlayer.disconnect().catch((error) => {
-          console.error("Error disconnecting WavStreamPlayer:", error);
-        });
       }
     };
   }, []);
