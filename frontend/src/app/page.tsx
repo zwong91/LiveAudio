@@ -19,73 +19,98 @@ export default function Home() {
 
   let audioContext: AudioContext | null = null;
   let audioBufferQueue: AudioBuffer[] = [];
-  
+
   // Check if AudioContext is available in the browser
   if (typeof window !== "undefined" && window.AudioContext) {
     audioContext = new AudioContext();
   }
-  
-  let currentAudio: HTMLAudioElement | null = null;  // Keep track of the currently playing audio
 
-const audioManager = {
-  stopCurrentAudio: () => {
-    // Stop and clear the current audio
-    if (currentAudio && !currentAudio.paused) {
-      currentAudio.pause();  // Pause the currently playing audio
-      currentAudio.currentTime = 0;  // Reset to the beginning
-    }
-
-    // Clear the audio buffer queue to prepare for new audio
-    audioBufferQueue = [];
-
-    // Stop playback
-    if (isPlayingAudio) {
-      setIsPlayingAudio(false);
-    }
-  },
-
-  playNewAudio: async (audioBlob: Blob) => {
-    // Stop and clear current audio before playing new one
-    audioManager.stopCurrentAudio();
-
-    // Create and play the new audio
-    const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
-    currentAudio = audio;  // Track the current audio instance
-
-    // When the metadata of the audio is loaded, set its duration
-    audio.onloadedmetadata = () => {
-      setAudioDuration(audio.duration); // Set the audio duration after loading metadata
-    };
-
-    // Play the audio
-    setIsPlayingAudio(true);
-
-    audio.onended = () => {
-      URL.revokeObjectURL(audioUrl);
-      setIsPlayingAudio(false);
-      setIsRecording(true);
-
-      if (audioQueue.length > 0) {
-        const nextAudioBlob = audioQueue.shift();
-        if (nextAudioBlob) {
-          audioManager.playNewAudio(nextAudioBlob); // Play next audio in the queue
-        }
+  const audioManager = {
+    stopCurrentAudio: () => {
+      if (isPlayingAudio) {
+        setIsPlayingAudio(false);
       }
-    };
+    },
 
-    try {
-      await audio.play();
-    } catch (error) {
-      console.error("播放音频失败:", error);
-      audioManager.stopCurrentAudio();
+    playNewAudio: async (audioBlob: Blob) => {
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+
+      // When the metadata of the audio is loaded, set its duration
+      audio.onloadedmetadata = () => {
+        setAudioDuration(audio.duration); // Set the audio duration after loading metadata
+      };
+
+      // Play the audio
+      setIsPlayingAudio(true);
+
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        setIsPlayingAudio(false);
+        setIsRecording(true);
+
+        if (audioQueue.length > 0) {
+          const nextAudioBlob = audioQueue.shift();
+          if (nextAudioBlob) {
+            audioManager.playNewAudio(nextAudioBlob); // Play next audio in the queue
+          }
+        }
+      };
+
+      try {
+        await audio.play();
+      } catch (error) {
+        console.error("播放音频失败:", error);
+        audioManager.stopCurrentAudio();
+      }
+    }
+  };
+
+  // Buffer audio and add it to the queue
+  function bufferAudio(data: ArrayBuffer) {
+    if (audioContext) {
+      audioContext.decodeAudioData(data, (buffer) => {
+        // Buffer the audio chunk and push it to the queue
+        audioBufferQueue.push(buffer);
+
+        // If we are not already playing, start playing the audio
+        if (!isPlayingAudio) {
+          playAudioBufferQueue();
+        }
+      });
     }
   }
-};
 
-  
+  // Play the buffered audio chunks from the queue
+  function playAudioBufferQueue() {
+    if (audioBufferQueue.length === 0) {
+      setIsPlayingAudio(false); // Stop playback if queue is empty
+      setIsRecording(true); // Start recording again
+      return;
+    }
 
-  const SOCKET_URL = "wss://audio.enty.services/stream-vc";
+    const buffer = audioBufferQueue.shift(); // Get the next audio buffer
+    if (buffer && audioContext) {
+      const source = audioContext.createBufferSource();
+      source.buffer = buffer;
+
+      // Connect the source to the audio context's output
+      source.connect(audioContext.destination);
+
+      // When this audio ends, play the next one
+      source.onended = () => {
+        playAudioBufferQueue(); // Continue playing the next buffer
+      };
+
+      // Start playing the audio
+      source.start();
+
+      // Update the state to reflect the playing status
+      setIsPlayingAudio(true);
+    }
+  }
+
+  const SOCKET_URL = "wss://audio.enty.services/stream";
   let manualDisconnect = false; // 标志位
 
   // Initialize WebSocket and media devices
@@ -174,7 +199,7 @@ const audioManager = {
                               speed: 1.0,            // Speech speed
                               volume: 0              // Volume adjustment in dB
                             },
-                            reference_id: "c9cf4e49"   // A unique reference ID
+                            vc_uid: "c9cf4e49"   // A unique reference ID
                           }
                         };
                         // Encode the data using MessagePack
@@ -318,7 +343,7 @@ const audioManager = {
           {connectionStatus}
         </div>
       </div>
-  
+
       <div className={styles.mainContent}>
         <div className={styles.avatarSection}>
           <div
@@ -335,7 +360,7 @@ const audioManager = {
           </div>
         </div>
       </div>
-  
+
       <div className={styles.controls}>
           <button
             className={isInCall ? styles.endCallButton : styles.startCallButton}
