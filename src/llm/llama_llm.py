@@ -32,7 +32,7 @@ default_system = """
 class LlamaLLM(LLMInterface):
     def __init__(
         self, 
-        model_path="Qwen/Qwen2-0.5B-Instruct-GGUF",
+        model_path="Qwen/Qwen2.5-1.5B-Instruct-GGUF",
         device="cuda",
         sys_prompt="",
         chat_format=None,

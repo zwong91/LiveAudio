@@ -82,7 +82,7 @@ sudo systemctl restart docker
 You can build the container image with:
 
 ```bash
-sudo docker build -t Live-Audio .
+sudo docker build -t LiveAudio .
 ```
 
 After getting your VAD token (see next sections) run:
@@ -90,14 +90,14 @@ After getting your VAD token (see next sections) run:
 ```bash
 sudo docker volume create huggingface
 
-sudo docker run --gpus all -p 8765:8765 -v huggingface:/root/.cache/huggingface  -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' Live-Audio
+sudo docker run --gpus all -p 8765:8765 -v huggingface:/root/.cache/huggingface  -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' LiveAudio
 ```
 
 The "volume" stuff will allow you not to re-download the huggingface models each
 time you re-run the container. If you don't need this, just use:
 
 ```bash
-sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' Live-Audio
+sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' LiveAudio
 ```
 
 ## Usage
@@ -109,7 +109,7 @@ sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE
 [pem file](generate_ssl.sh) microphone need ssl/tls
 
 ``` sh
-HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}' --llm-type llama
+HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type silero --vad-args '{"auth_token": "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"}' --llm-type llama
 ```
 
 ***test***
