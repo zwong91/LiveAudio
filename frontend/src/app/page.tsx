@@ -304,12 +304,6 @@ export default function Home() {
   // 添加状态来跟踪是否在通话中
   const [isInCall, setIsInCall] = useState(true);
 
-  async function infiniteLoop() {
-    while (true) {
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // 每秒钟迭代一次
-    }
-  }
-
   // End call function
   async function endCall() {
     if (socket) {
@@ -328,7 +322,7 @@ export default function Home() {
     setIsPlayingAudio(false);
     setConnectionStatus("Closed");
 
-    await infiniteLoop();
+    await new Promise((resolve) => setTimeout(resolve, 1000000));
   }
 
   return (

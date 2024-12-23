@@ -32,14 +32,15 @@ default_system = """
 class LlamaLLM(LLMInterface):
     def __init__(
         self, 
-        model_path="meta-llama/Llama-3.2-1B-Instruct",
+        model_path="Qwen/Qwen2-0.5B-Instruct-GGUF",
         device="cuda",
         sys_prompt="",
         chat_format=None,
         temperature=0.7,
     ):
-        self.model = Llama(
-            model_path=model_path,
+        self.model = Llama.from_pretrained(
+            repo_id=model_path,
+            filename="*q8_0.gguf",
             n_ctx=4096,
             n_gpu_layers=-1 if device == "cuda" else 0,
             verbose=False,

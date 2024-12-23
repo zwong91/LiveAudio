@@ -17,7 +17,9 @@ For `SenseVoice`, visit [SenseVoice repo](https://github.com/FunAudioLLM/SenseVo
 #0  source code
 
 apt update
-apt-get install vim  ffmpeg  git-lfs -y
+apt-get install build-essential libopenblas-dev vim  ffmpeg  git-lfs -y
+CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python
+
 
 mkdir /asset
 chmod 777 /asset/
@@ -107,7 +109,7 @@ sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE
 [pem file](generate_ssl.sh) microphone need ssl/tls
 
 ``` sh
-HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type silero --vad-args '{"auth_token": "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"}'
+HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type silero --vad-args '{"auth_token": "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"}' --llm-type llama
 ```
 
 ***test***
