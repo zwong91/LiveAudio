@@ -86,7 +86,7 @@ class LlamaLLM(LLMInterface):
         max_length=100,
     ):
 
-        self.messages.append({"role": "user", "content": input_text})
+        self.messages.append({"role": "user", "content": query})
         out = self.model.create_chat_completion(
             self.messages, stream=True, temperature=self.temperature
         )
