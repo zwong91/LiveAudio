@@ -100,8 +100,6 @@ class OllamaLLM(LLMInterface):
         stream = await AsyncClient().chat(
             model=self.model,
             messages=self.messages,
-            max_tokens=max_length,
-            temperature=1,
             stream=True,
         )
 
