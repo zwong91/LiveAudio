@@ -110,7 +110,7 @@ export default function Home() {
     }
   }
 
-  const SOCKET_URL = "wss://audio.enty.services/stream-vc";
+  const SOCKET_URL = "wss://audio.enty.services/stream";
   let manualDisconnect = false; // 标志位
 
   // Initialize WebSocket and media devices
