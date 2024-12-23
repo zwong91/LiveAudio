@@ -52,7 +52,7 @@ class OpenAILLM(LLMInterface):
         #aclient.base_url = "https://xyz-api.jongun2038.win/v1/"
         aclient.base_url = BASE_URL
         self.messages = [
-            {"role": "system", "content": default_system}
+            {"role": "assistant", "content": default_system}
         ]
         self.sys_prompt=sys_prompt,
         self.tools = tools
@@ -181,9 +181,9 @@ class OpenAILLM(LLMInterface):
         response = ""
         async for text in out:
             # which stores the transcription if interruption occurred. stop generating
-            if not interrupt_queue.empty():
-                print("interruption detected LLM")
-                break
+            # if not interrupt_queue.empty():
+            #     print("interruption detected LLM")
+            #     break
             # TODO: text output queue where the result is accumulated
             response += text
 

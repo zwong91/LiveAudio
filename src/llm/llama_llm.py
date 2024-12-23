@@ -32,7 +32,7 @@ default_system = """
 class LlamaLLM(LLMInterface):
     def __init__(
         self, 
-        model_path="models/llama-2-7b-chat.Q4_K_M.gguf",
+        model_path="meta-llama/Llama-3.2-1B-Instruct",
         device="cuda",
         sys_prompt="",
         chat_format=None,
@@ -45,7 +45,7 @@ class LlamaLLM(LLMInterface):
             verbose=False,
             chat_format=chat_format,
         )
-        self.messages = [{"role": "system", "content": sys_prompt}]
+        self.messages = [{"role": "assistant", "content": sys_prompt}]
         self.temperature = temperature
 
         # self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -105,9 +105,9 @@ class LlamaLLM(LLMInterface):
         response = ""
         async for text in out:
             # which stores the transcription if interruption occurred. stop generating
-            if not interrupt_queue.empty():
-                print("interruption detected LLM")
-                break
+            # if not interrupt_queue.empty():
+            #     print("interruption detected LLM")
+            #     break
             # TODO: text output queue where the result is accumulated
             response += text
 

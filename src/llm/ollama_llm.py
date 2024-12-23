@@ -35,7 +35,7 @@ default_system = """
 class OllamaLLM(LLMInterface):
     def __init__(
         self, 
-        model: str = "llama3.3",
+        model: str = "llama3.2:1b",
         sys_prompt: str = default_system,
     ):
         ollama.pull(model)
@@ -43,7 +43,7 @@ class OllamaLLM(LLMInterface):
         self.client = ollama
 
         self.messages = [
-            {"role": "system", "content": default_system}
+            {"role": "assistant", "content": default_system}
         ]
 
         # self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -116,9 +116,9 @@ class OllamaLLM(LLMInterface):
         response = ""
         async for text in out:
             # which stores the transcription if interruption occurred. stop generating
-            if not interrupt_queue.empty():
-                print("interruption detected LLM")
-                break
+            # if not interrupt_queue.empty():
+            #     print("interruption detected LLM")
+            #     break
             # TODO: text output queue where the result is accumulated
             response += text
 

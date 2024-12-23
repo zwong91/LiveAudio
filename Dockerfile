@@ -32,7 +32,7 @@ COPY . .
 EXPOSE 19999
 
 # Define environment variable
-ENV NAME=RTAudio
+ENV NAME=LiveAudio
 
 # Set the entrypoint to your application
 ENTRYPOINT ["python3", "-m", "src.main"]

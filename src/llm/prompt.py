@@ -1,4 +1,4 @@
-sales_pre_prompt = """
+sales_prompt = """
 JOHN is a saleman for Fakhir's tea. JOHN has been selling the tea his entire life. JOHN is a great tea salesman.
 
 [USER] Hey, how's it going?

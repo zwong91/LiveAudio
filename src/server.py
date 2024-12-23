@@ -161,14 +161,14 @@ class Server:
         self.app.add_event_handler("shutdown", self.shutdown)
         #self.app.mount("/assets", StaticFiles(directory=static_dir), name="assets")
 
-        self.app.get("/asset/{filename}")(self.get_asset_file)
-        self.app.post("/generate_accent/{vc_name}")(self.upload_audio_files)
-        self.app.post("/generate_tts")(self.generate_tts)
-        self.app.get("/get_task_result/{task_id}")(self.get_task_result)
-        self.app.get("/health")(self.health)
+        self.app.get("/v1/asset/{filename}")(self.get_asset_file)
+        self.app.post("/v1/generate_accent/{vc_name}")(self.upload_audio_files)
+        self.app.post("/v1/generate_tts")(self.generate_tts)
+        self.app.get("/v1/get_task_result/{task_id}")(self.get_task_result)
+        self.app.get("/v1/health")(self.health)
 
-        self.app.websocket("/stream")(self.websocket_endpoint)
-        self.app.websocket("/stream-vc")(self.websocket_endpoint)
+        self.app.websocket("/v1/stream")(self.websocket_endpoint)
+        self.app.websocket("/v1/stream-vc")(self.websocket_endpoint)
 
     async def startup(self):
         """Called on startup to set up additional services."""
@@ -345,7 +345,7 @@ class Server:
     async def health(self):
         return {"status": "ojbk"}
 
-    def create_uvicorn_server(self, ssl_context=None):
+    def create_uvicorn_server(self):
         """Creates and returns a Uvicorn server instance."""
         uvicorn_config = uvicorn.Config(
             self.app,
@@ -354,7 +354,7 @@ class Server:
             ssl_certfile=self.certfile,
             ssl_keyfile=self.keyfile,
             loop="uvloop",
-            log_level="debug",
+            log_level="info",
             workers=os.cpu_count(),
             limit_concurrency=1000,
             limit_max_requests=10000,
@@ -365,11 +365,10 @@ class Server:
 
     def start(self):
         """Start the WebSocket server."""
-        ssl_context = None
         if self.certfile and self.keyfile:
             logging.info(f"Starting secure WebSocket server on {self.host}:{self.port}")
         else:
             logging.info(f"Starting WebSocket server on {self.host}:{self.port}")
 
-        server = self.create_uvicorn_server(ssl_context)
+        server = self.create_uvicorn_server()
         server.run()

@@ -87,11 +87,11 @@ class HFLLM(LLMInterface):
         max_length=100,
     ):
 
-        from prompt import sales_pre_prompt
+        from prompt import sales_prompt
 
         start_time = time.time()
 
-        preprompt = sales_pre_prompt
+        preprompt = sales_prompt
         john = Chatbot()
         break_word = "[USER]"
         name = "[JOHN]"
