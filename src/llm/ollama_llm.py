@@ -33,8 +33,8 @@ default_system = """
 
 class OllamaLLM(LLMInterface):
     def __init__(
-        self, 
-        model: str = "llama3.2:1b",
+        self,
+        model: str = "qwen2.5:3b",
         sys_prompt: str = default_system,
     ):
         # Ollama should be installed and running
