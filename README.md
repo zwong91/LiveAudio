@@ -109,7 +109,7 @@ sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE
 [pem file](generate_ssl.sh) microphone need ssl/tls
 
 ``` sh
-HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type silero --vad-args '{"auth_token": "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"}' --llm-type llama
+HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type silero --vad-args '{"auth_token": "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"}' --llm-type ollama
 ```
 
 ***test***
