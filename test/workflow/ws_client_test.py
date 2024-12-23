@@ -32,6 +32,11 @@ async def test_websocket():
 
         print(f"Encoded audio data: {encoded_audio[:50]}...")  # 只打印前50个字符，避免输出过长
         # 创建要发送的 JSON 数据
+        latency = "normal"
+        format = "opus"
+        speed = 1.0
+        volume = 0
+        reference_id = "c9cf4e49"
         message = {
             "event": "start",
             "request": {
