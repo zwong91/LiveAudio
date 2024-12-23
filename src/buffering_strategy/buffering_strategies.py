@@ -140,7 +140,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                             ww = wave.open(content, "wb")
                             ww.setsampwidth(stream_info["sample_width"])
                             ww.setnchannels(stream_info["channels"])
-                            ww.setframerate(stream_info["rate"])
+                            ww.setframerate(stream_info["sample_rate"])
                             ww.writeframes(chunk)
                             ww.close()
                             content.seek(0)
