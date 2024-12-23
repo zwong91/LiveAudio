@@ -103,7 +103,7 @@ class OllamaLLM(LLMInterface):
             stream=True,
         )
 
-        for chunk in stream:
+        async for chunk in stream:
             if chunk["message"]["content"] is not None:
                 yield chunk["message"]["content"]
 
