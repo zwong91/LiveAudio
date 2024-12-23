@@ -124,7 +124,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             #TODO: repeated deealing with the same data
             if transcription["text"] != "":
                 tts_text, updated_history = await llm_pipeline.generate_response(
-                    self.client.history, transcription["text"]
+                    self.client.history, transcription["text"], True
                 )
                 # async for chunk in tts_pipeline.text_to_speech(tts_text, "liuyifei", False):
                 #     audio_data = chunk[0]  # 获取音频数据，chunk[0] 是音频数据

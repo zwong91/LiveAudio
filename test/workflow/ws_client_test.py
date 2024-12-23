@@ -72,14 +72,14 @@ async def test_websocket():
                     print("JSON data sent")
 
                     try:
-                        # response = await websocket.recv()  # 接收消息
-                        # #print(f"Received message: {response}")
-                        # # 解码接收到的消息
-                        # print(f"Decoded message: {response}")
-                        # # 记录结束时间
-                        # end_time = time.time()
-                        # elapsed_time = end_time - start_time
-                        # print(f"Total elapsed time: {elapsed_time:.2f} seconds")
+                        response = await websocket.recv()  # 接收消息
+                        #print(f"Received message: {response}")
+                        # 解码接收到的消息
+                        print(f"Decoded message: {response}")
+                        # 记录结束时间
+                        end_time = time.time()
+                        elapsed_time = end_time - start_time
+                        print(f"Total elapsed time: {elapsed_time:.2f} seconds")
 
                         await asyncio.sleep(1)
 

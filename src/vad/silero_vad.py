@@ -20,7 +20,7 @@ class SileroVAD(VADInterface):
         self.sampling_rate = sampling_rate = 16000
 
     async def detect_activity(self, client):
-        frames = np.frombuffer(client.scratch_buffer, dtype=np.int16, byteorder='little')
+        frames = np.frombuffer(client.scratch_buffer, dtype=np.int16)
 
         # normalization see https://discuss.pytorch.org/t/torchaudio-load-normalization-question/71470
         frames = frames / (1 << 15)
@@ -33,7 +33,7 @@ class SileroVAD(VADInterface):
         vad_segments = []
         if len(vad_results) > 0:
             vad_segments = [
-                {"start": segment["start"], "end": segment["end"], "confidence": 1.0}
+                {"start": segment["start"] / 1000 , "end": segment["end"] / 1000, "confidence": 1.0}
                 for segment in vad_results
             ]
         return vad_segments
