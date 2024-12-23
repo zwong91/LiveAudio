@@ -181,6 +181,8 @@ class Server:
 
     async def websocket_endpoint(self, websocket: WebSocket):
         await websocket.accept()
+
+        logging.info(f"accept client: {websocket.client}")
         client_id = str(uuid.uuid4())
         client = Client(client_id, self.sampling_rate, self.samples_width)
         self.connected_clients[client_id] = client
