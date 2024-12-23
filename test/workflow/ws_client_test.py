@@ -20,7 +20,7 @@ def resample_audio(audio_data: np.ndarray, original_rate: int, target_rate: int)
 
 async def test_websocket():
     #uri = "wss://gtp.aleopool.cc/transcribe"  # WebSocket 服务器的地址
-    uri = "wss://108.136.246.72:19998/stream-vc"  # WebSocket 服务器的地址
+    uri = "ws://127.0.0.1:8765/stream-vc"  # WebSocket 服务器的地址
     # 读取音频文件并进行Base64编码
     audio_file_path = "../../vc/liuyifei.wav"  # 替换成你自己的音频文件路径
     
@@ -32,8 +32,20 @@ async def test_websocket():
 
         print(f"Encoded audio data: {encoded_audio[:50]}...")  # 只打印前50个字符，避免输出过长
         # 创建要发送的 JSON 数据
-        data_to_send = [[[' 今天打老虎吗? ', '没妞啊']], "Azure-xiaoxiao", encoded_audio]
-        json_data = json.dumps(data_to_send)
+        message = {
+            "event": "start",
+            "request": {
+                "audio": encoded_audio,
+                "latency": latency,
+                "format": format,
+                "prosody": {
+                    "speed": speed,
+                    "volume": volume
+                },
+                "reference_id": reference_id
+            }
+        }
+        json_data = json.dumps(message)
 
         # 创建 SSL 上下文，忽略证书验证
         ssl_context = ssl._create_unverified_context()
