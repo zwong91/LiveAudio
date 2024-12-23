@@ -111,7 +111,6 @@ export default function Home() {
   }
 
   const SOCKET_URL = "wss://audio.enty.services/stream";
-  let manualDisconnect = false; // 标志位
 
   // Initialize WebSocket and media devices
   useEffect(() => {
@@ -130,7 +129,6 @@ export default function Home() {
     requestWakeLock();
 
     return () => {
-      manualDisconnect = true;
       if (wakeLock) {
         wakeLock.release().then(() => {
           console.log("Screen wake lock released");
@@ -273,7 +271,6 @@ export default function Home() {
     document.body.appendChild(script);
 
     return () => {
-      manualDisconnect = true;
       if (socket) {
         socket.close();
       }
