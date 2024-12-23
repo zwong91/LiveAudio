@@ -130,5 +130,5 @@ class OllamaLLM(LLMInterface):
         history = history[-20:]
 
         end_time = time.time()
-        print(f"openai llm time: {end_time - start_time:.4f} seconds")
+        print(f"ollama llm time: {end_time - start_time:.4f} seconds")
         return response, history       
