@@ -117,7 +117,7 @@ class OpenAILLM(LLMInterface):
             stream = await aclient.chat.completions.create(
                 model=self.model,
                 messages=self.messages,
-                max_tokens=max_tokens,
+                max_tokens=32,
                 temperature=1,
                 stream=True,
                 tools=self.tools,
