@@ -201,7 +201,7 @@ class Server:
                 # Decode the MessagePack data
                 #data = ormsgpack.unpackb(message)
 
-                if data.get('type') == 'start':
+                if data.get('event') == 'start':
                     request_data = data.get('request', {})
                     chunk = request_data.get('audio')
                     bytes = base64.b64decode(chunk)
@@ -211,7 +211,7 @@ class Server:
                     vc_uid = request_data.get('vc_uid')
 
                     # Print or process the extracted data
-                    #logging.debug(f"Audio Data: {bytes}, Latency: {latency}, Format: {format}")
+                    logging.debug(f"Audio Data: {bytes}, Latency: {latency}, Format: {format}")
                     logging.debug(f"Prosody: {prosody}, VC UID: {vc_uid}")
 
                     client.append_audio_data(bytes, vc_uid)
