@@ -6,6 +6,7 @@ import logging
 from .buffering_strategy_interface import BufferingStrategyInterface
 import ormsgpack
 import wave
+import io
 
 class SilenceAtEndOfChunk(BufferingStrategyInterface):
     """
