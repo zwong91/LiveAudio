@@ -39,9 +39,9 @@ class OllamaLLM(LLMInterface):
     ):
         # Ollama should be installed and running
         #curl -fsSL https://ollama.com/install.sh | sh
-        ollama.pull(model)
+        #ollama.pull(model)
         self.model = model
-        self.client = ollama
+        #self.client = ollama
 
         self.messages = [
             {"role": "assistant", "content": default_system}
