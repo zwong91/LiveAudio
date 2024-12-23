@@ -5,6 +5,7 @@ import time
 import logging
 from .buffering_strategy_interface import BufferingStrategyInterface
 import ormsgpack
+import wave
 
 class SilenceAtEndOfChunk(BufferingStrategyInterface):
     """
@@ -126,24 +127,29 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 tts_text, updated_history = await llm_pipeline.generate_response(
                     self.client.history, transcription["text"], True
                 )
-                # async for chunk in tts_pipeline.text_to_speech(tts_text, "liuyifei", False):
-                #     audio_data = chunk[0]  # 获取音频数据，chunk[0] 是音频数据
-                #     await websocket.send_bytes(audio_data)
-                #chunk_iterator =  tts_pipeline.text_to_speech_stream(tts_text, "liuyifei")
-                audio = await tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid)
-                end = time.time()
-                logging.debug(f"processing_time: {end - start}, text: {tts_text}")
+                
+                # Stream audio chunks
+                stream_info = tts_pipeline.get_stream_info()
+                async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
+                    await websocket.send_bytes(chunk)
                 try:
-                    # Stream audio chunks
-                    # async for chunk in chunk_iterator:
-                    #     if chunk:
-                    #         #await websocket.send_bytes(ormsgpack.packb({"event": "audio", "audio": chunk}))
-                    #         await websocket.send_bytes(chunk)
+                    async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
+                        if len(chunk) > 0:
+                            content = io.BytesIO()
+                            ww = wave.open(content, "wb")
+                            ww.setsampwidth(stream_info["sample_width"])
+                            ww.setnchannels(stream_info["channels"])
+                            ww.setframerate(stream_info["rate"])
+                            ww.writeframes(chunk)
+                            ww.close()
+                            content.seek(0)
+                            await websocket.send_bytes(content.read())
                     # Send stop signal
                     #await websocket.send_bytes(ormsgpack.packb({"event": "stop"}))
-                    await websocket.send_bytes(audio)
                 except Exception as e:
                     logging.error(f"Error sending WebSocket message: {e}")
+                end = time.time()
+                logging.debug(f"processing_time: {end - start}, text: {tts_text}")
                 self.client.history = updated_history
                 self.client.scratch_buffer.clear()
                 self.client.increment_file_counter()

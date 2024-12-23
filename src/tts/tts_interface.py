@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, AsyncGenerator
 
 class TTSInterface:
     async def text_to_speech(self, text: str, vc_uid: str) -> Tuple[str]:
@@ -9,7 +9,7 @@ class TTSInterface:
             "This method should be implemented by subclasses."
         )
 
-    async def text_to_speech_stream(self, text: str, vc_uid: str) -> Tuple[bytes]:
+    async def text_to_speech_stream(self, text: str, vc_uid: str) -> AsyncGenerator[bytes, None]:
         """
         将文本转换为语音，并返回音频流
         """

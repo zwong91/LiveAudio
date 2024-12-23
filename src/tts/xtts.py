@@ -2,7 +2,7 @@ import torch
 import torchaudio
 import asyncio
 import os
-from io import BytesIO
+from typing import AsyncGenerator
 import sys
 import time
 import logging
@@ -18,7 +18,6 @@ import base64
 
 sys.path.insert(1, "../vc")
 
-import edge_tts
 from src.xtts.TTS.api import TTS
 from src.xtts.TTS.tts.configs.xtts_config import XttsConfig    
 from src.xtts.TTS.tts.models.xtts import Xtts
@@ -51,8 +50,11 @@ class XTTS_v2(TTSInterface):
         self.model.load_checkpoint(config, checkpoint_dir=model_path, use_deepspeed=True)
         self.model.to(device)
         
-        self.supported_languages = config.languages
+        model_million_params = sum(p.numel() for p in self.model.parameters()) / 1e6
+        logging.debug(f"{model_million_params}M parameters")
 
+        self.supported_languages = config.languages
+        self.config = config
         print("Computing speaker latents...")
         t_latent = time.time()
         ## note diffusion_conditioning not used on hifigan (default mode), it will be empty but need to pass it to model.inference
@@ -83,6 +85,15 @@ class XTTS_v2(TTSInterface):
             # 缓存结果
             self.latent_cache[cache_key] = (gpt_cond_latent, speaker_embedding)
             return gpt_cond_latent, speaker_embedding
+
+    def get_stream_info(self) -> dict:
+        return {
+            "format": 1, # PYAUDIO_PAFLOAT32
+            "channels": 1,
+            "rate": self.config.audio.output_sample_rate,
+            "sample_width": 4,
+            "np_dtype": np.float32,
+        }
 
     async def text_to_speech(self, text: str, vc_uid: str) -> Tuple[str]: 
         start_time = time.time()
@@ -125,52 +136,54 @@ class XTTS_v2(TTSInterface):
         gpt_cond_latent, speaker_embedding = self.get_cached_latents(vc_uid, target_wav_files)
         print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
         t0 = time.time()
-        chunks = self.model.inference_stream(
+        logging.debug("Inference...")
+        out = self.model.inference(
             text,
             language,
             gpt_cond_latent,
             speaker_embedding,
-            # Streaming
-            stream_chunk_size=256,
-            overlap_wav_len=1024,
+            # # Streaming
+            # stream_chunk_size=256,
+            # overlap_wav_len=1024,
             # GPT inference
             temperature=0.01,
             length_penalty=1.0,
             repetition_penalty=10.0,
-            top_k=3,
+            #top_k=3,
             top_p=0.97,
-            do_sample=True,
             speed=1.0,
-            enable_text_splitting=True,
+            num_beams=1,
         )
-        wav_chunks = []
-        output_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
-        for i, chunk in enumerate(chunks):
-            wav_chunks.append(chunk)
-
-        wav = torch.cat(wav_chunks, dim=0)
-        real_time_factor= (time.time() - t0) / wav.shape[0] * 24000
+        
+        tensor_wave = torch.tensor(out["wav"]).unsqueeze(0).cpu()
+        logging.debug(
+            f"inference out tensor {torch.tensor(out['wav']).shape}, tensor_wave: {tensor_wave.shape}"
+        )
+        real_time_factor= (time.time() - t0) / tensor_wave.shape[-1] * 24000
         print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
-        wav_audio = wav.squeeze().unsqueeze(0).cpu()
 
         # Saving to a file on disk
-        torchaudio.save(output_path, wav_audio, 22050, format="wav")
+        output_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
+        torchaudio.save(output_path, tensor_wave, 24000)
 
         end_time = time.time()
         print(f"XTTSv2 text_to_speech time: {end_time - start_time:.4f} seconds")
         return output_path
 
 
-    def wav_postprocess(self, wav):
-        """Post process the output waveform"""
-        if isinstance(wav, list):
-            wav = torch.cat(wav, dim=0)
-        wav = wav.clone().detach().cpu().numpy()
-        wav = np.clip(wav, -1, 1)
-        wav = (wav * 32767).astype(np.int16)
-        return wav
+    def postprocess_tts_wave(chunk: torch.Tensor | list) -> bytes:
+        r"""
+        Post process the output waveform with numpy.float32 to bytes
+        """
+        if isinstance(chunk, list):
+            chunk = torch.cat(chunk, dim=0)
+        chunk = chunk.clone().detach().cpu().numpy()
+        chunk = chunk[None, : int(chunk.shape[0])]
+        chunk = np.clip(chunk, -1, 1)
+        chunk = chunk.astype(np.float32)
+        return chunk.tobytes()
 
-    async def text_to_speech_stream(self, text: str, vc_uid: str) -> Tuple[bytes]: 
+    async def text_to_speech_stream(self, text: str, vc_uid: str) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
         language = langid.classify(text)[0].strip()
         if language == 'zh':
@@ -203,14 +216,15 @@ class XTTS_v2(TTSInterface):
         gpt_cond_latent, speaker_embedding = self.get_cached_latents(vc_uid, target_wav_files)
         print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
 
-        t0 = time.time()
+        time_start = time.time()
+        logging.debug("Inference streaming...")
         chunks = self.model.inference_stream(
             text,
             language,
             gpt_cond_latent,
             speaker_embedding,
             # Streaming
-            stream_chunk_size=256,
+            stream_chunk_size=20,
             overlap_wav_len=1024,
             # GPT inference
             temperature=0.01,
@@ -218,32 +232,50 @@ class XTTS_v2(TTSInterface):
             repetition_penalty=10.0,
             top_k=3,
             top_p=0.97,
-            do_sample=True,
             speed=1.0,
-            enable_text_splitting=True,
+            enable_text_splitting=False,
         )
 
-        # for i, chunk in enumerate(chunks):
-        #     processed_chunk = self.wav_postprocess(chunk)
-        #     processed_bytes = processed_chunk.tobytes()
-        #     print(f"XTTS-v2 音频chunk大小: {len(processed_bytes)} 字节")
-        #     yield processed_bytes
-        wav_chunks = []
+        seconds_to_first_chunk = 0.0
+        full_generated_seconds = 0.0
+        raw_inference_start = 0.0
+        first_chunk_length_seconds = 0.0
         for i, chunk in enumerate(chunks):
-            wav_chunks.append(chunk)
-        
-        wav = torch.cat(wav_chunks, dim=0)
-        real_time_factor= (time.time() - t0) / wav.shape[0] * 24000
-        print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
-        wav_audio = wav.squeeze().unsqueeze(0).cpu()
-        with torch.no_grad():
-            # Use torchaudio to save the tensor to a buffer (or file)
-            # Using a buffer to save the audio data as bytes
-            buffer = BytesIO()
-            torchaudio.save(buffer, wav_audio, 24000, format="wav")  # Adjust sample rate if needed
-            buffer.seek(0)
-            audio_data = buffer.read()
+            logging.debug(f"Received chunk {i} of audio length {chunk.shape[-1]}")
+            chunk = postprocess_tts_wave(chunk)
+            yield chunk
+            # 4 bytes per sample, 24000 Hz
+            chunk_duration = len(chunk) / (4 * self.config.audio.output_sample_rate)
+            full_generated_seconds += chunk_duration
+            if i == 0:
+                first_chunk_length_seconds = chunk_duration
+                raw_inference_start = time.time()
+                seconds_to_first_chunk = raw_inference_start - time_start
+        self._print_synthesized_info(
+            time_start,
+            full_generated_seconds,
+            first_chunk_length_seconds,
+            seconds_to_first_chunk,
+        )
 
-        end_time = time.time()
-        print(f"XTTSv2 text_to_speech time: {end_time - start_time:.4f} seconds")
-        return audio_data
+    def _print_synthesized_info(
+        self, time_start, full_generated_seconds, first_chunk_length_seconds, seconds_to_first_chunk
+    ):
+        time_end = time.time()
+        seconds = time_end - time_start
+        if full_generated_seconds > 0 and (full_generated_seconds - first_chunk_length_seconds) > 0:
+            realtime_factor = seconds / full_generated_seconds
+            raw_inference_time = seconds - seconds_to_first_chunk
+            raw_inference_factor = raw_inference_time / (
+                full_generated_seconds - first_chunk_length_seconds
+            )
+
+            logging.debug(
+                f"XTTS synthesized {full_generated_seconds:.2f}s"
+                f" audio in {seconds:.2f}s"
+                f" realtime factor: {realtime_factor:.2f}x"
+            )
+            logging.debug(
+                f"seconds to first chunk: {seconds_to_first_chunk:.2f}s"
+                f" raw_inference_factor: {raw_inference_factor:.2f}x"
+            )

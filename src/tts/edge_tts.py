@@ -1,8 +1,8 @@
 import time
 from uuid import uuid4
-from typing import Tuple
+from typing import Tuple, AsyncGenerator
 import edge_tts
-from io import BytesIO
+from pydub import AudioSegment
 from .tts_interface import TTSInterface
 
 
@@ -11,7 +11,27 @@ import langid
 class EdgeTTS(TTSInterface):
     def __init__(self, voice: str = 'zh-CN-XiaoxiaoNeural'):
         self.voice = voice
-            
+         
+    async def get_voices(self, **kwargs):
+        from edge_tts import VoicesManager
+
+        voice_mg: VoicesManager = await VoicesManager.create()
+        return voice_mg.find(**kwargs)
+
+    async def save_submakers(self, vit_file: str):
+        with open(vit_file, "w", encoding="utf-8") as file:
+            file.write(self.submaker.generate_subs())
+
+    def set_voice(self, voice: str):
+        self.args.voice_name = voice
+
+    def get_stream_info(self) -> dict:
+        return {
+            "sample_rate": 16000,
+            "sample_width": 2,
+            "channels": 1,
+        }
+
     async def text_to_speech(self, text: str, vc_uid: str) -> Tuple[str]:
         start_time = time.time()
         audio_buffer = BytesIO()
@@ -42,7 +62,7 @@ class EdgeTTS(TTSInterface):
         # 返回原始文件名
         return output_path
 
-    async def text_to_speech_stream(self, text: str, vc_uid: str) -> Tuple[bytes]:
+    async def text_to_speech_stream(self, text: str, vc_uid: str) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
         audio_buffer = BytesIO()
         language, _ = langid.classify(text)
@@ -67,18 +87,21 @@ class EdgeTTS(TTSInterface):
             volume=volume_str
         )
 
-        # async for chunk in communicate.stream():
-        #     if chunk["type"] == "audio":
-        #         print(f"EdgeTTS 音频chunk大小: {len(chunk['data'])} 字节")
-        #         yield chunk["data"]
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio_buffer.write(chunk["data"])
+        self.submaker = edge_tts.SubMaker()
+        # "outputFormat":"audio-24khz-48kbitrate-mono-mp3"
+        
+        with io.BytesIO() as f:
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    f.write(chunk["data"])
+                elif chunk["type"] == "WordBoundary":
+                    # logging.info( f"{self.TAG} type:{chunk['type']} chunk: {chunk}")
+                    self.submaker.create_sub((chunk["offset"], chunk["duration"]), chunk["text"])
 
-        audio_buffer.seek(0)
-        audio_data = audio_buffer.read()
-        print(f"音频数据大小: {len(audio_data)} 字节")
-        end_time = time.time()
-        print(f"EdgeTTS text_to_speech time: {end_time - start_time:.4f} seconds")
-        # 返回音频数据的字节流
-        return audio_data
+            f.seek(0)
+            audio: AudioSegment = AudioSegment.from_mp3(f)
+            audio_resampled = (
+                audio.set_frame_rate(22050).set_channels(1).set_sample_width(2)
+            )  # 16bit sample_width 16/8=2
+            audio_data = audio_resampled.raw_data
+            yield audio_data

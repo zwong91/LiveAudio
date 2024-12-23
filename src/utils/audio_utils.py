@@ -5,7 +5,6 @@ import numpy as np
 from io import BytesIO
 import asyncio
 
-
 def next_power_of_2(x):
     return 1 if x == 0 else 2 ** (x - 1).bit_length()
 
@@ -112,19 +111,3 @@ def wave_header_chunk(frame_input=b"", channels=1, sample_width=2, sample_rate=3
 
     wav_buf.seek(0)
     return wav_buf.read()
-
-
-# if streaming_mode:
-#     def streaming_generator(tts_generator:Generator, media_type:str):
-#         if media_type == "wav":
-#             yield wave_header_chunk()
-#             media_type = "raw"
-#         for sr, chunk in tts_generator:
-#             yield pack_audio(BytesIO(), chunk, sr, media_type).getvalue()
-#     # _media_type = f"audio/{media_type}" if not (streaming_mode and media_type in ["wav", "raw"]) else f"audio/x-{media_type}"
-#     return StreamingResponse(streaming_generator(tts_generator, media_type, ), media_type=f"audio/{media_type}")
-
-# else:
-#     sr, audio_data = next(tts_generator)
-#     audio_data = pack_audio(BytesIO(), audio_data, sr, media_type).getvalue()
-#     return Response(audio_data, media_type=f"audio/{media_type}")
