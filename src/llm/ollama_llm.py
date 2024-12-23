@@ -14,8 +14,7 @@ import asyncio
 
 #from sentence_transformers import SentenceTransformer, util
 
-# 初始化模型
-import ollama
+from ollama import AsyncClient
 
 # 定义默认系统消息
 default_system = """
@@ -98,7 +97,7 @@ class OllamaLLM(LLMInterface):
         history.append({"role": "user", "content": query})
         self.messages.extend(history)
 
-        stream = self.client.chat(
+        stream = await AsyncClient().chat(
             model=self.MODEL,
             messages=self.messages,
             max_tokens=max_tokens,
