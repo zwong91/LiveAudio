@@ -27,7 +27,8 @@ class SileroVAD(VADInterface):
 
         audio = torch.tensor(frames.astype(np.float32))
         vad_results = self.get_speech_timestamps(
-            audio, self.model, sampling_rate=self.sampling_rate
+            audio, self.model, sampling_rate=self.sampling_rate, threshold = 0.5,
+            min_speech_duration_ms = 250, max_speech_duration_s = float('inf'), min_silence_duration_ms = 100, speech_pad_ms = 30
         )
   
         vad_segments = []
