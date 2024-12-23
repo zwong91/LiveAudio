@@ -90,7 +90,7 @@ class OpenAILLM(LLMInterface):
         relevant_context = [self.vault_content[idx].strip() for idx in top_indices]
         return relevant_context
 
-    async def generate(self, history: List[Dict[str, str]], vault_input: str, max_tokens: int = 32) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate(self, history: List[Dict[str, str]], vault_input: str, max_lengths: int = 32) -> Tuple[str, List[Dict[str, str]]]:
         # with open("vault.txt", "a", encoding="utf-8") as vault_file:
         #     print("Wrote to info.")
         #     vault_file.write(vault_input + "\n")
@@ -174,10 +174,10 @@ class OpenAILLM(LLMInterface):
                 if finish_reason == "stop":
                     finished = True
 
-    async def generate_response(self, history: List[Dict[str, str]], query: str, stream:  bool, max_tokens: int = 32) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate_response(self, history: List[Dict[str, str]], query: str, stream:  bool, max_lengths: int = 32) -> Tuple[str, List[Dict[str, str]]]:
         start_time = time.time()
 
-        out = self.generate(history, query, stream)
+        out = self.generate(history, query, stream, max_lengths)
         response = ""
         async for text in out:
             # which stores the transcription if interruption occurred. stop generating
