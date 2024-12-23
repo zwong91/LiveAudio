@@ -90,7 +90,7 @@ class XTTS_v2(TTSInterface):
         return {
             "format": 1, # PYAUDIO_PAFLOAT32
             "channels": 1,
-            "rate": self.config.audio.output_sample_rate,
+            "sample_rate": self.config.audio.output_sample_rate,
             "sample_width": 4,
             "np_dtype": np.float32,
         }
