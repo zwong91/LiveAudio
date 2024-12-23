@@ -36,7 +36,7 @@ class Client:
             "processing_strategy": "silence_at_end_of_chunk",
             "processing_args": {
                 "chunk_length_seconds": 3,
-                "chunk_offset_seconds": 0.5,
+                "chunk_offset_seconds": 0.1,
             },
         }
         self.file_counter = 0
