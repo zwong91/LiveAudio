@@ -108,7 +108,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """
         start = time.time()
         vad_results = await vad_pipeline.detect_activity(self.client)
-
+        logging.debug(f"vad vad_results: {vad_results}")
         if len(vad_results) == 0:
             self.client.scratch_buffer.clear()
             self.client.buffer.clear()

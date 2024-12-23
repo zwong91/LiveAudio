@@ -20,7 +20,7 @@ def resample_audio(audio_data: np.ndarray, original_rate: int, target_rate: int)
 
 async def test_websocket():
     #uri = "wss://gtp.aleopool.cc/transcribe"  # WebSocket 服务器的地址
-    uri = "ws://127.0.0.1:8765/stream-vc"  # WebSocket 服务器的地址
+    uri = "ws://127.0.0.1:8765/v1/stream-vc"  # WebSocket 服务器的地址
     # 读取音频文件并进行Base64编码
     audio_file_path = "../../vc/liuyifei.wav"  # 替换成你自己的音频文件路径
     
@@ -47,7 +47,7 @@ async def test_websocket():
                     "speed": speed,
                     "volume": volume
                 },
-                "reference_id": reference_id
+                "vc_uid": reference_id
             }
         }
         json_data = json.dumps(message)
@@ -57,7 +57,7 @@ async def test_websocket():
         # 记录开始时间
         start_time = time.time()
         # 连接到WebSocket服务器
-        async with websockets.connect(uri, ssl=ssl_context) as websocket:
+        async with websockets.connect(uri) as websocket:
             print("WebSocket connected")
             # 记录结束时间
             end_time = time.time()
@@ -72,27 +72,15 @@ async def test_websocket():
                     print("JSON data sent")
 
                     try:
-                        response = await websocket.recv()  # 接收消息
-                        #print(f"Received message: {response}")
-                        # 解码接收到的消息
-                        print(f"Decoded message: {response}")
-                        # 记录结束时间
-                        end_time = time.time()
-                        elapsed_time = end_time - start_time
-                        print(f"Total elapsed time: {elapsed_time:.2f} seconds")
+                        # response = await websocket.recv()  # 接收消息
+                        # #print(f"Received message: {response}")
+                        # # 解码接收到的消息
+                        # print(f"Decoded message: {response}")
+                        # # 记录结束时间
+                        # end_time = time.time()
+                        # elapsed_time = end_time - start_time
+                        # print(f"Total elapsed time: {elapsed_time:.2f} seconds")
 
-                        #发送静音数据来通知 VAD 检测到语音活动结束
-                        # frame_size = 480 * 2  # 每帧 480 个采样点，每个采样点 2 个字节
-                        # silence_duration = 1  # 发送静音数据的持续时间（秒）
-                        # silence_chunk = b'\x00' * frame_size  # 每一帧的静音数据
-                        # for _ in range(int(silence_duration / 0.03)):  # 发送静音数据，通常每帧间隔 30 毫秒
-                        #     encoded_audio = base64.b64encode(silence_chunk).decode('utf-8')
-                        #     data_to_send = [[[' 只是雨滴 受什么麻烦的这还没有打雷呢 ', '下雨总让人心情沉重呢。要不要聊聊？']], "Azure-xiaoxiao", encoded_audio]
-                        #     json_data = json.dumps(data_to_send)
-                        #     await websocket.send(json_data)
-                        #     print("Silence data sent")
-
-                        # 保持连接一段时间，以便服务器处理静音数据
                         await asyncio.sleep(1)
 
                     except websockets.exceptions.ConnectionClosedOK as e:
