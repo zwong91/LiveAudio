@@ -77,7 +77,7 @@ class OllamaLLM(LLMInterface):
         relevant_context = [self.vault_content[idx].strip() for idx in top_indices]
         return relevant_context
 
-    async def generate(self, history: List[Dict[str, str]], vault_input: str, max_tokens: int = 32) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate(self, history: List[Dict[str, str]], vault_input: str, max_length: int = 32) -> Tuple[str, List[Dict[str, str]]]:
         # with open("vault.txt", "a", encoding="utf-8") as vault_file:
         #     print("Wrote to info.")
         #     vault_file.write(vault_input + "\n")
@@ -100,7 +100,7 @@ class OllamaLLM(LLMInterface):
         stream = await AsyncClient().chat(
             model=self.model,
             messages=self.messages,
-            max_tokens=max_tokens,
+            max_tokens=max_length,
             temperature=1,
             stream=True,
         )
