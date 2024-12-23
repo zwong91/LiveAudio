@@ -4,7 +4,7 @@ import torch
 import numpy as np
 
 class SileroVAD(VADInterface):
-    def __init__(self, sampling_rate=16000):
+    def __init__(self,  **kwargs):
         self.model, utils = torch.hub.load(
             repo_or_dir="snakers4/silero-vad", model="silero_vad", force_reload=False
         )
@@ -17,7 +17,7 @@ class SileroVAD(VADInterface):
             self.collect_chunks,
         ) = utils
 
-        self.sampling_rate = sampling_rate
+        self.sampling_rate = sampling_rate = 16000
 
     async def detect_activity(self, client):
         frames = np.frombuffer(client.scratch_buffer, dtype=np.int16, byteorder='little')

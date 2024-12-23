@@ -1,6 +1,7 @@
 torch
 torchaudio
 openai
+ollama
 faster-whisper
 ctranslate2==4.4.0,
 huggingface
@@ -21,7 +22,7 @@ onnxconverter_common
 speechbrain==1.0.0
 pyannote.audio
 asyncio==3.4.3
-sentence-transformers==3.3.1
+sentence-transformers==2.7.0
 transformers==4.36.0
 deepspeed==0.16.1
 langid
