@@ -98,7 +98,7 @@ class OllamaLLM(LLMInterface):
         self.messages.extend(history)
 
         stream = await AsyncClient().chat(
-            model=self.MODEL,
+            model=self.model,
             messages=self.messages,
             max_tokens=max_tokens,
             temperature=1,
