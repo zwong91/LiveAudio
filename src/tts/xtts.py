@@ -58,7 +58,7 @@ class XTTS_v2(TTSInterface):
         ## note diffusion_conditioning not used on hifigan (default mode), it will be empty but need to pass it to model.inference
         gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(audio_path=[target_wav], gpt_cond_len=30, gpt_cond_chunk_len=4, max_ref_length=60)
         latent_calculation_time = time.time() - t_latent
-        prinf(f"Embedding speaker latents computed in {latent_calculation_time:.4f} seconds")
+        print(f"Embedding speaker latents computed in {latent_calculation_time:.4f} seconds")
         self.gpt_cond_latent = gpt_cond_latent
         self.speaker_embedding = speaker_embedding
         
@@ -240,7 +240,7 @@ class XTTS_v2(TTSInterface):
             # Use torchaudio to save the tensor to a buffer (or file)
             # Using a buffer to save the audio data as bytes
             buffer = BytesIO()
-            torchaudio.save(buffer, wav_audio, 22050, format="wav")  # Adjust sample rate if needed
+            torchaudio.save(buffer, wav_audio, 24000, format="wav")  # Adjust sample rate if needed
             buffer.seek(0)
             audio_data = buffer.read()
 

@@ -38,6 +38,8 @@ class OllamaLLM(LLMInterface):
         model: str = "llama3.2:1b",
         sys_prompt: str = default_system,
     ):
+        # Ollama should be installed and running
+        #curl -fsSL https://ollama.com/install.sh | sh
         ollama.pull(model)
         self.model = model
         self.client = ollama
