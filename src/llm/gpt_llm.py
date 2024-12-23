@@ -124,7 +124,7 @@ class OpenAILLM(LLMInterface):
                 tool_choice=self.tool_choice,
             )
 
-            for chunk in stream:
+            async for chunk in stream:
                 finish_reason = chunk.choices[0].finish_reason
                 if chunk.choices[0].delta.tool_calls is not None:
                     function_call_detected = True
