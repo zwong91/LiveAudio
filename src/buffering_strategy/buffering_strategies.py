@@ -150,7 +150,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 # except Exception as e:
                 #     logging.error(f"Error sending WebSocket message: {e}")
                 end = time.time()
-                logging.debug(f"processing_time: {end - start}, text: {tts_text}")
+                print(f"total processing time: {end - start}, text: {tts_text}")
                 self.client.history = updated_history
                 self.client.scratch_buffer.clear()
                 self.client.increment_file_counter()
