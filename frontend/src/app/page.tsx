@@ -319,7 +319,9 @@ export default function Home() {
     setIsPlayingAudio(false);
     setConnectionStatus("Closed");
 
-    await new Promise((resolve) => setTimeout(resolve, 1000000));
+    while (true) {
+      // blocked here
+    }
   }
 
   return (
