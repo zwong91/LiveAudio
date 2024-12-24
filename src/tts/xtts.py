@@ -268,30 +268,30 @@ class XTTS_v2(TTSInterface):
             enable_text_splitting=True,
         )
 
-        # for i, chunk in enumerate(chunks):
-        #     processed_chunk = self.wav_postprocess(chunk)
-        #     processed_bytes = processed_chunk.tobytes()
-        #     print(f"XTTS-v2 音频chunk大小: {len(processed_bytes)} 字节")
-        #     yield processed_bytes
-        wav_chunks = []
         for i, chunk in enumerate(chunks):
-            wav_chunks.append(chunk)
+            processed_chunk = self.wav_postprocess(chunk)
+            processed_bytes = processed_chunk.tobytes()
+            print(f"XTTS-v2 音频chunk大小: {len(processed_bytes)} 字节")
+            yield processed_bytes
+        # wav_chunks = []
+        # for i, chunk in enumerate(chunks):
+        #     wav_chunks.append(chunk)
 
-        wav = torch.cat(wav_chunks, dim=0)
-        real_time_factor= (time.time() - t0) / wav.shape[0] * 24000
-        print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
-        wav_audio = wav.squeeze().unsqueeze(0).cpu()
-        with torch.no_grad():
-            # Use torchaudio to save the tensor to a buffer (or file)
-            # Using a buffer to save the audio data as bytes
-            buffer = io.BytesIO()
-            torchaudio.save(buffer, wav_audio, 24000, format="wav")  # Adjust sample rate if needed
-            buffer.seek(0)
-            audio_data = buffer.read()
+        # wav = torch.cat(wav_chunks, dim=0)
+        # real_time_factor= (time.time() - t0) / wav.shape[0] * 24000
+        # print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
+        # wav_audio = wav.squeeze().unsqueeze(0).cpu()
+        # with torch.no_grad():
+        #     # Use torchaudio to save the tensor to a buffer (or file)
+        #     # Using a buffer to save the audio data as bytes
+        #     buffer = io.BytesIO()
+        #     torchaudio.save(buffer, wav_audio, 24000, format="wav")  # Adjust sample rate if needed
+        #     buffer.seek(0)
+        #     audio_data = buffer.read()
 
-        end_time = time.time()
-        print(f"XTTSv2 text_to_speech time: {end_time - start_time:.4f} seconds")
-        yield audio_data
+        # end_time = time.time()
+        # print(f"XTTSv2 text_to_speech time: {end_time - start_time:.4f} seconds")
+        # yield audio_data
 
 
         # time_start = time.time()
