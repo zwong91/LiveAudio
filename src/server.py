@@ -7,7 +7,7 @@ import base64
 import uvicorn
 import os
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, Request
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from starlette.staticfiles import StaticFiles
@@ -23,6 +23,8 @@ import ormsgpack
 from pydantic import BaseModel
 from typing import List
 import shutil
+
+MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
 
 class TTSRequest(BaseModel):
     tts_text: str
@@ -161,11 +163,11 @@ class Server:
         self.app.add_event_handler("shutdown", self.shutdown)
         #self.app.mount("/assets", StaticFiles(directory=static_dir), name="assets")
 
-        self.app.get("/v1/asset/{filename}")(self.get_asset_file)
-        self.app.post("/v1/generate_accent/{vc_name}")(self.upload_audio_files)
-        self.app.post("/v1/generate_tts")(self.generate_tts)
-        self.app.get("/v1/get_task_result/{task_id}")(self.get_task_result)
-        self.app.get("/v1/health")(self.health)
+        self.app.get("/asset/{filename}")(self.get_asset_file)
+        self.app.post("/generate_accent/{vc_name}")(self.upload_audio_files)
+        self.app.post("/generate_tts")(self.generate_tts)
+        self.app.get("/get_task_result/{task_id}")(self.get_task_result)
+        self.app.get("/health")(self.health)
 
         self.app.websocket("/stream")(self.websocket_endpoint)
         self.app.websocket("/stream-vc")(self.websocket_endpoint)
@@ -269,27 +271,45 @@ class Server:
 
     async def upload_audio_files(self, vc_name: str, files: List[UploadFile] = File(...)):
         file_paths = []
-        # 为每个文件生成一个8位 UUID 前缀
         file_uuid = uuid.uuid4().hex[:8]
+        
+        # 检查文件是否为空以及大小是否超过20MB
         for file in files:
-            # 获取文件名和扩展名
+            if not file.filename:
+                raise HTTPException(status_code=400, detail="File is empty")
+            
+            # 检查文件大小是否超过20MB
+            file_size = await self.get_file_size(file)
+            if file_size > MAX_FILE_SIZE:
+                raise HTTPException(status_code=400, detail="File is too large. Max size is 20MB")
+            
             filename = file.filename
             file_name_without_ext, file_extension = os.path.splitext(filename)
-            # Save each file to disk
+            
+            # 为每个文件生成一个独特的文件路径
             file_location = os.path.join("vc", f"{file_uuid}_{vc_name}{file_extension}")
             file_paths.append(file_location)
+            
+            # 保存文件到磁盘
             with open(file_location, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
 
-        # After saving the files, process the audio files with ffmpeg for voice cleaning
+        # 处理音频文件进行声音清理
         cleaned_file_paths = []
         for file_path in file_paths:
-            # Perform voice cleanup using ffmpeg
             cleaned_file_path = await self.clean_audio(file_path, False)
             cleaned_file_paths.append(cleaned_file_path)
 
-        # Return the cleaned files paths and vc_uid
+        # 返回清理后的文件路径和 vc_uid
         return {"vc_uid": file_uuid, "file_paths": cleaned_file_paths}
+
+    async def get_file_size(self, file: UploadFile) -> int:
+        """ 获取上传文件的大小 """
+        # 将文件指针移动到文件的开始位置
+        file.file.seek(0, os.SEEK_END)
+        size = file.file.tell()  # 获取文件大小
+        file.file.seek(0)  # 恢复文件指针位置
+        return size
 
     async def clean_audio(self, speaker_wav: str, voice_cleanup: bool) -> str:
         """
