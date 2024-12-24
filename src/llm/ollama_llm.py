@@ -14,6 +14,12 @@ import asyncio
 
 #from sentence_transformers import SentenceTransformer, util
 
+from openai import AsyncOpenAI
+aclient = AsyncOpenAI()
+MODEL = os.getenv('MODEL')
+BASE_URL = os.getenv('BASE_URL')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
 from ollama import AsyncClient
 
 # 定义默认系统消息
@@ -41,8 +47,7 @@ class OllamaLLM(LLMInterface):
         #curl -fsSL https://ollama.com/install.sh | sh
         #ollama.pull(model)
         self.model = model
-        #self.client = ollama
-
+        aclient.api_key = "ollama"
         self.messages = [
             {"role": "assistant", "content": default_system}
         ]
@@ -115,22 +120,26 @@ class OllamaLLM(LLMInterface):
     async def generate_response(self, history: List[Dict[str, str]], query: str, stream:  bool, max_tokens: int = 32) -> Tuple[str, List[Dict[str, str]]]:
         start_time = time.time()
 
-        out = self.generate(history, query, stream)
-        response = ""
-        async for text in out:
-            # which stores the transcription if interruption occurred. stop generating
-            # if not interrupt_queue.empty():
-            #     print("interruption detected LLM")
-            #     break
-            # TODO: text output queue where the result is accumulated
-            response += text
+        if history is None:
+            history = []
+        history.append({"role": "user", "content": query})
+        messages = [
+            {"role": "system", "content": default_system}
+        ]
+        messages.extend(history)
+        response = await aclient.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": query}],
+            max_tokens=32,
+            temperature=1,
+        )
 
-        # remove the tool utterances from the response
-        # for tool in self.tool_utterances:
-        #     response = response.replace(self.tool_utterances[tool], '')
-        history.append({"role": "assistant", "content": response})
-        history = history[-20:]
+        role = response.choices[0].message.role
+        response_content = response.choices[0].message.content
+
+        history.append({"role": "assistant", "content": response_content})
+        history = history[-10:]
 
         end_time = time.time()
         print(f"ollama llm time: {end_time - start_time:.4f} seconds")
-        return response, history       
+        return response_content, history     
