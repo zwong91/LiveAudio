@@ -40,7 +40,7 @@ class EdgeTTS(TTSInterface):
         if language == "zh":
             language = "zh-CN"
         """使用 edge_tts 库将文本转语音"""
-        rate: int = 20
+        rate: int = 15
         pitch: int = 20
         volume: int = 110
 
@@ -70,8 +70,8 @@ class EdgeTTS(TTSInterface):
         #TODO: choice zh voice
         if language == "zh":
             language = "zh-CN"
-        """使用 edge_tts 库将文本转语音"""
-        rate: int = 20
+
+        rate: int = 15
         pitch: int = 20
         volume: int = 110
 

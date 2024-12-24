@@ -101,6 +101,10 @@ class OllamaLLM(LLMInterface):
             model=self.model,
             messages=self.messages,
             stream=True,
+            options={
+                'num_predict': max_length,
+                'temperature': 1,
+            },
         )
 
         async for chunk in stream:
