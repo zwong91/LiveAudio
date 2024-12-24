@@ -167,8 +167,8 @@ class Server:
         self.app.get("/v1/get_task_result/{task_id}")(self.get_task_result)
         self.app.get("/v1/health")(self.health)
 
-        self.app.websocket("/v1/stream")(self.websocket_endpoint)
-        self.app.websocket("/v1/stream-vc")(self.websocket_endpoint)
+        self.app.websocket("/stream")(self.websocket_endpoint)
+        self.app.websocket("/stream-vc")(self.websocket_endpoint)
 
     async def startup(self):
         """Called on startup to set up additional services."""
