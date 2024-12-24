@@ -219,7 +219,7 @@ class XTTS_v2(TTSInterface):
             gpt_cond_latent,
             speaker_embedding,
             # GPT inference
-            temperature=0.0,
+            temperature=0.01,
             length_penalty=1.0,
             repetition_penalty=10.0,
             #top_k=3,
