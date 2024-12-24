@@ -171,7 +171,7 @@ class XTTS_v2(TTSInterface):
         return output_path
 
 
-    def postprocess_tts_wave(chunk: torch.Tensor | list) -> bytes:
+    def postprocess_tts_wave(self, chunk: torch.Tensor | list) -> bytes:
         r"""
         Post process the output waveform with numpy.float32 to bytes
         """
@@ -242,7 +242,7 @@ class XTTS_v2(TTSInterface):
         first_chunk_length_seconds = 0.0
         for i, chunk in enumerate(chunks):
             logging.debug(f"Received chunk {i} of audio length {chunk.shape[-1]}")
-            chunk = postprocess_tts_wave(chunk)
+            chunk = self.postprocess_tts_wave(chunk)
             yield chunk
             # 4 bytes per sample, 24000 Hz
             chunk_duration = len(chunk) / (4 * self.config.audio.output_sample_rate)
