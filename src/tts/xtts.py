@@ -5,6 +5,7 @@ import os
 from typing import AsyncGenerator
 import sys
 import time
+import io
 import logging
 from uuid import uuid4
 from typing import Tuple
@@ -283,7 +284,7 @@ class XTTS_v2(TTSInterface):
         with torch.no_grad():
             # Use torchaudio to save the tensor to a buffer (or file)
             # Using a buffer to save the audio data as bytes
-            buffer = BytesIO()
+            buffer = io.BytesIO()
             torchaudio.save(buffer, wav_audio, 24000, format="wav")  # Adjust sample rate if needed
             buffer.seek(0)
             audio_data = buffer.read()
