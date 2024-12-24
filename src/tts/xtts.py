@@ -285,7 +285,7 @@ class XTTS_v2(TTSInterface):
             # Use torchaudio to save the tensor to a buffer (or file)
             # Using a buffer to save the audio data as bytes
             buffer = io.BytesIO()
-            torchaudio.save(buffer, wav_audio, 24000, format="wav")  # Adjust sample rate if needed
+            torchaudio.save(buffer, wav_audio, 22050, format="wav")
             buffer.seek(0)
             audio_data = buffer.read()
 
