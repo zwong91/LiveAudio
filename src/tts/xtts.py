@@ -230,7 +230,7 @@ class XTTS_v2(TTSInterface):
 
         tensor_wave = torch.tensor(out["wav"]).unsqueeze(0).cpu()
         logging.debug(
-            f"{self.TAG} inference out tensor {torch.tensor(out['wav']).shape}, tensor_wave: {tensor_wave.shape}"
+            f"inference out tensor {torch.tensor(out['wav']).shape}, tensor_wave: {tensor_wave.shape}"
         )
         # torchaudio.save("records/tts_coqui_infer_zh_test.wav", tensor_wave, 24000)
 
