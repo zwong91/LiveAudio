@@ -14,11 +14,13 @@ import asyncio
 
 #from sentence_transformers import SentenceTransformer, util
 
-from openai import AsyncOpenAI
-aclient = AsyncOpenAI()
-MODEL = os.getenv('MODEL')
-BASE_URL = os.getenv('BASE_URL')
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+from openai import OpenAI
+
+client = OpenAI(
+    base_url='http://localhost:11434/v1/',
+    # required but ignored
+    api_key='ollama',
+)
 
 from ollama import AsyncClient
 
@@ -47,7 +49,6 @@ class OllamaLLM(LLMInterface):
         #curl -fsSL https://ollama.com/install.sh | sh
         #ollama.pull(model)
         self.model = model
-        aclient.api_key = "ollama"
         self.messages = [
             {"role": "assistant", "content": default_system}
         ]
@@ -127,9 +128,9 @@ class OllamaLLM(LLMInterface):
             {"role": "system", "content": default_system}
         ]
         messages.extend(history)
-        response = await aclient.chat.completions.create(
+        response = client.chat.completions.create(
             model=self.model,
-            messages=[{"role": "user", "content": query}],
+            messages=messages,
             max_tokens=32,
             temperature=1,
         )
