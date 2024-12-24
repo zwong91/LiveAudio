@@ -213,47 +213,71 @@ class XTTS_v2(TTSInterface):
         gpt_cond_latent, speaker_embedding = self.get_cached_latents(vc_uid, target_wav_files)
         print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
 
-        time_start = time.time()
-        logging.debug("Inference streaming...")
-        chunks = self.model.inference_stream(
+        out = self.model.inference(
             text,
             language,
             gpt_cond_latent,
             speaker_embedding,
-            # Streaming
-            stream_chunk_size=256,
-            overlap_wav_len=1024,
             # GPT inference
-            temperature=0.01,
+            temperature=0.0,
             length_penalty=1.0,
             repetition_penalty=10.0,
-            top_k=3,
+            #top_k=3,
             top_p=0.97,
             speed=1.0,
-            enable_text_splitting=False,
+            num_beams=1,
         )
 
-        seconds_to_first_chunk = 0.0
-        full_generated_seconds = 0.0
-        raw_inference_start = 0.0
-        first_chunk_length_seconds = 0.0
-        for i, chunk in enumerate(chunks):
-            logging.debug(f"Received chunk {i} of audio length {chunk.shape[-1]}")
-            chunk = self.postprocess_tts_wave(chunk)
-            yield chunk
-            # 4 bytes per sample, 24000 Hz
-            chunk_duration = len(chunk) / (4 * self.config.audio.output_sample_rate)
-            full_generated_seconds += chunk_duration
-            if i == 0:
-                first_chunk_length_seconds = chunk_duration
-                raw_inference_start = time.time()
-                seconds_to_first_chunk = raw_inference_start - time_start
-        self._print_synthesized_info(
-            time_start,
-            full_generated_seconds,
-            first_chunk_length_seconds,
-            seconds_to_first_chunk,
+        tensor_wave = torch.tensor(out["wav"]).unsqueeze(0).cpu()
+        logging.debug(
+            f"{self.TAG} inference out tensor {torch.tensor(out['wav']).shape}, tensor_wave: {tensor_wave.shape}"
         )
+        # torchaudio.save("records/tts_coqui_infer_zh_test.wav", tensor_wave, 24000)
+
+        res = self.postprocess_tts_wave(tensor_wave)
+        yield res
+
+        # time_start = time.time()
+        # logging.debug("Inference streaming...")
+        # chunks = self.model.inference_stream(
+        #     text,
+        #     language,
+        #     gpt_cond_latent,
+        #     speaker_embedding,
+        #     # Streaming
+        #     stream_chunk_size=256,
+        #     overlap_wav_len=1024,
+        #     # GPT inference
+        #     temperature=0.01,
+        #     length_penalty=1.0,
+        #     repetition_penalty=10.0,
+        #     top_k=3,
+        #     top_p=0.97,
+        #     speed=1.0,
+        #     enable_text_splitting=False,
+        # )
+
+        # seconds_to_first_chunk = 0.0
+        # full_generated_seconds = 0.0
+        # raw_inference_start = 0.0
+        # first_chunk_length_seconds = 0.0
+        # for i, chunk in enumerate(chunks):
+        #     logging.debug(f"Received chunk {i} of audio length {chunk.shape[-1]}")
+        #     chunk = self.postprocess_tts_wave(chunk)
+        #     yield chunk
+        #     # 4 bytes per sample, 24000 Hz
+        #     chunk_duration = len(chunk) / (4 * self.config.audio.output_sample_rate)
+        #     full_generated_seconds += chunk_duration
+        #     if i == 0:
+        #         first_chunk_length_seconds = chunk_duration
+        #         raw_inference_start = time.time()
+        #         seconds_to_first_chunk = raw_inference_start - time_start
+        # self._print_synthesized_info(
+        #     time_start,
+        #     full_generated_seconds,
+        #     first_chunk_length_seconds,
+        #     seconds_to_first_chunk,
+        # )
 
     def _print_synthesized_info(
         self, time_start, full_generated_seconds, first_chunk_length_seconds, seconds_to_first_chunk
