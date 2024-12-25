@@ -209,7 +209,7 @@ class XTTS_v2(TTSInterface):
         gpt_cond_latent, speaker_embedding = self.get_cached_latents(vc_uid, target_wav_files)
         print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
 
-        time_start = time.time()
+        t0 = time.time()
         wav_chunks = []
         chunks = self.model.inference_stream(
             text,
@@ -230,10 +230,6 @@ class XTTS_v2(TTSInterface):
             enable_text_splitting=True,
         )
 
-        seconds_to_first_chunk = 0.0
-        full_generated_seconds = 0.0
-        raw_inference_start = 0.0
-        first_chunk_length_seconds = 0.0
         for i, chunk in enumerate(chunks):
             if i == 0:
                 print(f"Time to first chunck: {time.time() - t0}")
