@@ -19,6 +19,7 @@ export default function Home() {
 
   const [connectionStatus, setConnectionStatus] = useState<string>("Connecting..."); // State to track connection status
 
+  let manualClose = false;
   let audioContext: AudioContext | null = null;
   let audioBufferQueue: AudioBuffer[] = [];
 
@@ -168,7 +169,7 @@ export default function Home() {
 
           const reconnectWebSocket = () => {
 
-            if (isCallEnded) { // 再檢查 isCallEnded，雙重保險
+            if (manualClose) { // 再檢查 isCallEnded，雙重保險
               console.log("Reconnection prevented by isCallEnded flag.");
               return;
             }
@@ -277,7 +278,7 @@ export default function Home() {
             };
 
             websocket.onclose = () => {
-              if (isCallEnded) return; // Don't reconnect if the call has ended
+              if (manualClose) return; // Don't reconnect if the call has ended
               if (connectionStatus === "Closed") {
                 console.log("WebSocket 已关闭");
                 return;
@@ -334,6 +335,7 @@ export default function Home() {
 
   const endCall = async () => {
 
+    manualClose = true
     setConnectionStatus("Closed");
     setIsCallEnded(true); // Set isCallEnded to true to prevent reconnection
   
