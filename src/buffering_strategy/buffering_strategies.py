@@ -140,6 +140,11 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                                 await websocket.send_bytes(chunk)
                             else:
                                 raise StopAsyncIteration
+                        end = time.time()
+                        print(f"total processing time: {end - start}, text: {tts_text}")
+                        self.client.history = updated_history
+                        self.client.scratch_buffer.clear()
+                        self.client.increment_file_counter()
 
                 except StopAsyncIteration:
                     self.interrupt_flag = False
@@ -150,12 +155,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     
                 except Exception as e:
                     print(f"An error occurred during TTS: {e}") 
-
-                end = time.time()
-                print(f"total processing time: {end - start}, text: {tts_text}")
-                self.client.history = updated_history
-                self.client.scratch_buffer.clear()
-                self.client.increment_file_counter()
 
         self.processing_flag = False
         self.interrupt_flag = False
