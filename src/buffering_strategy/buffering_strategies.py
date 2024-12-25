@@ -161,6 +161,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                         except Exception as e:
                             print(f"An error occurred during TTS: {e}")
                         finally:
+                            # Always clean up, no matter success or failure
+                            end = time.time()
                             print(f"Total processing time: {end - start:.2f}s, text: {tts_text}")
                             self._update_client_state(updated_history)
 
