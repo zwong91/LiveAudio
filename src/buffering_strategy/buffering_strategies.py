@@ -81,6 +81,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if len(self.client.buffer) > chunk_length_in_bytes:
             if self.processing_flag:
                 self.interrupt_flag = True
+                # Send stop signal
+                await websocket.send_json({"event": "interrupt"})
                 logging.warning("Warning in realtime processing: tried processing a new chunk while the previous one was still being processed")
                 return
             self.client.scratch_buffer += self.client.buffer
