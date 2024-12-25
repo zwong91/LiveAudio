@@ -293,6 +293,8 @@ export default function Home() {
               websocket?.close();
             };
           };
+
+          if (manualClose) return;
           console.log("client start connect to websocket");
           reconnectWebSocket();
         }).catch((error) => {
