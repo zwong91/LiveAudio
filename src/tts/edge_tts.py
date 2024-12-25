@@ -89,7 +89,6 @@ class EdgeTTS(TTSInterface):
         )
 
         self.submaker = edge_tts.SubMaker()
-        # "outputFormat":"audio-24khz-48kbitrate-mono-mp3"
         
         with io.BytesIO() as f:
             async for chunk in communicate.stream():
@@ -102,7 +101,7 @@ class EdgeTTS(TTSInterface):
             f.seek(0)
             audio: AudioSegment = AudioSegment.from_mp3(f)
             audio_resampled = (
-                audio.set_frame_rate(22050).set_channels(1).set_sample_width(2)
+                audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
             )  # 16bit sample_width 16/8=2
             audio_data = audio_resampled.raw_data
             yield audio_data
