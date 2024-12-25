@@ -323,7 +323,10 @@ export default function Home() {
     setIsPlayingAudio(false);
     setConnectionStatus("Closed");
 
-    await sleep(600000);
+    // Block execution indefinitely using a loop with an empty condition
+    while (true) {
+      await sleep(1000);
+    }
   }
 
   return (

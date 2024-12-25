@@ -131,9 +131,17 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 )
                 
                 # Stream audio chunks
-                async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
-                    if not self.interrupt_flag: 
-                        await websocket.send_bytes(chunk)
+                try:
+                    async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
+                        if not self.interrupt_flag: 
+                            await websocket.send_bytes(chunk)
+                        else:
+                            raise StopAsyncIteration 
+
+                except StopAsyncIteration:
+                    print("TTS stream interrupted.")
+                except Exception as e:
+                    print(f"An error occurred during TTS: {e}") 
 
                 end = time.time()
                 print(f"total processing time: {end - start}, text: {tts_text}")
