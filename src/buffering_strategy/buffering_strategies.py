@@ -82,7 +82,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             if self.processing_flag:
                 self.interrupt_flag = True
                 # FIXME: TO interrupt live-audio, start talking
-                self.client.buffer.clear()
                 logging.warning("Warning in realtime processing: tried processing a new chunk while the previous one was still being processed")
                 return
             self.client.scratch_buffer += self.client.buffer
@@ -125,19 +124,22 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             / (self.client.sampling_rate * self.client.samples_width)
         ) - self.chunk_offset_seconds
         if vad_results[-1]["end"] < last_segment_should_end_before:
-            transcription = await asr_pipeline.transcribe(self.client)
+            if not self.interrupt_flag: 
+                transcription = await asr_pipeline.transcribe(self.client)
             if transcription["text"] != "":
-                tts_text, updated_history = await llm_pipeline.generate_response(
-                    self.client.history, transcription["text"], True
-                )
+                if not self.interrupt_flag: 
+                    tts_text, updated_history = await llm_pipeline.generate_response(
+                        self.client.history, transcription["text"], True
+                    )
                 
                 # Stream audio chunks
                 try:
-                    async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
-                        if not self.interrupt_flag: 
-                            await websocket.send_bytes(chunk)
-                        else:
-                            raise StopAsyncIteration 
+                    if tts_text != "":
+                        async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
+                            if not self.interrupt_flag: 
+                                await websocket.send_bytes(chunk)
+                            else:
+                                raise StopAsyncIteration
 
                 except StopAsyncIteration:
                     self.interrupt_flag = False
