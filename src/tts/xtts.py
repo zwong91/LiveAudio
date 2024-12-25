@@ -229,54 +229,31 @@ class XTTS_v2(TTSInterface):
             enable_text_splitting=True,
         )
 
+        seconds_to_first_chunk = 0.0
+        full_generated_seconds = 0.0
+        raw_inference_start = 0.0
+        first_chunk_length_seconds = 0.0
         for i, chunk in enumerate(chunks):
             logging.debug(f"Received chunk {i} of audio length {chunk.shape[-1]}")
             processed_bytes = postprocess_tts_wave_int16(chunk)
             pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
             print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
-        # wav_chunks = []
-        # for i, chunk in enumerate(chunks):
-        #     wav_chunks.append(chunk)
+            
+            # 4 bytes per sample, 24000 Hz
+            chunk_duration = len(chunk) / (4 * self.config.audio.output_sample_rate)
+            full_generated_seconds += chunk_duration
+            if i == 0:
+                first_chunk_length_seconds = chunk_duration
+                raw_inference_start = time.time()
+                seconds_to_first_chunk = raw_inference_start - time_start
 
-        # wav = torch.cat(wav_chunks, dim=0)
-        # real_time_factor= (time.time() - time_start) / wav.shape[0] * 24000
-        # print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
-        # wav_audio = wav.squeeze().unsqueeze(0).cpu()
-        # with torch.no_grad():
-        #     # Use torchaudio to save the tensor to a buffer (or file)
-        #     # Using a buffer to save the audio data as bytes
-        #     buffer = io.BytesIO()
-        #     torchaudio.save(buffer, wav_audio, 22050, format="wav")
-        #     buffer.seek(0)
-        #     audio_data = buffer.read()
-
-        # end_time = time.time()
-        # print(f"XTTSv2 text_to_speech time: {end_time - start_time:.4f} seconds")
-        # yield audio_data
-
-        # seconds_to_first_chunk = 0.0
-        # full_generated_seconds = 0.0
-        # raw_inference_start = 0.0
-        # first_chunk_length_seconds = 0.0
-        # for i, chunk in enumerate(chunks):
-        #     logging.debug(f"Received chunk {i} of audio length {chunk.shape[-1]}")
-        #     processed_chunk = self.wav_postprocess(chunk)
-        #     processed_bytes = processed_chunk.tobytes()
-        #     yield processed_bytes
-        #     # 4 bytes per sample, 24000 Hz
-        #     chunk_duration = len(chunk) / (4 * self.config.audio.output_sample_rate)
-        #     full_generated_seconds += chunk_duration
-        #     if i == 0:
-        #         first_chunk_length_seconds = chunk_duration
-        #         raw_inference_start = time.time()
-        #         seconds_to_first_chunk = raw_inference_start - time_start
-        # self._print_synthesized_info(
-        #     time_start,
-        #     full_generated_seconds,
-        #     first_chunk_length_seconds,
-        #     seconds_to_first_chunk,
-        #)
+        self._print_synthesized_info(
+            time_start,
+            full_generated_seconds,
+            first_chunk_length_seconds,
+            seconds_to_first_chunk,
+        )
 
     def _print_synthesized_info(
         self, time_start, full_generated_seconds, first_chunk_length_seconds, seconds_to_first_chunk
@@ -290,12 +267,12 @@ class XTTS_v2(TTSInterface):
                 full_generated_seconds - first_chunk_length_seconds
             )
 
-            logging.debug(
+            print(
                 f"XTTS synthesized {full_generated_seconds:.2f}s"
                 f" audio in {seconds:.2f}s"
                 f" realtime factor: {realtime_factor:.2f}x"
             )
-            logging.debug(
+            print(
                 f"seconds to first chunk: {seconds_to_first_chunk:.2f}s"
                 f" raw_inference_factor: {raw_inference_factor:.2f}x"
             )
