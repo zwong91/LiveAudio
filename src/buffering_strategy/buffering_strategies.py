@@ -93,6 +93,19 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             )
 
 
+
+    async def _send_interrupt_signal(self, websocket):
+        try:
+            await websocket.send_json({"event": "interrupt"})
+        except Exception as e:
+            print(f"Failed to send interrupt signal: {e}")
+
+    def _update_client_state(self, updated_history):
+        """Update client state after TTS process ends."""
+        self.client.history = updated_history
+        self.client.scratch_buffer.clear()
+        self.client.increment_file_counter()
+
     async def process_audio_async(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
         """
         Asynchronously process audio for activity detection and transcription.
@@ -141,20 +154,16 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                                         raise StopAsyncIteration
 
                         except StopAsyncIteration:
-                            self.interrupt_flag = False
-                            self.processing_flag = False
                             print("TTS stream interrupted.")
                             # Send stop signal
-                            await websocket.send_json({"event": "interrupt"})
+                            await self._send_interrupt_signal(websocket)
                             
                         except Exception as e:
                             print(f"An error occurred during TTS: {e}")
                         finally:
-                            end = time.time()
-                            print(f"total processing time: {end - start}, text: {tts_text}")
-                            self.client.history = updated_history
-                            self.client.scratch_buffer.clear()
-                            self.client.increment_file_counter()
+                            print(f"Total processing time: {end - start:.2f}s, text: {tts_text}")
+                            self._update_client_state(updated_history)
 
         self.processing_flag = False
         self.interrupt_flag = False
+
