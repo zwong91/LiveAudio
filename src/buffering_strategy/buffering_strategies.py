@@ -57,6 +57,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 "error_if_not_realtime", False
             )
 
+        self.interrupt_flag = False
         self.processing_flag = False
 
     def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
@@ -79,7 +80,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         )
         if len(self.client.buffer) > chunk_length_in_bytes:
             if self.processing_flag:
-                #FIXME: 这里直接丢弃, interrupt handled？
+                self.interrupt_flag = True
                 self.client.buffer.clear()
                 logging.warning("Warning in realtime processing: tried processing a new chunk while the previous one was still being processed")
                 return
@@ -123,16 +124,15 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         ) - self.chunk_offset_seconds
         if vad_results[-1]["end"] < last_segment_should_end_before:
             transcription = await asr_pipeline.transcribe(self.client)
-            #TODO: repeated deealing with the same data
             if transcription["text"] != "":
                 tts_text, updated_history = await llm_pipeline.generate_response(
                     self.client.history, transcription["text"], True
                 )
                 
                 # Stream audio chunks
-                #stream_info = tts_pipeline.get_stream_info()
                 async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
-                    await websocket.send_bytes(chunk)
+                    if not self.interrupt_flag: 
+                        await websocket.send_bytes(chunk)
 
                 end = time.time()
                 print(f"total processing time: {end - start}, text: {tts_text}")
