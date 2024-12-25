@@ -278,6 +278,10 @@ export default function Home() {
 
             websocket.onclose = () => {
               if (isCallEnded) return; // Don't reconnect if the call has ended
+              if (connectionStatus === "Closed") {
+                console.log("WebSocket 已关闭");
+                return;
+              }
               console.log("WebSocket connection closed...");
               setConnectionStatus("Reconnecting...");
               setTimeout(reconnectWebSocket, 5000);
@@ -302,7 +306,7 @@ export default function Home() {
         socket.close();
       }
     };
-  }, [isCallEnded]);
+  }, [isCallEnded, connectionStatus]);
 
   // Handle media recorder pause/resume
   useEffect(() => {
