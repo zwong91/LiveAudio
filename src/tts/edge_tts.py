@@ -103,5 +103,5 @@ class EdgeTTS(TTSInterface):
             audio_resampled = (
                 audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
             )  # 16bit sample_width 16/8=2
-            audio_data = audio_resampled.raw_data
-            yield audio_data
+            pcm_data_16K = audio_resampled.raw_data
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
