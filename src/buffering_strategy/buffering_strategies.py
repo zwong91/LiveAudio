@@ -130,7 +130,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     if not self.interrupt_flag:
                         tts_text, updated_history = await llm_pipeline.generate_response(
                             self.client.history, transcription["text"], True
-                        )     
+                        )
                         # Stream audio chunks
                         try:
                             if tts_text != "":
@@ -139,11 +139,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                                         await websocket.send_bytes(chunk)
                                     else:
                                         raise StopAsyncIteration
-                                end = time.time()
-                                print(f"total processing time: {end - start}, text: {tts_text}")
-                                self.client.history = updated_history
-                                self.client.scratch_buffer.clear()
-                                self.client.increment_file_counter()
 
                         except StopAsyncIteration:
                             self.interrupt_flag = False
@@ -154,6 +149,12 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                             
                         except Exception as e:
                             print(f"An error occurred during TTS: {e}")
+                        finally:
+                            end = time.time()
+                            print(f"total processing time: {end - start}, text: {tts_text}")
+                            self.client.history = updated_history
+                            self.client.scratch_buffer.clear()
+                            self.client.increment_file_counter()
 
         self.processing_flag = False
         self.interrupt_flag = False
