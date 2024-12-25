@@ -141,6 +141,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     self.interrupt_flag = False
                     self.processing_flag = False
                     print("TTS stream interrupted.")
+                    # Send stop signal
+                    await websocket.send_json({"event": "interrupt"})
+                    
                 except Exception as e:
                     print(f"An error occurred during TTS: {e}") 
 
