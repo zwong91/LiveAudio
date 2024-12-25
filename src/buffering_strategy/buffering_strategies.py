@@ -96,7 +96,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
     async def _send_interrupt_signal(self, websocket):
         try:
-            await websocket.send_json({"event": "interrupt"})
+            res = {"event": "interrupt"}
+            await websocket.send(json.dumps(res))
         except Exception as e:
             print(f"Failed to send interrupt signal: {e}")
 
