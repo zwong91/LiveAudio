@@ -167,6 +167,12 @@ export default function Home() {
           let websocket: WebSocket | null = null;
 
           const reconnectWebSocket = () => {
+
+            if (isCallEnded) { // 再檢查 isCallEnded，雙重保險
+              console.log("Reconnection prevented by isCallEnded flag.");
+              return;
+            }
+
             if (websocket) websocket.close();
             websocket = new WebSocket(SOCKET_URL);
             setSocket(websocket);
@@ -322,13 +328,11 @@ export default function Home() {
   // 添加状态来跟踪是否在通话中
   const [isInCall, setIsInCall] = useState(true);
 
-  function sleep(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
   const endCall = async () => {
-    setIsCallEnded(true); // Set isCallEnded to true to prevent reconnection
 
+    setConnectionStatus("Closed");
+    setIsCallEnded(true); // Set isCallEnded to true to prevent reconnection
+  
     if (socket) {
       socket.close();
       setSocket(null);
@@ -343,7 +347,7 @@ export default function Home() {
     setIsInCall(false);
     setIsRecording(false);
     setIsPlayingAudio(false);
-    setConnectionStatus("Closed");
+
   };
 
   return (
