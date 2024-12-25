@@ -217,7 +217,7 @@ class XTTS_v2(TTSInterface):
             gpt_cond_latent,
             speaker_embedding,
             # Streaming
-            stream_chunk_size=256,
+            stream_chunk_size=128,
             overlap_wav_len=1024,
             # GPT inference
             temperature=0.01,
@@ -232,7 +232,7 @@ class XTTS_v2(TTSInterface):
 
         for i, chunk in enumerate(chunks):
             if i == 0:
-                print(f"Time to first chunck: {time.time() - t0}")
+                print(f"Time to first chunck: {time.time() - t0} s")
             print(f"Received chunk {i} of audio length {chunk.shape[-1]}")
             wav_chunks.append(chunk)
             processed_bytes = postprocess_tts_wave_int16(chunk)
