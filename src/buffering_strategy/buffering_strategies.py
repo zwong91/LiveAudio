@@ -124,37 +124,36 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             / (self.client.sampling_rate * self.client.samples_width)
         ) - self.chunk_offset_seconds
         if vad_results[-1]["end"] < last_segment_should_end_before:
-            if not self.interrupt_flag: 
+            if not self.interrupt_flag:
                 transcription = await asr_pipeline.transcribe(self.client)
-            if transcription["text"] != "":
-                if not self.interrupt_flag: 
-                    tts_text, updated_history = await llm_pipeline.generate_response(
-                        self.client.history, transcription["text"], True
-                    )
-                
-                # Stream audio chunks
-                try:
-                    if tts_text != "":
-                        async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
-                            if not self.interrupt_flag: 
-                                await websocket.send_bytes(chunk)
-                            else:
-                                raise StopAsyncIteration
-                        end = time.time()
-                        print(f"total processing time: {end - start}, text: {tts_text}")
-                        self.client.history = updated_history
-                        self.client.scratch_buffer.clear()
-                        self.client.increment_file_counter()
+                if transcription["text"] != "":
+                    if not self.interrupt_flag:
+                        tts_text, updated_history = await llm_pipeline.generate_response(
+                            self.client.history, transcription["text"], True
+                        )     
+                        # Stream audio chunks
+                        try:
+                            if tts_text != "":
+                                async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
+                                    if not self.interrupt_flag: 
+                                        await websocket.send_bytes(chunk)
+                                    else:
+                                        raise StopAsyncIteration
+                                end = time.time()
+                                print(f"total processing time: {end - start}, text: {tts_text}")
+                                self.client.history = updated_history
+                                self.client.scratch_buffer.clear()
+                                self.client.increment_file_counter()
 
-                except StopAsyncIteration:
-                    self.interrupt_flag = False
-                    self.processing_flag = False
-                    print("TTS stream interrupted.")
-                    # Send stop signal
-                    await websocket.send_json({"event": "interrupt"})
-                    
-                except Exception as e:
-                    print(f"An error occurred during TTS: {e}") 
+                        except StopAsyncIteration:
+                            self.interrupt_flag = False
+                            self.processing_flag = False
+                            print("TTS stream interrupted.")
+                            # Send stop signal
+                            await websocket.send_json({"event": "interrupt"})
+                            
+                        except Exception as e:
+                            print(f"An error occurred during TTS: {e}")
 
         self.processing_flag = False
         self.interrupt_flag = False
