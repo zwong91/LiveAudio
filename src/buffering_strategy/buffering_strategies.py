@@ -138,6 +138,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                             raise StopAsyncIteration 
 
                 except StopAsyncIteration:
+                    self.interrupt_flag = False
+                    self.processing_flag = False
                     print("TTS stream interrupted.")
                 except Exception as e:
                     print(f"An error occurred during TTS: {e}") 
