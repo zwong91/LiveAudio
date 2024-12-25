@@ -130,7 +130,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 )
                 
                 # Stream audio chunks
-                stream_info = tts_pipeline.get_stream_info()
+                #stream_info = tts_pipeline.get_stream_info()
                 async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
                     await websocket.send_bytes(chunk)
                 # try:

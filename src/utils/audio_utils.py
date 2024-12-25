@@ -1,9 +1,13 @@
 import os
 import wave
+from scipy import signal
 import aiofiles
-import numpy as np
+
 from io import BytesIO
 import asyncio
+
+import torch
+import numpy as np
 
 def next_power_of_2(x):
     return 1 if x == 0 else 2 ** (x - 1).bit_length()
@@ -96,6 +100,46 @@ def pack_audio(io_buffer:BytesIO, data:np.ndarray, rate:int, media_type:str):
     return io_buffer
 
 
+def postprocess_tts_wave(chunk: torch.Tensor | list) -> bytes:
+    r"""
+    Post process the output waveform with numpy.float32 to bytes
+    """
+    if isinstance(chunk, list):
+        chunk = torch.cat(chunk, dim=0)
+    chunk = chunk.clone().detach().cpu().numpy()
+    chunk = chunk[None, : int(chunk.shape[0])]
+    chunk = np.clip(chunk, -1, 1)
+    chunk = chunk.astype(np.float32)
+    return chunk.tobytes()
+
+
+def convertSampleRateTo16khz(audio_data: bytes | bytearray, original_sample_rate):
+    if original_sample_rate == 16000:
+        return audio_data
+
+    pcm_data = np.frombuffer(audio_data, dtype=np.int16)
+    pcm_data_16K = resample_audio(pcm_data, original_sample_rate, 16000)
+    audio_data = pcm_data_16K.tobytes()
+
+    return audio_data
+
+
+def resample_audio(pcm_data: np.ndarray, original_rate: int, target_rate: int) -> np.ndarray:
+    num_samples = int(len(pcm_data) * target_rate / original_rate)
+    resampled_audio = signal.resample(pcm_data, num_samples)
+    # resampled_audio = signal.resample_poly(pcm_data, target_rate, original_rate)
+    return resampled_audio.astype(np.int16)
+
+
+def convert_sampling_rate_to_16k(input_file, output_file):
+    original_rate, data = read(input_file)
+    if original_rate == 16000:
+        return
+    up = 16000
+    down = original_rate
+    resampled_data = signal.resample_poly(data, up, down)
+    write(output_file, 16000, resampled_data.astype(np.int16))
+    
 
 # from https://huggingface.co/spaces/coqui/voice-chat-with-mistral/blob/main/app.py
 def wave_header_chunk(frame_input=b"", channels=1, sample_width=2, sample_rate=32000):
