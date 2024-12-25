@@ -95,13 +95,12 @@ class EdgeTTS(TTSInterface):
                 if chunk["type"] == "audio":
                     f.write(chunk["data"])
                 elif chunk["type"] == "WordBoundary":
-                    # logging.info( f"{self.TAG} type:{chunk['type']} chunk: {chunk}")
                     self.submaker.create_sub((chunk["offset"], chunk["duration"]), chunk["text"])
 
             f.seek(0)
             audio: AudioSegment = AudioSegment.from_mp3(f)
             audio_resampled = (
                 audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            )  # 16bit sample_width 16/8=2
+            )  # 16bit sample_width 16/8=2  16k-mono-mp3
             pcm_data_16K = audio_resampled.raw_data
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
