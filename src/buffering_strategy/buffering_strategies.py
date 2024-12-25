@@ -116,6 +116,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             self.client.scratch_buffer.clear()
             self.client.buffer.clear()
             self.processing_flag = False
+            self.interrupt_flag = False
             return
 
         last_segment_should_end_before = (
