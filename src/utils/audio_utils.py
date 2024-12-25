@@ -100,6 +100,17 @@ def pack_audio(io_buffer:BytesIO, data:np.ndarray, rate:int, media_type:str):
     return io_buffer
 
 
+def postprocess_tts_wave_int16(chunk: torch.Tensor | list) -> bytes:
+    r"""
+    Post process the output waveform with numpy.int16 to bytes
+    """
+    if isinstance(chunk, list):
+        chunk = torch.cat(chunk, dim=0)
+    chunk = chunk.clone().detach().cpu().numpy()
+    chunk = chunk * (2**15)
+    chunk = chunk.astype(np.int16)
+    return chunk.tobytes()
+
 def postprocess_tts_wave(chunk: torch.Tensor | list) -> bytes:
     r"""
     Post process the output waveform with numpy.float32 to bytes

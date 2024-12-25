@@ -26,7 +26,7 @@ from src.xtts.TTS.tts.models.xtts import Xtts
 from src.xtts.TTS.utils.generic_utils import get_user_data_dir
 from src.xtts.TTS.utils.manage import ModelManager
 
-from src.utils.audio_utils import postprocess_tts_wave, convertSampleRateTo16khz
+from src.utils.audio_utils import postprocess_tts_wave_int16, convertSampleRateTo16khz, wave_header_chunk
 
 class XTTS_v2(TTSInterface):
     def __init__(self, voice: str = 'liuyifei'):
@@ -216,7 +216,7 @@ class XTTS_v2(TTSInterface):
             gpt_cond_latent,
             speaker_embedding,
             # Streaming
-            stream_chunk_size=256,
+            stream_chunk_size=512,
             overlap_wav_len=1024,
             # GPT inference
             temperature=0.01,
@@ -231,10 +231,10 @@ class XTTS_v2(TTSInterface):
 
         for i, chunk in enumerate(chunks):
             logging.debug(f"Received chunk {i} of audio length {chunk.shape[-1]}")
-            processed_bytes = postprocess_tts_wave(chunk)
+            processed_bytes = postprocess_tts_wave_int16(chunk)
             pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
             print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
-            yield pcm_data_16K
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
         # wav_chunks = []
         # for i, chunk in enumerate(chunks):
         #     wav_chunks.append(chunk)

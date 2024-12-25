@@ -133,22 +133,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 #stream_info = tts_pipeline.get_stream_info()
                 async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
                     await websocket.send_bytes(chunk)
-                # try:
-                #     async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
-                #         if len(chunk) > 0:
-                #             content = io.BytesIO()
-                #             ww = wave.open(content, "wb")
-                #             ww.setsampwidth(stream_info["sample_width"])
-                #             ww.setnchannels(stream_info["channels"])
-                #             ww.setframerate(stream_info["sample_rate"])
-                #             ww.writeframes(chunk)
-                #             ww.close()
-                #             content.seek(0)
-                #             await websocket.send_bytes(content.read())
-                #     # Send stop signal
-                #     #await websocket.send_bytes(ormsgpack.packb({"event": "stop"}))
-                # except Exception as e:
-                #     logging.error(f"Error sending WebSocket message: {e}")
+
                 end = time.time()
                 print(f"total processing time: {end - start}, text: {tts_text}")
                 self.client.history = updated_history
