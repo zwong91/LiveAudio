@@ -69,6 +69,26 @@ export default function Home() {
     }
   };
 
+
+  // 检查 ArrayBuffer 是否包含 "END_OF_AUDIO" 并处理音频数据
+  function checkAndBufferAudio(audioData: ArrayBuffer) {
+    // 将 ArrayBuffer 转为字符串
+    const text = new TextDecoder("utf-8").decode(audioData);
+  
+    if (text.includes("END_OF_AUDIO")) {
+      console.log("Detected END_OF_AUDIO signal in audioData");
+      // 停止当前音频播放
+      audioManager.stopCurrentAudio();
+      // 停止录音并切换状态
+      setIsRecording(true);
+      setIsPlayingAudio(false);
+      return;
+    }
+  
+    // 如果不包含 END_OF_AUDIO，则缓冲音频数据
+    bufferAudio(audioData);
+  }
+
   // Buffer audio and add it to the queue
   function bufferAudio(data: ArrayBuffer) {
     if (audioContext) {
@@ -230,22 +250,6 @@ export default function Home() {
             };
 
             websocket.onmessage = (event) => {
-                try {
-                  // 解析接收到的 JSON 数据
-                  const jsonData = JSON.parse(event.data);
-                  if (jsonData["event"] === "interrupt") {
-                      console.log("Received interrupt signal");
-                      // 停止当前音频播放
-                      audioManager.stopCurrentAudio();
-                      // 停止录音并切换状态
-                      setIsRecording(true);
-                      setIsPlayingAudio(false);
-                      return;
-                }
-              } catch (e) {
-                console.warn("Warn processing WebSocket message:", e);
-              }
-
               setIsRecording(false);
               setIsPlayingAudio(true);
 
@@ -260,7 +264,7 @@ export default function Home() {
                   const reader = new FileReader();
                   reader.onloadend = () => {
                     audioData = reader.result as ArrayBuffer;
-                    bufferAudio(audioData);
+                    checkAndBufferAudio(audioData);
                   };
                   reader.readAsArrayBuffer(event.data);
                   return; // 需要提前退出，等 FileReader 读取完成后再继续处理
@@ -269,7 +273,7 @@ export default function Home() {
                 }
 
                 // 调用 bufferAudio 处理音频数据
-                bufferAudio(audioData);
+                checkAndBufferAudio(audioData);
               } catch (error) {
                 console.error("Error processing WebSocket message:", error);
               }
