@@ -210,6 +210,7 @@ class XTTS_v2(TTSInterface):
         print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
 
         time_start = time.time()
+        wav_chunks = []
         chunks = self.model.inference_stream(
             text,
             language,
@@ -234,45 +235,16 @@ class XTTS_v2(TTSInterface):
         raw_inference_start = 0.0
         first_chunk_length_seconds = 0.0
         for i, chunk in enumerate(chunks):
-            logging.debug(f"Received chunk {i} of audio length {chunk.shape[-1]}")
+            if i == 0:
+                print(f"Time to first chunck: {time.time() - t0}")
+            print(f"Received chunk {i} of audio length {chunk.shape[-1]}")
+            wav_chunks.append(chunk)
             processed_bytes = postprocess_tts_wave_int16(chunk)
             pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
             print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
             
-            # 4 bytes per sample, 24000 Hz
-            chunk_duration = len(chunk) / (4 * self.config.audio.output_sample_rate)
-            full_generated_seconds += chunk_duration
-            if i == 0:
-                first_chunk_length_seconds = chunk_duration
-                raw_inference_start = time.time()
-                seconds_to_first_chunk = raw_inference_start - time_start
+        wav = torch.cat(wav_chunks, dim=0)
+        real_time_factor= (time.time() - t0) / wav.shape[0] * 24000
+        print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
 
-        self._print_synthesized_info(
-            time_start,
-            full_generated_seconds,
-            first_chunk_length_seconds,
-            seconds_to_first_chunk,
-        )
-
-    def _print_synthesized_info(
-        self, time_start, full_generated_seconds, first_chunk_length_seconds, seconds_to_first_chunk
-    ):
-        time_end = time.time()
-        seconds = time_end - time_start
-        if full_generated_seconds > 0 and (full_generated_seconds - first_chunk_length_seconds) > 0:
-            realtime_factor = seconds / full_generated_seconds
-            raw_inference_time = seconds - seconds_to_first_chunk
-            raw_inference_factor = raw_inference_time / (
-                full_generated_seconds - first_chunk_length_seconds
-            )
-
-            print(
-                f"XTTS synthesized {full_generated_seconds:.2f}s"
-                f" audio in {seconds:.2f}s"
-                f" realtime factor: {realtime_factor:.2f}x"
-            )
-            print(
-                f"seconds to first chunk: {seconds_to_first_chunk:.2f}s"
-                f" raw_inference_factor: {raw_inference_factor:.2f}x"
-            )
