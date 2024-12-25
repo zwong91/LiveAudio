@@ -87,7 +87,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             self.client.scratch_buffer += self.client.buffer
             self.client.buffer.clear()
             self.processing_flag = True
-            self.interrupt_flag = False
             # schedule the processing in a separate task
             asyncio.create_task(
                 self.process_audio_async(websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
@@ -150,3 +149,4 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.client.increment_file_counter()
 
         self.processing_flag = False
+        self.interrupt_flag = False
