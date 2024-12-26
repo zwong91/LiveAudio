@@ -194,7 +194,7 @@ class Server:
         finally:
             del self.connected_clients[client_id]
             logging.info(f"Client {client_id} disconnected")
-            await websocket.close()
+            #await websocket.close()
 
     async def handle_audio(self, client, websocket):
         while True:
