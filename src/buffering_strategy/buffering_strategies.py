@@ -82,6 +82,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             if self.processing_flag:
                 self.interrupt_flag = True
                 # FIXME: TO interrupt live-audio, start talking
+                asyncio.create_task(
+                    self._send_interrupt_signal(websocket)
+                )
                 logging.warning("Warning in realtime processing: tried processing a new chunk while the previous one was still being processed")
                 return
             self.client.scratch_buffer += self.client.buffer
@@ -154,12 +157,12 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                                         raise StopAsyncIteration
 
                         except StopAsyncIteration:
-                            print("TTS stream interrupted.")
+                            logging.warning("TTS stream interrupted.")
                             # Send stop signal
                             await self._send_interrupt_signal(websocket)
                             
                         except Exception as e:
-                            print(f"An error occurred during TTS: {e}")
+                            logging.error(f"An error occurred during TTS: {e}")
                         finally:
                             # Always clean up, no matter success or failure
                             end = time.time()

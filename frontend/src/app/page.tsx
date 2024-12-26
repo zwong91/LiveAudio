@@ -85,6 +85,8 @@ export default function Home() {
       return;
     }
   
+    setIsRecording(false);
+    setIsPlayingAudio(true);
     // 如果不包含 END_OF_AUDIO，则缓冲音频数据
     bufferAudio(audioData);
   }
@@ -250,9 +252,6 @@ export default function Home() {
             };
 
             websocket.onmessage = (event) => {
-              setIsRecording(false);
-              setIsPlayingAudio(true);
-
               try {
                 let audioData: ArrayBuffer;
 
