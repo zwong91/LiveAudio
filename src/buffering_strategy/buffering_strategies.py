@@ -163,7 +163,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     end = time.time()
                     print(f"Total processing time: {end - start:.2f}s, text: {tts_text}")
                     self._update_client_state(updated_history)
-        await asyncio.sleep(3)
+                    await asyncio.sleep(3)
+
+
         self.processing_flag = False
         self.interrupt_flag = False
 
