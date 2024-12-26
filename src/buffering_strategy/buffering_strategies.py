@@ -60,7 +60,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.interrupt_flag = False
         self.processing_flag = False
 
-    def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+    async def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
         """
         Process audio chunks by checking their length and scheduling
         asynchronous processing.
@@ -94,11 +94,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             task = asyncio.create_task(
                 self.process_audio_async(websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
             )
-
-            # 获取当前的事件循环
-            loop = asyncio.get_event_loop()            
             # 等待任务完成并获取结果
-            result = loop.run_until_complete(task)
+            result = await task
             print(f"Async task result: {result}")
 
     async def _send_interrupt_signal(self, websocket):
