@@ -80,11 +80,11 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         )
         if len(self.client.buffer) > chunk_length_in_bytes:
             if self.processing_flag:
-                self.interrupt_flag = True
+                #self.interrupt_flag = True
                 # FIXME: TO interrupt live-audio, start talking
-                asyncio.create_task(
-                    self._send_interrupt_signal(websocket)
-                )
+                # asyncio.create_task(
+                #     self._send_interrupt_signal(websocket)
+                # )
                 logging.warning("Warning in realtime processing: tried processing a new chunk while the previous one was still being processed")
                 return
             self.client.scratch_buffer += self.client.buffer
