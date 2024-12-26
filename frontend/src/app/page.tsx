@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import styles from "./page.module.css";
 import msgpack from 'msgpack-lite';
 
@@ -33,7 +33,7 @@ export default function Home() {
       if (isPlayingAudio) {
         setIsPlayingAudio(false);
       }
-      audioBufferQueue = []
+      audioBufferQueue = [];
     },
 
     playNewAudio: async (audioBlob: Blob) => {
@@ -70,12 +70,11 @@ export default function Home() {
     }
   };
 
-
   // 检查 ArrayBuffer 是否包含 "END_OF_AUDIO" 并处理音频数据
   function checkAndBufferAudio(audioData: ArrayBuffer) {
     // 将 ArrayBuffer 转为字符串
     const text = new TextDecoder("utf-8").decode(audioData);
-  
+
     if (text.includes("END_OF_AUDIO")) {
       console.log("Detected END_OF_AUDIO signal in audioData");
       // 停止当前音频播放
@@ -85,7 +84,7 @@ export default function Home() {
       setIsPlayingAudio(false);
       return;
     }
-  
+
     setIsRecording(false);
     setIsPlayingAudio(true);
     // 如果不包含 END_OF_AUDIO，则缓冲音频数据
@@ -194,9 +193,8 @@ export default function Home() {
           let websocket: WebSocket | null = null;
 
           const reconnectWebSocket = () => {
-
-            if (manualClose) { // 再檢查 isCallEnded，雙重保險
-              console.log("Reconnection prevented by isCallEnded flag.");
+            if (manualClose || isCallEnded) {
+              console.log("Reconnection prevented by manualClose or isCallEnded flag.");
               return;
             }
 
@@ -236,7 +234,7 @@ export default function Home() {
                           }
                         };
                         // Encode the data using MessagePack
-                        //const encodedData = msgpack.encode(message);
+                        // const encodedData = msgpack.encode(message);
                         const encodedData = JSON.stringify(message);
                         if (websocket) {
                           websocket.send(encodedData);
@@ -283,7 +281,7 @@ export default function Home() {
             };
 
             websocket.onclose = () => {
-              if (manualClose) return; // Don't reconnect if the call has ended
+              if (manualClose || isCallEnded) return; // Don't reconnect if the call has ended
               if (connectionStatus === "Closed") {
                 console.log("WebSocket 已关闭");
                 return;
@@ -299,7 +297,7 @@ export default function Home() {
             };
           };
 
-          if (manualClose) return;
+          if (manualClose || isCallEnded) return;
           console.log("client start connect to websocket");
           reconnectWebSocket();
         }).catch((error) => {
@@ -312,6 +310,7 @@ export default function Home() {
     return () => {
       if (socket) {
         socket.close();
+        setSocket(null);
       }
     };
   }, [isCallEnded, connectionStatus]);
@@ -341,11 +340,10 @@ export default function Home() {
   const [isInCall, setIsInCall] = useState(true);
 
   const endCall = async () => {
-
-    manualClose = true
+    manualClose = true;
     setConnectionStatus("Closed");
     setIsCallEnded(true); // Set isCallEnded to true to prevent reconnection
-  
+
     if (socket) {
       socket.close();
       setSocket(null);
@@ -360,7 +358,6 @@ export default function Home() {
     setIsInCall(false);
     setIsRecording(false);
     setIsPlayingAudio(false);
-
   };
 
   return (
@@ -386,27 +383,27 @@ export default function Home() {
             <img src="/ai-avatar.png" alt="AI" className={styles.avatar} />
           </div>
           <div className={styles.status}>
-            <span className={isInCall ? isPlayingAudio ? styles.speakingAnimation : styles.listeningAnimation : styles.offlineAnimation}>
-              {isInCall ? isPlayingAudio ? "AI正在说话" : "AI正在听" : "AI 离线"}
+            <span className={isInCall ? (isPlayingAudio ? styles.speakingAnimation : styles.listeningAnimation) : styles.offlineAnimation}>
+              {isInCall ? (isPlayingAudio ? "AI正在说话" : "AI正在听") : "AI 离线"}
             </span>
           </div>
         </div>
       </div>
 
       <div className={styles.controls}>
-          <button
-            className={isInCall ? styles.endCallButton : styles.startCallButton}
-            onClick={() => {
-              if (isInCall) {
-                endCall();
-              } else {
-                window.location.reload();
-              }
-            }}
-          >
-            {isInCall ? "结束通话" : "重新通话"}
-          </button>
-        </div>
+        <button
+          className={isInCall ? styles.endCallButton : styles.startCallButton}
+          onClick={() => {
+            if (isInCall) {
+              endCall();
+            } else {
+              window.location.reload();
+            }
+          }}
+        >
+          {isInCall ? "结束通话" : "重新通话"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -142,12 +142,14 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             / (self.client.sampling_rate * self.client.samples_width)
         ) - self.chunk_offset_seconds
         if vad_results[-1]["end"] < last_segment_should_end_before:
+            # Step 1: Transcribe audio
             transcription = await asr_pipeline.transcribe(self.client)
             if transcription["text"] != "":
+                # Step 2: Generate response
                 tts_text, updated_history = await llm_pipeline.generate_response(
                     self.client.history, transcription["text"], True
                 )
-                # Stream audio chunks
+                # Step 3: Stream audio chunks
                 try:
                     async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
                         if not self.interrupt_flag:
