@@ -65,11 +65,11 @@ class SenseVoiceASR(ASRInterface):
         #         n -= 1
         #         print(f"No sentence boundary detected. Tries left: {n}")
         
-        sentence = trans_text if sentence_finished else ""
+        # sentence = trans_text if sentence_finished else ""
         to_return = {
             "language": "zh-cn",
             "language_probability": None,
-            "text": sentence,
+            "text": trans_text,
             "words": "UNSUPPORTED_BY_HUGGINGFACE_SENSEVOICE",
         }
         return to_return
