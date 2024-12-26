@@ -141,6 +141,8 @@ export default function Home() {
   //const SOCKET_URL = "wss://gtp.aleopool.cc/stream";
   const SOCKET_URL = "wss://audio.enty.services/stream";
 
+ let websocket: WebSocket | null = null;
+
   // Initialize WebSocket and media devices
   useEffect(() => {
     let wakeLock: WakeLockSentinel | null = null;
@@ -191,7 +193,6 @@ export default function Home() {
 
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-          let websocket: WebSocket | null = null;
 
           const reconnectWebSocket = () => {
             if (manualClose || isCallEnded) {
