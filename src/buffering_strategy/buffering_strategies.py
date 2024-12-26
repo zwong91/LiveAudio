@@ -142,6 +142,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if vad_results[-1]["end"] < last_segment_should_end_before:
             transcription = await asr_pipeline.transcribe(self.client)
             if transcription["text"] != "":
+                self.client.scratch_buffer.clear()
                 tts_text, updated_history = await llm_pipeline.generate_response(
                     self.client.history, transcription["text"], True
                 )
@@ -165,8 +166,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     end = time.time()
                     print(f"Total processing time: {end - start:.2f}s, text: {tts_text}")
                     self._update_client_state(updated_history)
-                    # 防止音频堆叠
-                    await asyncio.sleep(1)
 
         self.processing_flag = False
         self.interrupt_flag = False
