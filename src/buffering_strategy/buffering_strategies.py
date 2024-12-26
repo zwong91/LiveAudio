@@ -91,9 +91,13 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             self.client.buffer.clear()
             self.processing_flag = True
             # schedule the processing in a separate task
-            asyncio.create_task(
+            task = asyncio.create_task(
                 self.process_audio_async(websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
             )
+
+            # 等待任务完成并获取结果
+            result = await task
+            print(f"Task returned: {result}")
 
     async def _send_interrupt_signal(self, websocket):
         try:
@@ -163,7 +167,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     end = time.time()
                     print(f"Total processing time: {end - start:.2f}s, text: {tts_text}")
                     self._update_client_state(updated_history)
-        await asyncio.sleep(1)
         self.processing_flag = False
         self.interrupt_flag = False
 
