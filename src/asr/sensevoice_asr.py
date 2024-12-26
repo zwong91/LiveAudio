@@ -48,22 +48,22 @@ class SenseVoiceASR(ASRInterface):
         os.remove(file_path)
 
         trans_text = rich_transcription_postprocess(text)
-        print(f"stt transcribe text: {trans_text}")
-        pysbd_language = langid.classify(trans_text)[0].strip()
-        seg = pysbd.Segmenter(language=pysbd_language, clean=False)
+        # print(f"stt transcribe text: {trans_text}")
+        # pysbd_language = langid.classify(trans_text)[0].strip()
+        # seg = pysbd.Segmenter(language=pysbd_language, clean=False)
 
-        sentence_finished = False
-        first = True
+        # sentence_finished = False
+        # first = True
 
-        n = 2  # number of times to see if the sentence ends
-        while not sentence_finished and n > 0:
-            first = False
-            if len(seg.segment(trans_text)) > 1 or self.has_sentence_boundary(trans_text, pysbd_language):
-                sentence_finished = True
-                print(f"Sentence boundary detected for language '{langid_detected_language}': {text}")
-            else:
-                n -= 1
-                print(f"No sentence boundary detected. Tries left: {n}")
+        # n = 2  # number of times to see if the sentence ends
+        # while not sentence_finished and n > 0:
+        #     first = False
+        #     if len(seg.segment(trans_text)) > 1 or self.has_sentence_boundary(trans_text, pysbd_language):
+        #         sentence_finished = True
+        #         print(f"Sentence boundary detected for language '{langid_detected_language}': {text}")
+        #     else:
+        #         n -= 1
+        #         print(f"No sentence boundary detected. Tries left: {n}")
         
         sentence = trans_text if sentence_finished else ""
         to_return = {
