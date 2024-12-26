@@ -85,7 +85,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 # asyncio.create_task(
                 #     self._send_interrupt_signal(websocket)
                 # )
-                logging.warning("Warning in realtime processing: tried processing a new chunk while the previous one was still being processed")
+                logging.debug("Warning in realtime processing: tried processing a new chunk while the previous one was still being processed")
                 return
 
             # 处理累积的buffer
@@ -166,8 +166,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     print(f"Total processing time: {end - start:.2f}s, text: {tts_text}")
                     self._update_client_state(updated_history)
                     # 防止音频堆叠
-                    await asyncio.sleep(3)
-
+                    await asyncio.sleep(1)
 
         self.processing_flag = False
         self.interrupt_flag = False
