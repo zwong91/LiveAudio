@@ -217,7 +217,7 @@ class XTTS_v2(TTSInterface):
             gpt_cond_latent,
             speaker_embedding,
             # Streaming
-            stream_chunk_size=128,
+            stream_chunk_size=60,
             overlap_wav_len=1024,
             # GPT inference
             temperature=0.01,
