@@ -46,8 +46,6 @@ class BaseProcessor:
         self.custom_audio_cycle = {}
         self.custom_audio_index = {}
         self.custom_index = {}
-        self.custom_opt = {}
-        self.__loadcustom()
 
     def put_audio_frame(self, audio_chunk):  # 16khz 20ms pcm
         self.asr.put_audio_frame(audio_chunk)
@@ -79,17 +77,6 @@ class BaseProcessor:
 
     def is_speaking(self) -> bool:
         return self.speaking
-
-    def __loadcustom(self):
-        for item in self.opt.customopt:
-            print(item)
-            input_img_list = glob.glob(os.path.join(item['imgpath'], '*.[jpJP][pnPN]*[gG]'))
-            input_img_list = sorted(input_img_list, key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
-            self.custom_img_cycle[item['audiotype']] = read_imgs(input_img_list)
-            self.custom_audio_cycle[item['audiotype']], sample_rate = sf.read(item['audiopath'], dtype='float32')
-            self.custom_audio_index[item['audiotype']] = 0
-            self.custom_index[item['audiotype']] = 0
-            self.custom_opt[item['audiotype']] = item
 
     def init_customindex(self):
         self.curr_state = 0
@@ -266,16 +253,6 @@ class RTCProcessor(BaseProcessor):
     def __del__(self):
         """Ensure cleanup is performed when the object is deleted."""
         self.stop_inference()
-    
-    @torch.no_grad()
-    def __loadmodels(self):
-        print("Loading diffusion and audio models...")
-        self.diffusion_model = load_diffusion_model()
-        self.audio_processor = load_audio_model()
-
-    @torch.no_grad()
-    def __loadavatar(self):
-        pass
 
     @torch.no_grad()
     def __mirror_index(self, index):
@@ -326,9 +303,6 @@ class RTCProcessor(BaseProcessor):
                 except Exception as e:
                     print(f"Error resizing frame: {e}")
                     continue
-                mask = self.mask_list_cycle[idx]
-                mask_crop_box = self.mask_coords_list_cycle[idx]
-                combine_frame = get_image_blending(ori_frame, res_frame, bbox, mask, mask_crop_box)
 
             # Create VideoFrame
             image = combine_frame

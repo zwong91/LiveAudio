@@ -1,6 +1,6 @@
-# Live-Audio
+# LiveAudio
 
-Welcome to the Live-Audio repository! This project hosts two exciting applications leveraging advanced audio understand and speech generation models to bring your audio experiences to life:
+Welcome to the LiveAudio repository! This project hosts two exciting applications leveraging advanced audio understand and speech generation models to bring your audio experiences to life:
 
 **Voice Chat** :  This application is designed to provide an interactive and natural chatting experience, making it easier to adopt sophisticated AI-driven dialogues in various settings.
 
@@ -23,8 +23,8 @@ CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python
 
 mkdir /asset
 chmod 777 /asset/
-git clone https://github.com/zwong91/Live-Audio.git
-cd /workspace/Live-Audio
+git clone https://github.com/zwong91/LiveAudio.git
+cd /workspace/LiveAudio
 git pull
 
 #1 pre_install.sh
@@ -38,12 +38,12 @@ conda config --set auto_activate_base false
 conda create -n rt python=3.10  -y
 conda activate rt
 
-#2  Live-Audio
-cd /workspace/Live-Audio
+#2  LiveAudio
+cd /workspace/LiveAudio
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 #3 xtts
-cd /workspace/Live-Audio/src/xtts
+cd /workspace/LiveAudio/src/xtts
 pip install -e .[all,dev,notebooks]  -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 #4. download xtts-v2 
