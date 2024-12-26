@@ -114,7 +114,7 @@ HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile cf
 
 ***test***
 
-```
+```bash
 export PYANNOTE_AUTH_TOKEN=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
 ASR_TYPE=sensevoice python -m unittest test.server.test_server
 ```

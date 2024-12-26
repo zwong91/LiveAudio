@@ -18,6 +18,7 @@ edge-tts
 pydub
 onnx
 onnxconverter_common
+pyloudnorm
 speechbrain==1.0.0
 pyannote.audio
 asyncio==3.4.3
@@ -37,5 +38,6 @@ aiohttp
 streamlit
 streamlit-webrtc
 moviepy
+pyaudio
 gdown
 requests
