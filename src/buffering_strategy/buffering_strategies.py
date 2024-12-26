@@ -5,7 +5,7 @@ import time
 import logging
 from .buffering_strategy_interface import BufferingStrategyInterface
 import ormsgpack
-import wave
+from collections import deque
 import io
 
 class SilenceAtEndOfChunk(BufferingStrategyInterface):
@@ -59,6 +59,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         self.interrupt_flag = False
         self.processing_flag = False
+        self.processing_task = None
 
     def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
         """
@@ -92,8 +93,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             self.client.scratch_buffer.extend(self.client.buffer)
             self.client.buffer.clear()
             self.processing_flag = True
-            # schedule the processing in a separate task
-            asyncio.create_task(
+
+            if self.processing_task is None or self.processing_task.done():
+                self.processing_task = asyncio.create_task(
                 self.process_audio_async(websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
             )
 
@@ -142,7 +144,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if vad_results[-1]["end"] < last_segment_should_end_before:
             transcription = await asr_pipeline.transcribe(self.client)
             if transcription["text"] != "":
-                self.client.scratch_buffer.clear()
                 tts_text, updated_history = await llm_pipeline.generate_response(
                     self.client.history, transcription["text"], True
                 )
