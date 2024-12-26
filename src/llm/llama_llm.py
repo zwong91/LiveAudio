@@ -99,7 +99,7 @@ class LlamaLLM(LLMInterface):
             if o["choices"][0]["finish_reason"] is not None:
                 break
 
-    async def generate_response(self, history: List[Dict[str, str]], query: str, stream:  bool, max_tokens: int = 32) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate_response(self, history: List[Dict[str, str]], query: str, stream:  bool, max_tokens: int = 64) -> Tuple[str, List[Dict[str, str]]]:
         start_time = time.time()
 
         out = self.generate(history, query, stream)
