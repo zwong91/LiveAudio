@@ -95,9 +95,11 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.process_audio_async(websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
             )
 
+            # 获取当前的事件循环
+            loop = asyncio.get_event_loop()            
             # 等待任务完成并获取结果
-            result = await task
-            print(f"Task returned: {result}")
+            result = loop.run_until_complete(task)
+            print(f"Async task result: {result}")
 
     async def _send_interrupt_signal(self, websocket):
         try:
