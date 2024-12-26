@@ -26,6 +26,9 @@ def parse_args():
     parser.add_argument("--port", type=int, default=8765, help="Port for the WebSocket server")
     parser.add_argument("--certfile", type=str, default=None, help="Path to SSL certificate file")
     parser.add_argument("--keyfile", type=str, default=None, help="Path to SSL key file")
+    parser.add_argument('--max_session', type=int, default=1)
+    parser.add_argument('--transport', type=str, default='webrtc')
+    parser.add_argument('--push_url', type=str, default='http://localhost:39999/rtc/v1/vc/?app=live&stream=livestream')
     parser.add_argument("--log-level", type=str, default="error", choices=["debug", "info", "warning", "error"], help="Logging level")
     return parser.parse_args()
 

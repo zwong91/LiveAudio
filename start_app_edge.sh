@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Activate the virtual environment
+conda activate rt
+
+# Optional HF configuration
+export HF_ENDPOINT="https://hf-mirror.com"
+
 # Start the app
 HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --certfile cf.pem --keyfile cf.key --port 8765 --vad-type pyannote --vad-args '{"auth_token": "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"}'
 
