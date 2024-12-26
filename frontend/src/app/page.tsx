@@ -21,11 +21,16 @@ export default function Home() {
 
   let manualClose = false;
   let audioContext: AudioContext | null = null;
+  let analyser: AnalyserNode;
+  let currentSourceNode: AudioBufferSourceNode | null = null;
+  let freqs;
   let audioBufferQueue: AudioBuffer[] = [];
 
   // Check if AudioContext is available in the browser
   if (typeof window !== "undefined" && window.AudioContext) {
     audioContext = new AudioContext();
+    analyser = audioContext.createAnalyser();
+    freqs = new Uint8Array(analyser.frequencyBinCount);
   }
 
   const audioManager = {
@@ -33,6 +38,12 @@ export default function Home() {
       if (isPlayingAudio) {
         setIsPlayingAudio(false);
       }
+
+      if (currentSourceNode) {
+        currentSourceNode.stop();
+        currentSourceNode = null;
+      }
+      audioBufferQueue = [];
     },
 
     playNewAudio: async (audioBlob: Blob) => {
@@ -119,19 +130,19 @@ export default function Home() {
 
     const buffer = audioBufferQueue.shift(); // Get the next audio buffer
     if (buffer && audioContext) {
-      const source = audioContext.createBufferSource();
-      source.buffer = buffer;
-
+      const currentSourceNode = audioContext.createBufferSource();
+      currentSourceNode.buffer = buffer;
+      //currentSourceNode.connect(analyser);
       // Connect the source to the audio context's output
-      source.connect(audioContext.destination);
+      currentSourceNode.connect(audioContext.destination);
 
       // When this audio ends, play the next one
-      source.onended = () => {
+      currentSourceNode.onended = () => {
         playAudioBufferQueue(); // Continue playing the next buffer
       };
 
       // Start playing the audio
-      source.start();
+      currentSourceNode.start();
 
       // Update the state to reflect the playing status
       setIsPlayingAudio(true);

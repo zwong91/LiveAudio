@@ -8,6 +8,28 @@ import asyncio
 
 import torch
 import numpy as np
+import pyloudnorm as pyln
+
+def calculate_audio_volume(audio: bytes, sample_rate: int) -> float:
+    audio_np = np.frombuffer(audio, dtype=np.int16)
+    audio_float = audio_np.astype(np.float64)
+
+    block_size = audio_np.size / sample_rate
+    meter = pyln.Meter(sample_rate, block_size=block_size)
+    loudness = meter.integrated_loudness(audio_float)
+
+    # Loudness goes from -20 to 80 (more or less), where -20 is quiet and 80 is
+    # loud. LUFS (Loudness Units relative to Full Scale)
+    loudness = normalize_value(loudness, -20, 80)
+
+    return loudness
+
+
+def normalize_value(value, min_value, max_value):
+    normalized = (value - min_value) / (max_value - min_value)
+    normalized_clamped = max(0, min(1, normalized))
+    return normalized_clamped
+
 
 def next_power_of_2(x):
     return 1 if x == 0 else 2 ** (x - 1).bit_length()
@@ -25,7 +47,8 @@ def int2float(sound):
     return sound
 
 async def save_audio_to_file(
-    audio_data, file_name, audio_dir="audio_files", audio_format="wav"
+    audio_data, file_name, audio_dir="audio_files", audio_format="wav",
+    channles=1, sample_width=2, sample_rate=16000
 ):
     """
     Saves the audio data to a file asynchronously.
@@ -47,12 +70,18 @@ async def save_audio_to_file(
         # Writing audio data directly, but first need to convert it to a valid byte format.
         # Mono, 16-bit PCM, 16000 Hz
         with wave.open(file_path, 'wb') as wave_file:
-            wave_file.setnchannels(1)  # mono audio
-            wave_file.setsampwidth(2)
-            wave_file.setframerate(16000)
+            wave_file.setnchannels(channles)  #default mono audio
+            wave_file.setsampwidth(sample_width)
+            wave_file.setframerate(sample_rate)
             wave_file.writeframes(audio_data)
     
     return file_path
+
+async def read_audio_file(file_path):
+    with wave.open(file_path, "rb") as wav_file:
+        frames = wav_file.readframes(wav_file.getnframes())
+    return frames
+
 
 def pack_ogg(io_buffer:BytesIO, data:np.ndarray, rate:int):
     with sf.SoundFile(io_buffer, mode='w', samplerate=rate, channels=1, format='ogg') as audio_file:
