@@ -77,7 +77,7 @@ class Client:
     def get_file_name(self):
         return f"{self.client_id}_{self.file_counter}.wav"
 
-    def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
-        self.buffering_strategy.process_audio(
+    async def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+        await self.buffering_strategy.process_audio(
             websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline
         )
