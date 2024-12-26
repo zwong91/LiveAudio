@@ -87,7 +87,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 # )
                 logging.warning("Warning in realtime processing: tried processing a new chunk while the previous one was still being processed")
                 return
-            self.client.scratch_buffer += self.client.buffer
+
+            # 处理累积的buffer
+            self.client.scratch_buffer.extend(self.client.buffer)
             self.client.buffer.clear()
             self.processing_flag = True
             # schedule the processing in a separate task
@@ -163,6 +165,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     end = time.time()
                     print(f"Total processing time: {end - start:.2f}s, text: {tts_text}")
                     self._update_client_state(updated_history)
+                    # 防止音频堆叠
                     await asyncio.sleep(3)
 
 
