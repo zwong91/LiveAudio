@@ -131,7 +131,7 @@ class OllamaLLM(LLMInterface):
         response = client.chat.completions.create(
             model=self.model,
             messages=messages,
-            max_tokens=32,
+            max_tokens=64,
             temperature=1,
         )
 
