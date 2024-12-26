@@ -170,6 +170,7 @@ class Server:
         self.app.get("/health")(self.health)
 
         self.app.websocket("/stream")(self.websocket_endpoint)
+        self.app.websocket("/stream-vc")(self.websocket_endpoint)
 
     async def startup(self):
         """Called on startup to set up additional services."""

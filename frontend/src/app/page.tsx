@@ -288,8 +288,8 @@ export default function Home() {
                 return;
               }
               console.log("WebSocket connection closed...");
-              setConnectionStatus("Reconnecting...");
-              setTimeout(reconnectWebSocket, 5000);
+              //setConnectionStatus("Reconnecting...");
+              //setTimeout(reconnectWebSocket, 5000);
             };
 
             websocket.onerror = (error) => {
