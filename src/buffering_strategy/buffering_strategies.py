@@ -82,7 +82,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             if self.processing_flag:
                 self.interrupt_flag = True
                 # FIXME: TO interrupt live-audio, start talking
-                self.client.buffer.clear()
                 asyncio.create_task(
                     self._send_interrupt_signal(websocket)
                 )
@@ -95,8 +94,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             asyncio.create_task(
                 self.process_audio_async(websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
             )
-
-
 
     async def _send_interrupt_signal(self, websocket):
         try:
@@ -141,35 +138,32 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             / (self.client.sampling_rate * self.client.samples_width)
         ) - self.chunk_offset_seconds
         if vad_results[-1]["end"] < last_segment_should_end_before:
-            if not self.interrupt_flag:
-                transcription = await asr_pipeline.transcribe(self.client)
-                if transcription["text"] != "":
-                    if not self.interrupt_flag:
-                        tts_text, updated_history = await llm_pipeline.generate_response(
-                            self.client.history, transcription["text"], True
-                        )
-                        # Stream audio chunks
-                        try:
-                            if tts_text != "":
-                                async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
-                                    if not self.interrupt_flag:
-                                        await websocket.send_bytes(chunk)
-                                    else:
-                                        raise StopAsyncIteration
+            transcription = await asr_pipeline.transcribe(self.client)
+            if transcription["text"] != "":
+                tts_text, updated_history = await llm_pipeline.generate_response(
+                    self.client.history, transcription["text"], True
+                )
+                # Stream audio chunks
+                try:
+                    async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
+                        if not self.interrupt_flag:
+                            await websocket.send_bytes(chunk)
+                        else:
+                            raise StopAsyncIteration
 
-                        except StopAsyncIteration:
-                            logging.warning("TTS stream interrupted.")
-                            # Send stop signal
-                            await self._send_interrupt_signal(websocket)
-                            
-                        except Exception as e:
-                            logging.error(f"An error occurred during TTS: {e}")
-                        finally:
-                            # Always clean up, no matter success or failure
-                            end = time.time()
-                            print(f"Total processing time: {end - start:.2f}s, text: {tts_text}")
-                            self._update_client_state(updated_history)
-
+                except StopAsyncIteration:
+                    logging.warning("TTS stream interrupted.")
+                    # Send stop signal
+                    await self._send_interrupt_signal(websocket)
+                    
+                except Exception as e:
+                    logging.error(f"An error occurred during TTS: {e}")
+                finally:
+                    # Always clean up, no matter success or failure
+                    end = time.time()
+                    print(f"Total processing time: {end - start:.2f}s, text: {tts_text}")
+                    self._update_client_state(updated_history)
+        await asyncio.sleep(1)
         self.processing_flag = False
         self.interrupt_flag = False
 
