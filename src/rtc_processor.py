@@ -23,9 +23,6 @@ from fractions import Fraction
 import soundfile as sf
 from tqdm import tqdm
 
-from rtlipsync.utils.utils import get_file_type, get_video_fps, datagen, load_diffusion_model, load_audio_model
-from rtlipsync.utils.blending import get_image, get_image_prepare_material, get_image_blending
-from .museasr import MuseASR
 import asyncio
 from av import AudioFrame, VideoFrame
 import gc
@@ -207,84 +204,13 @@ def __mirror_index(size, index):
 
 @torch.no_grad()
 def inference(render_event, batch_size, latents_out_path, audio_feat_queue, audio_out_queue, res_frame_queue, quit_event):
-    # Check if the model is loaded properly
-    if RTCProcessor._diffusion_model is None:
-        print("Diffusion model not loaded in subprocess, loading model now...")
-        # Load the diffusion model in the subprocess
-        RTCProcessor._diffusion_model = load_diffusion_model()
-    
-    # Reuse the cached models instead of reloading them
-    vae, unet, pe = RTCProcessor._diffusion_model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     timesteps = torch.tensor([0], device=device)
-    pe = pe.half()
-    vae.vae = vae.vae.half()
-    unet.model = unet.model.half()
-
-    input_latent_list_cycle = torch.load(latents_out_path)
-    length = len(input_latent_list_cycle)
-    index = 0
-    count = 0
-    counttime = 0
-    print('start inference')
-    try:
-        while not quit_event.is_set():  # Check if the quit_event is set to stop the loop
-            if render_event.is_set():
-                starttime = time.perf_counter()
-                try:
-                    whisper_chunks = audio_feat_queue.get(block=True, timeout=1)
-                except queue.Empty:
-                    continue
-                is_all_silence = True
-                audio_frames = []
-                for _ in range(batch_size * 2):
-                    frame, frame_type  = audio_out_queue.get()
-                    audio_frames.append((frame, frame_type ))
-                    if frame_type  == 0:
-                        is_all_silence = False
-                if is_all_silence:
-                    for i in range(batch_size):
-                        res_frame_queue.put((None, __mirror_index(length, index), audio_frames[i * 2:i * 2 + 2]))
-                        index = index + 1
-                else:
-                    t = time.perf_counter()
-                    whisper_batch = np.stack(whisper_chunks)
-                    latent_batch = []
-                    for i in range(batch_size):
-                        idx = __mirror_index(length, index + i)
-                        latent = input_latent_list_cycle[idx]
-                        latent_batch.append(latent)
-                    latent_batch = torch.cat(latent_batch, dim=0)
-
-                    audio_feature_batch = torch.from_numpy(whisper_batch)
-                    audio_feature_batch = audio_feature_batch.to(device=device, dtype=unet.model.dtype)
-                    audio_feature_batch = pe(audio_feature_batch)
-                    latent_batch = latent_batch.to(dtype=unet.model.dtype)
-
-                    pred_latents = unet.model(latent_batch,
-                                            timesteps,
-                                            encoder_hidden_states=audio_feature_batch).sample
-
-                    recon = vae.decode_latents(pred_latents)
-                    counttime += (time.perf_counter() - t)
-                    count += batch_size
-                    if count >= 100:
-                        print(f"Actual average inference FPS: {count / counttime:.4f}")
-                        count = 0
-                        counttime = 0
-                    for i, res_frame in enumerate(recon):
-                        res_frame_queue.put((res_frame, __mirror_index(length, index), audio_frames[i * 2:i * 2 + 2]))
-                        index = index + 1
-            else:
-                time.sleep(1)
-    except Exception as e:
-        print(f"Inference error: {e}")
-    
-    finally:
-        # Cleanup GPU resources after inference is done
-        torch.cuda.empty_cache()
-        print("Inference process stopped and cleaned up GPU resources.")
-        gc.collect()  # Garbage collection to free up any remaining memory
+   
+    # Cleanup GPU resources after inference is done
+    torch.cuda.empty_cache()
+    print("Inference process stopped and cleaned up GPU resources.")
+    gc.collect()  # Garbage collection to free up any remaining memory
 
 
 # import torch.multiprocessing as tmp
@@ -299,45 +225,16 @@ class RTCProcessor(BaseProcessor):
     @torch.no_grad()
     def __init__(self, opt):
         super().__init__(opt)
-        self.opt = opt
         self.W = opt.W
         self.H = opt.H
 
         self.fps = opt.fps
-        self.avatar_id = opt.avatar_id
         self.video_path = ''
-        self.bbox_shift = opt.bbox_shift
-        self.avatar_path = f"./results/avatars/{self.avatar_id}"
-        self.full_imgs_path = f"{self.avatar_path}/full_imgs"
-        self.coords_path = f"{self.avatar_path}/coords.pkl"
-        self.latents_out_path = f"{self.avatar_path}/latents.pt"
-        self.video_out_path = f"{self.avatar_path}/vid_output/"
-        self.mask_out_path = f"{self.avatar_path}/mask"
-        self.mask_coords_path = f"{self.avatar_path}/mask_coords.pkl"
-        self.avatar_info_path = f"{self.avatar_path}/avator_info.json"
-        self.avatar_info = {
-            "avatar_id": self.avatar_id,
-            "video_path": self.video_path,
-            "bbox_shift": self.bbox_shift
-        }
-        self.batch_size = opt.batch_size
         self.idx = 0
         self.res_frame_queue = mp.Queue(self.batch_size * 2)
 
-        # Load models and avatar data
-        self.__loadmodels()
-        self.__loadavatar()
-
-        # Initialize ASR and start inference
-        self.asr = MuseASR(opt, self, self.audio_processor)
-        self.asr.warm_up()
-
         self.render_event = mp.Event()
         self.quit_event = mp.Event()  # New quit event to stop inference gracefully
-        self.process = mp.Process(target=inference, args=(self.render_event, self.batch_size, self.latents_out_path,
-                                           self.asr.feat_queue, self.asr.output_queue, self.res_frame_queue, self.quit_event))
-        
-        self.process.start() 
         
         self.loop = asyncio.get_event_loop()
         
@@ -378,16 +275,7 @@ class RTCProcessor(BaseProcessor):
 
     @torch.no_grad()
     def __loadavatar(self):
-        with open(self.coords_path, 'rb') as f:
-            self.coord_list_cycle = pickle.load(f)
-        input_img_list = glob.glob(os.path.join(self.full_imgs_path, '*.[jpJP][pnPN]*[gG]'))
-        input_img_list = sorted(input_img_list, key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
-        self.frame_list_cycle = read_imgs(input_img_list)
-        with open(self.mask_coords_path, 'rb') as f:
-            self.mask_coords_list_cycle = pickle.load(f)
-        input_mask_list = glob.glob(os.path.join(self.mask_out_path, '*.[jpJP][pnPN]*[gG]'))
-        input_mask_list = sorted(input_mask_list, key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
-        self.mask_list_cycle = read_imgs(input_mask_list)
+        pass
 
     @torch.no_grad()
     def __mirror_index(self, index):
@@ -466,7 +354,7 @@ class RTCProcessor(BaseProcessor):
 
                 if self.recording:
                     self.recordq_audio.put(new_audio_frame)
-        print('musereal process_frames thread stop')
+        print('rtc process_frames thread stop')
 
     def render(self, quit_event, loop=None, audio_track=None, video_track=None):
         self.init_customindex()
