@@ -220,7 +220,7 @@ class Server:
 
                     client.append_audio_data(bytes, vc_uid)
                     # 异步task处理音频
-                    await self._process_audio(client, websocket)
+                    self._process_audio(client, websocket)
 
             except WebSocketDisconnect as e:
                 logging.error(f"Connection with {client.client_id} closed: {e}")
@@ -229,9 +229,9 @@ class Server:
                 logging.error(f"Error handling audio for {client.client_id}: {e}")
                 break
 
-    async def _process_audio(self, client, websocket):
+    def _process_audio(self, client, websocket):
         try:
-            await client.process_audio(
+            client.process_audio(
                 websocket, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
             )
         except RuntimeError as e:

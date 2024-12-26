@@ -35,7 +35,7 @@ class Client:
             "language": None,
             "processing_strategy": "silence_at_end_of_chunk",
             "processing_args": {
-                "chunk_length_seconds": 1.5,
+                "chunk_length_seconds": 1,
                 "chunk_offset_seconds": 0.1,
             },
         }
@@ -77,7 +77,7 @@ class Client:
     def get_file_name(self):
         return f"{self.client_id}_{self.file_counter}.wav"
 
-    async def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
-        await self.buffering_strategy.process_audio(
+    def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+        self.buffering_strategy.process_audio(
             websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline
         )

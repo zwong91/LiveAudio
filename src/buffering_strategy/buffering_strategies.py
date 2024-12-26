@@ -60,7 +60,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.interrupt_flag = False
         self.processing_flag = False
 
-    async def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+    def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
         """
         Process audio chunks by checking their length and scheduling
         asynchronous processing.
@@ -91,12 +91,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             self.client.buffer.clear()
             self.processing_flag = True
             # schedule the processing in a separate task
-            task = asyncio.create_task(
+            asyncio.create_task(
                 self.process_audio_async(websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
             )
-            # 等待任务完成并获取结果
-            result = await task
-            print(f"Async task result: {result}")
 
     async def _send_interrupt_signal(self, websocket):
         try:
@@ -157,7 +154,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 except StopAsyncIteration:
                     logging.warning("TTS stream interrupted.")
                     # Send stop signal
-                    await self._send_interrupt_signal(websocket)
+                    # await self._send_interrupt_signal(websocket)
                     
                 except Exception as e:
                     logging.error(f"An error occurred during TTS: {e}")
@@ -166,6 +163,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     end = time.time()
                     print(f"Total processing time: {end - start:.2f}s, text: {tts_text}")
                     self._update_client_state(updated_history)
+        await asyncio.sleep(3)
         self.processing_flag = False
         self.interrupt_flag = False
 

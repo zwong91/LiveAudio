@@ -33,6 +33,7 @@ export default function Home() {
       if (isPlayingAudio) {
         setIsPlayingAudio(false);
       }
+      audioBufferQueue = []
     },
 
     playNewAudio: async (audioBlob: Blob) => {
