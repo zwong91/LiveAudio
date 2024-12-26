@@ -82,6 +82,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             if self.processing_flag:
                 self.interrupt_flag = True
                 # FIXME: TO interrupt live-audio, start talking
+                self.client.buffer.clear()
                 asyncio.create_task(
                     self._send_interrupt_signal(websocket)
                 )
