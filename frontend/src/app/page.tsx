@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import styles from "./page.module.css";
 import msgpack from 'msgpack-lite';
 
@@ -69,12 +69,11 @@ export default function Home() {
     }
   };
 
-
   // 检查 ArrayBuffer 是否包含 "END_OF_AUDIO" 并处理音频数据
   function checkAndBufferAudio(audioData: ArrayBuffer) {
     // 将 ArrayBuffer 转为字符串
     const text = new TextDecoder("utf-8").decode(audioData);
-  
+
     if (text.includes("END_OF_AUDIO")) {
       console.log("Detected END_OF_AUDIO signal in audioData");
       // 停止当前音频播放
@@ -84,14 +83,8 @@ export default function Home() {
       setIsPlayingAudio(false);
       return;
     }
-  
-    setIsRecording(false);
-    setIsPlayingAudio(true);
     // 如果不包含 END_OF_AUDIO，则缓冲音频数据
     bufferAudio(audioData);
-
-    setIsRecording(true);
-    setIsPlayingAudio(false);
   }
 
   // Buffer audio and add it to the queue
@@ -138,7 +131,10 @@ export default function Home() {
     }
   }
 
+  //const SOCKET_URL = "wss://gtp.aleopool.cc/stream";
   const SOCKET_URL = "wss://audio.enty.services/stream";
+
+ let websocket: WebSocket | null = null;
 
   // Initialize WebSocket and media devices
   useEffect(() => {
@@ -149,6 +145,133 @@ export default function Home() {
       try {
         wakeLock = await navigator.wakeLock.request("screen");
         console.log("Screen wake lock acquired");
+
+        const script = document.createElement("script");
+        script.src = "https://www.WebRTC-Experiment.com/RecordRTC.js";
+        script.onload = () => {
+          const RecordRTC = (window as any).RecordRTC;
+          const StereoAudioRecorder = (window as any).StereoAudioRecorder;
+    
+          if (navigator) {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+            console.log("RecordRTC start.");
+              const reconnectWebSocket = () => {
+                if (manualClose || isCallEnded) {
+                  console.log("Reconnection prevented by manualClose or isCallEnded flag.");
+                  return;
+                }
+    
+                if (websocket) websocket.close();
+                websocket = new WebSocket(SOCKET_URL);
+                setSocket(websocket);
+    
+                websocket.onopen = () => {
+                  console.log("client connected to websocket");
+                  setConnectionStatus("Connected");
+                  setIsInCall(true);
+                  const recorder = new RecordRTC(stream, {
+                    type: 'audio',
+                    recorderType: StereoAudioRecorder,
+                    mimeType: 'audio/wav',
+                    timeSlice: 100,
+                    desiredSampRate: 16000,
+                    numberOfAudioChannels: 1,
+                    ondataavailable: (blob: Blob) => {
+                      if (blob.size > 0) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          if (reader.result) {
+                            const base64data = arrayBufferToBase64(reader.result as ArrayBuffer);
+    
+                            const message = {
+                              event: "start",
+                              request: {
+                                audio: base64data,  // Audio data as a binary array or ArrayBuffer
+                                latency: "normal",       // Latency type
+                                format: "opus",          // Audio format (opus, mp3, or wav)
+                                prosody: {               // Optional prosody settings
+                                  speed: 1.0,            // Speech speed
+                                  volume: 0              // Volume adjustment in dB
+                                },
+                                vc_uid: "c9cf4e49"   // A unique reference ID
+                              }
+                            };
+                            // Encode the data using MessagePack
+                            // const encodedData = msgpack.encode(message);
+                            const encodedData = JSON.stringify(message);
+                            if (websocket) {
+                              websocket.send(encodedData);
+                            } else {
+                              console.error("WebSocket is null, cannot send data.");
+                            }
+                          } else {
+                            console.error("FileReader result is null");
+                          }
+                        };
+                        reader.readAsArrayBuffer(blob);
+                      }
+                    }
+                  });
+    
+                  recorder.startRecording();
+                };
+    
+                websocket.onmessage = (event) => {
+                  try {
+
+                    setIsRecording(false);
+                    setIsPlayingAudio(true);
+                    let audioData: ArrayBuffer;
+    
+                    // 如果 event.data 是 ArrayBuffer，直接处理
+                    if (event.data instanceof ArrayBuffer) {
+                      audioData = event.data; // 直接是 ArrayBuffer 类型
+                    } else if (event.data instanceof Blob) {
+                      // 如果是 Blob 类型，使用 FileReader 将其转换为 ArrayBuffer
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        audioData = reader.result as ArrayBuffer;
+                        checkAndBufferAudio(audioData);
+                      };
+                      reader.readAsArrayBuffer(event.data);
+                      return; // 需要提前退出，等 FileReader 读取完成后再继续处理
+                    } else {
+                      throw new Error("Received unexpected data type from WebSocket");
+                    }
+    
+                    // 调用 bufferAudio 处理音频数据
+                    checkAndBufferAudio(audioData);
+                  } catch (error) {
+                    console.error("Error processing WebSocket message:", error);
+                  }
+                };
+    
+                websocket.onclose = () => {
+                  if (manualClose || isCallEnded) return; // Don't reconnect if the call has ended
+                  if (connectionStatus === "Closed") {
+                    console.log("WebSocket 已关闭");
+                    return;
+                  }
+                  console.log("WebSocket connection closed...");
+                  setConnectionStatus("Reconnecting...");
+                  setTimeout(reconnectWebSocket, 5000);
+                };
+    
+                websocket.onerror = (error) => {
+                  console.error("WebSocket error:", error);
+                  websocket?.close();
+                };
+              };
+    
+              if (manualClose || isCallEnded) return;
+              console.log("client start connect to websocket");
+              reconnectWebSocket();
+            }).catch((error) => {
+              console.error("Error with getUserMedia", error);
+            });
+          }
+        };
+        document.body.appendChild(script);
       } catch (error) {
         console.error("Failed to acquire wake lock", error);
       }
@@ -165,155 +288,7 @@ export default function Home() {
         });
       }
     };
-  }, []);
-
-  // Access the microphone and start recording
-  useEffect(() => {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-        setMediaRecorder(new MediaRecorder(stream));
-      }).catch((error) => {
-        console.error("Error accessing media devices.", error);
-      });
-    } else {
-      console.error("Media devices API not supported.");
-    }
-  }, []);
-
-  // Handle WebSocket connection and messaging
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://www.WebRTC-Experiment.com/RecordRTC.js";
-    script.onload = () => {
-      const RecordRTC = (window as any).RecordRTC;
-      const StereoAudioRecorder = (window as any).StereoAudioRecorder;
-
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-          let websocket: WebSocket | null = null;
-
-          const reconnectWebSocket = () => {
-
-            if (manualClose) { // 再檢查 isCallEnded，雙重保險
-              console.log("Reconnection prevented by isCallEnded flag.");
-              return;
-            }
-
-            if (websocket) websocket.close();
-            websocket = new WebSocket(SOCKET_URL);
-            setSocket(websocket);
-
-            websocket.onopen = () => {
-              console.log("client connected to websocket");
-              setConnectionStatus("Connected");
-
-              const recorder = new RecordRTC(stream, {
-                type: 'audio',
-                recorderType: StereoAudioRecorder,
-                mimeType: 'audio/wav',
-                timeSlice: 100,
-                desiredSampRate: 16000,
-                numberOfAudioChannels: 1,
-                ondataavailable: (blob: Blob) => {
-                  if (blob.size > 0) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      if (reader.result) {
-                        const base64data = arrayBufferToBase64(reader.result as ArrayBuffer);
-
-                        const message = {
-                          event: "start",
-                          request: {
-                            audio: base64data,  // Audio data as a binary array or ArrayBuffer
-                            latency: "normal",       // Latency type
-                            format: "opus",          // Audio format (opus, mp3, or wav)
-                            prosody: {               // Optional prosody settings
-                              speed: 1.0,            // Speech speed
-                              volume: 0              // Volume adjustment in dB
-                            },
-                            vc_uid: "c9cf4e49"   // A unique reference ID
-                          }
-                        };
-                        // Encode the data using MessagePack
-                        //const encodedData = msgpack.encode(message);
-                        const encodedData = JSON.stringify(message);
-                        if (websocket) {
-                          websocket.send(encodedData);
-                        } else {
-                          console.error("WebSocket is null, cannot send data.");
-                        }
-                      } else {
-                        console.error("FileReader result is null");
-                      }
-                    };
-                    reader.readAsArrayBuffer(blob);
-                  }
-                }
-              });
-
-              recorder.startRecording();
-            };
-
-            websocket.onmessage = (event) => {
-              try {
-                let audioData: ArrayBuffer;
-
-                // 如果 event.data 是 ArrayBuffer，直接处理
-                if (event.data instanceof ArrayBuffer) {
-                  audioData = event.data; // 直接是 ArrayBuffer 类型
-                } else if (event.data instanceof Blob) {
-                  // 如果是 Blob 类型，使用 FileReader 将其转换为 ArrayBuffer
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    audioData = reader.result as ArrayBuffer;
-                    checkAndBufferAudio(audioData);
-                  };
-                  reader.readAsArrayBuffer(event.data);
-                  return; // 需要提前退出，等 FileReader 读取完成后再继续处理
-                } else {
-                  throw new Error("Received unexpected data type from WebSocket");
-                }
-
-                // 调用 bufferAudio 处理音频数据
-                checkAndBufferAudio(audioData);
-              } catch (error) {
-                console.error("Error processing WebSocket message:", error);
-              }
-            };
-
-            websocket.onclose = () => {
-              if (manualClose) return; // Don't reconnect if the call has ended
-              if (connectionStatus === "Closed") {
-                console.log("WebSocket 已关闭");
-                return;
-              }
-              console.log("WebSocket connection closed...");
-              setConnectionStatus("Reconnecting...");
-              setTimeout(reconnectWebSocket, 5000);
-            };
-
-            websocket.onerror = (error) => {
-              console.error("WebSocket error:", error);
-              websocket?.close();
-            };
-          };
-
-          if (manualClose) return;
-          console.log("client start connect to websocket");
-          reconnectWebSocket();
-        }).catch((error) => {
-          console.error("Error with getUserMedia", error);
-        });
-      }
-    };
-    document.body.appendChild(script);
-
-    return () => {
-      if (socket) {
-        socket.close();
-      }
-    };
-  }, [isCallEnded, connectionStatus]);
+  }, [manualClose, isCallEnded]);
 
   // Handle media recorder pause/resume
   useEffect(() => {
@@ -340,11 +315,10 @@ export default function Home() {
   const [isInCall, setIsInCall] = useState(true);
 
   const endCall = async () => {
-
-    manualClose = true
+    manualClose = true;
     setConnectionStatus("Closed");
     setIsCallEnded(true); // Set isCallEnded to true to prevent reconnection
-  
+
     if (socket) {
       socket.close();
       setSocket(null);
@@ -359,7 +333,6 @@ export default function Home() {
     setIsInCall(false);
     setIsRecording(false);
     setIsPlayingAudio(false);
-
   };
 
   return (
@@ -385,27 +358,27 @@ export default function Home() {
             <img src="/ai-avatar.png" alt="AI" className={styles.avatar} />
           </div>
           <div className={styles.status}>
-            <span className={isInCall ? isPlayingAudio ? styles.speakingAnimation : styles.listeningAnimation : styles.offlineAnimation}>
-              {isInCall ? isPlayingAudio ? "AI正在说话" : "AI正在听" : "AI 离线"}
+            <span className={isInCall ? (isPlayingAudio ? styles.speakingAnimation : styles.listeningAnimation) : styles.offlineAnimation}>
+              {isInCall ? (isPlayingAudio ? "AI正在说话" : "AI正在听") : "AI 离线"}
             </span>
           </div>
         </div>
       </div>
 
       <div className={styles.controls}>
-          <button
-            className={isInCall ? styles.endCallButton : styles.startCallButton}
-            onClick={() => {
-              if (isInCall) {
-                endCall();
-              } else {
-                window.location.reload();
-              }
-            }}
-          >
-            {isInCall ? "结束通话" : "重新通话"}
-          </button>
-        </div>
+        <button
+          className={isInCall ? styles.endCallButton : styles.startCallButton}
+          onClick={() => {
+            if (isInCall) {
+              endCall();
+            } else {
+              window.location.reload();
+            }
+          }}
+        >
+          {isInCall ? "结束通话" : "重新通话"}
+        </button>
+      </div>
     </div>
   );
 }
