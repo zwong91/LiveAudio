@@ -31,9 +31,9 @@ import signal
 
 class BaseProcessor:
     def __init__(self, opt):
-        self.opt = opt
+        self.fps = 30
         self.sample_rate = 16000
-        self.chunk = self.sample_rate // opt.fps  # 320 samples per chunk (20ms * 16000 / 1000)
+        self.chunk = self.sample_rate // self.fps  # 320 samples per chunk (20ms * 16000 / 1000)
 
         self.speaking = False
 
