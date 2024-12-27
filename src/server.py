@@ -306,7 +306,7 @@ class Server:
             logging.info(f"Track {track.kind} received")
             if track.kind == "audio":
                 audio_track = ClientStreamTrack(
-                    self.relay.subscribe(
+                    relay.subscribe(
                         track=track,
                     ),
                     "audio",
