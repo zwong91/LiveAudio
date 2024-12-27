@@ -309,7 +309,7 @@ class Server:
                     self.relay.subscribe(
                         track=track,
                     ),
-                    kind="audio",
+                    "audio",
                     client,
                     self.vad_pipeline,
                     self.asr_pipeline,
@@ -334,7 +334,7 @@ class Server:
             self.relay.subscribe(
                 track=track,
                 ),
-            kind="audio",
+            "audio",
             client,
             self.vad_pipeline,
             self.asr_pipeline,
@@ -384,7 +384,7 @@ class Server:
             self.relay.subscribe(
                 track=track,
                 ),
-            kind="audio",
+            "audio",
             client,
             self.vad_pipeline,
             self.asr_pipeline,
