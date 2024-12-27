@@ -1,4 +1,4 @@
-# Live-Audio
+# LiveAudio
 
 Welcome to the Live-Audio repository! This project hosts two exciting applications leveraging advanced audio understand and speech generation models to bring your audio experiences to life:
 
