@@ -83,9 +83,6 @@ export default function Home() {
       setIsPlayingAudio(false);
       return;
     }
-
-    setIsRecording(false);
-    setIsPlayingAudio(true);
     // 如果不包含 END_OF_AUDIO，则缓冲音频数据
     bufferAudio(audioData);
   }
@@ -148,6 +145,133 @@ export default function Home() {
       try {
         wakeLock = await navigator.wakeLock.request("screen");
         console.log("Screen wake lock acquired");
+
+        const script = document.createElement("script");
+        script.src = "https://www.WebRTC-Experiment.com/RecordRTC.js";
+        script.onload = () => {
+          const RecordRTC = (window as any).RecordRTC;
+          const StereoAudioRecorder = (window as any).StereoAudioRecorder;
+    
+          if (navigator) {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+            console.log("RecordRTC start.");
+              const reconnectWebSocket = () => {
+                if (manualClose || isCallEnded) {
+                  console.log("Reconnection prevented by manualClose or isCallEnded flag.");
+                  return;
+                }
+    
+                if (websocket) websocket.close();
+                websocket = new WebSocket(SOCKET_URL);
+                setSocket(websocket);
+    
+                websocket.onopen = () => {
+                  console.log("client connected to websocket");
+                  setConnectionStatus("Connected");
+                  setIsInCall(true);
+                  const recorder = new RecordRTC(stream, {
+                    type: 'audio',
+                    recorderType: StereoAudioRecorder,
+                    mimeType: 'audio/wav',
+                    timeSlice: 100,
+                    desiredSampRate: 16000,
+                    numberOfAudioChannels: 1,
+                    ondataavailable: (blob: Blob) => {
+                      if (blob.size > 0) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          if (reader.result) {
+                            const base64data = arrayBufferToBase64(reader.result as ArrayBuffer);
+    
+                            const message = {
+                              event: "start",
+                              request: {
+                                audio: base64data,  // Audio data as a binary array or ArrayBuffer
+                                latency: "normal",       // Latency type
+                                format: "opus",          // Audio format (opus, mp3, or wav)
+                                prosody: {               // Optional prosody settings
+                                  speed: 1.0,            // Speech speed
+                                  volume: 0              // Volume adjustment in dB
+                                },
+                                vc_uid: "c9cf4e49"   // A unique reference ID
+                              }
+                            };
+                            // Encode the data using MessagePack
+                            // const encodedData = msgpack.encode(message);
+                            const encodedData = JSON.stringify(message);
+                            if (websocket) {
+                              websocket.send(encodedData);
+                            } else {
+                              console.error("WebSocket is null, cannot send data.");
+                            }
+                          } else {
+                            console.error("FileReader result is null");
+                          }
+                        };
+                        reader.readAsArrayBuffer(blob);
+                      }
+                    }
+                  });
+    
+                  recorder.startRecording();
+                };
+    
+                websocket.onmessage = (event) => {
+                  try {
+
+                    setIsRecording(false);
+                    setIsPlayingAudio(true);
+                    let audioData: ArrayBuffer;
+    
+                    // 如果 event.data 是 ArrayBuffer，直接处理
+                    if (event.data instanceof ArrayBuffer) {
+                      audioData = event.data; // 直接是 ArrayBuffer 类型
+                    } else if (event.data instanceof Blob) {
+                      // 如果是 Blob 类型，使用 FileReader 将其转换为 ArrayBuffer
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        audioData = reader.result as ArrayBuffer;
+                        checkAndBufferAudio(audioData);
+                      };
+                      reader.readAsArrayBuffer(event.data);
+                      return; // 需要提前退出，等 FileReader 读取完成后再继续处理
+                    } else {
+                      throw new Error("Received unexpected data type from WebSocket");
+                    }
+    
+                    // 调用 bufferAudio 处理音频数据
+                    checkAndBufferAudio(audioData);
+                  } catch (error) {
+                    console.error("Error processing WebSocket message:", error);
+                  }
+                };
+    
+                websocket.onclose = () => {
+                  if (manualClose || isCallEnded) return; // Don't reconnect if the call has ended
+                  if (connectionStatus === "Closed") {
+                    console.log("WebSocket 已关闭");
+                    return;
+                  }
+                  console.log("WebSocket connection closed...");
+                  setConnectionStatus("Reconnecting...");
+                  setTimeout(reconnectWebSocket, 5000);
+                };
+    
+                websocket.onerror = (error) => {
+                  console.error("WebSocket error:", error);
+                  websocket?.close();
+                };
+              };
+    
+              if (manualClose || isCallEnded) return;
+              console.log("client start connect to websocket");
+              reconnectWebSocket();
+            }).catch((error) => {
+              console.error("Error with getUserMedia", error);
+            });
+          }
+        };
+        document.body.appendChild(script);
       } catch (error) {
         console.error("Failed to acquire wake lock", error);
       }
@@ -165,153 +289,6 @@ export default function Home() {
       }
     };
   }, []);
-
-  // Access the microphone and start recording
-  useEffect(() => {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-        setMediaRecorder(new MediaRecorder(stream));
-      }).catch((error) => {
-        console.error("Error accessing media devices.", error);
-      });
-    } else {
-      console.error("Media devices API not supported.");
-    }
-  }, []);
-
-  // Handle WebSocket connection and messaging
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://www.WebRTC-Experiment.com/RecordRTC.js";
-    script.onload = () => {
-      const RecordRTC = (window as any).RecordRTC;
-      const StereoAudioRecorder = (window as any).StereoAudioRecorder;
-
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-
-          const reconnectWebSocket = () => {
-            if (manualClose || isCallEnded) {
-              console.log("Reconnection prevented by manualClose or isCallEnded flag.");
-              return;
-            }
-
-            if (websocket) websocket.close();
-            websocket = new WebSocket(SOCKET_URL);
-            setSocket(websocket);
-
-            websocket.onopen = () => {
-              console.log("client connected to websocket");
-              setConnectionStatus("Connected");
-              setIsInCall(true);
-              const recorder = new RecordRTC(stream, {
-                type: 'audio',
-                recorderType: StereoAudioRecorder,
-                mimeType: 'audio/wav',
-                timeSlice: 100,
-                desiredSampRate: 16000,
-                numberOfAudioChannels: 1,
-                ondataavailable: (blob: Blob) => {
-                  if (blob.size > 0) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      if (reader.result) {
-                        const base64data = arrayBufferToBase64(reader.result as ArrayBuffer);
-
-                        const message = {
-                          event: "start",
-                          request: {
-                            audio: base64data,  // Audio data as a binary array or ArrayBuffer
-                            latency: "normal",       // Latency type
-                            format: "opus",          // Audio format (opus, mp3, or wav)
-                            prosody: {               // Optional prosody settings
-                              speed: 1.0,            // Speech speed
-                              volume: 0              // Volume adjustment in dB
-                            },
-                            vc_uid: "c9cf4e49"   // A unique reference ID
-                          }
-                        };
-                        // Encode the data using MessagePack
-                        // const encodedData = msgpack.encode(message);
-                        const encodedData = JSON.stringify(message);
-                        if (websocket) {
-                          websocket.send(encodedData);
-                        } else {
-                          console.error("WebSocket is null, cannot send data.");
-                        }
-                      } else {
-                        console.error("FileReader result is null");
-                      }
-                    };
-                    reader.readAsArrayBuffer(blob);
-                  }
-                }
-              });
-
-              recorder.startRecording();
-            };
-
-            websocket.onmessage = (event) => {
-              try {
-                let audioData: ArrayBuffer;
-
-                // 如果 event.data 是 ArrayBuffer，直接处理
-                if (event.data instanceof ArrayBuffer) {
-                  audioData = event.data; // 直接是 ArrayBuffer 类型
-                } else if (event.data instanceof Blob) {
-                  // 如果是 Blob 类型，使用 FileReader 将其转换为 ArrayBuffer
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    audioData = reader.result as ArrayBuffer;
-                    checkAndBufferAudio(audioData);
-                  };
-                  reader.readAsArrayBuffer(event.data);
-                  return; // 需要提前退出，等 FileReader 读取完成后再继续处理
-                } else {
-                  throw new Error("Received unexpected data type from WebSocket");
-                }
-
-                // 调用 bufferAudio 处理音频数据
-                checkAndBufferAudio(audioData);
-              } catch (error) {
-                console.error("Error processing WebSocket message:", error);
-              }
-            };
-
-            websocket.onclose = () => {
-              if (manualClose || isCallEnded) return; // Don't reconnect if the call has ended
-              if (connectionStatus === "Closed") {
-                console.log("WebSocket 已关闭");
-                return;
-              }
-              console.log("WebSocket connection closed...");
-              //setConnectionStatus("Reconnecting...");
-              //setTimeout(reconnectWebSocket, 5000);
-            };
-
-            websocket.onerror = (error) => {
-              console.error("WebSocket error:", error);
-              websocket?.close();
-            };
-          };
-
-          if (manualClose || isCallEnded) return;
-          console.log("client start connect to websocket");
-          reconnectWebSocket();
-        }).catch((error) => {
-          console.error("Error with getUserMedia", error);
-        });
-      }
-    };
-    document.body.appendChild(script);
-
-    return () => {
-      if (socket) {
-        socket.close();
-        setSocket(null);
-      }
-    };
-  }, [isCallEnded, connectionStatus]);
 
   // Handle media recorder pause/resume
   useEffect(() => {
