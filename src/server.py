@@ -227,7 +227,7 @@ class Server:
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
-            logger.info(f"Connection state is {pc.connectionState}")
+            logging.info(f"Connection state is {pc.connectionState}")
             if pc.connectionState in ["failed", "closed"]:
                 await pc.close()
                 self.pcs.discard(pc)
@@ -343,7 +343,7 @@ class Server:
 
                 elif msg_type == 'stop':
                     if sessionid is not None:
-                        logger.info(f"Session {sessionid} ended.")
+                        logging.info(f"Session {sessionid} ended.")
                         # Clean up session
                         if sessionid in self.connected_rtcclients:
                             del self.connected_rtcclients[sessionid]

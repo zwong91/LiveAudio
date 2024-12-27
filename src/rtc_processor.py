@@ -1,4 +1,4 @@
-# musereal.py
+# vcs.py
 
 import math
 import fractions
@@ -277,12 +277,12 @@ class RTCProcessor(BaseProcessor):
 
         self.render_event.set()
         while not quit_event.is_set():
-            self.asr.run_step()
+            #self.asr.run_step()
             if video_track._queue.qsize() >= 1.5 * self.opt.batch_size:
                 print('Sleeping, video queue size:', video_track._queue.qsize())
                 time.sleep(0.04 * video_track._queue.qsize() * 0.8)
         self.render_event.clear()
-        print('musereal render thread stop')
+        print('vcs render thread stop')
 
     @torch.no_grad()
     async def get_video_frame(self):
