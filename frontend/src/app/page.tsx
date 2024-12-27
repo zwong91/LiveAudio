@@ -86,88 +86,101 @@ const useWebRTC = (
 ) => {
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [isCallEnded, setIsCallEnded] = useState(false);
-  const peerConnection = new RTCPeerConnection();
+  const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
 
   useEffect(() => {
-    const setupConnection = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((track) =>
-          peerConnection.addTransceiver(track, { direction: "sendrecv" })
-        );
+    // Ensure WebRTC only runs in the browser
+    if (typeof window !== "undefined" && window.RTCPeerConnection) {
+      const pc = new RTCPeerConnection();
+      setPeerConnection(pc);
 
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-
-        const response = await fetch(`${BASE_URL}/offer`, {
-          method: "POST",
-          body: offer.sdp,
-          headers: { "Content-Type": "application/sdp" },
-        });
-
-        const answer = await response.text();
-        await peerConnection.setRemoteDescription({ sdp: answer, type: "answer" });
-
-        setConnectionStatus("Connected");
-      } catch (error) {
-        console.error("WebRTC 初始化失败:", error);
-        setConnectionStatus("Disconnected");
-      }
-    };
-
-    setupConnection();
-
-    return () => {
-      peerConnection.close();
-      setConnectionStatus("Closed");
-    };
-  }, [BASE_URL, peerConnection]);
-
-  useEffect(() => {
-    peerConnection.ondatachannel = (event) => {
-      const dataChannel = event.channel;
-
-      dataChannel.onopen = () => {
-        console.log("DataChannel opened:", dataChannel.label);
-      };
-
-      dataChannel.onmessage = async (event) => {
-        console.log("Received message:", event.data);
-
+      const setupConnection = async () => {
         try {
-          let audioData: ArrayBuffer;
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach((track) =>
+            pc.addTransceiver(track, { direction: "sendrecv" })
+          );
 
-          if (event.data instanceof ArrayBuffer) {
-            audioData = event.data;
-          } else if (event.data instanceof Blob) {
-            const arrayBuffer = await event.data.arrayBuffer();
-            audioData = arrayBuffer;
-          } else {
-            throw new Error("Unsupported data type received");
-          }
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
 
-          checkAndBufferAudio(audioData);
+          const response = await fetch(`${BASE_URL}/offer`, {
+            method: "POST",
+            body: offer.sdp,
+            headers: { "Content-Type": "application/sdp" },
+          });
+
+          const answer = await response.text();
+          await pc.setRemoteDescription({ sdp: answer, type: "answer" });
+
+          setConnectionStatus("Connected");
         } catch (error) {
-          console.error("Error processing WebSocket message:", error);
+          console.error("WebRTC 初始化失败:", error);
+          setConnectionStatus("Disconnected");
         }
       };
 
-      dataChannel.onclose = () => {
-        console.log("DataChannel closed:", dataChannel.label);
+      setupConnection();
+
+      return () => {
+        pc.close();
+        setConnectionStatus("Closed");
       };
-    };
-  }, [peerConnection, checkAndBufferAudio]);
+    } else {
+      setConnectionStatus("WebRTC not supported");
+    }
+  }, [BASE_URL]);
+
+  useEffect(() => {
+    if (peerConnection) {
+      peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
+        const dataChannel = event.channel;
+  
+        dataChannel.onopen = () => {
+          console.log("DataChannel opened:", dataChannel.label);
+        };
+  
+        dataChannel.onmessage = async (event: MessageEvent) => {
+          console.log("Received message:", event.data);
+  
+          try {
+            let audioData: ArrayBuffer;
+  
+            if (event.data instanceof ArrayBuffer) {
+              audioData = event.data;
+            } else if (event.data instanceof Blob) {
+              const arrayBuffer = await event.data.arrayBuffer();
+              audioData = arrayBuffer;
+            } else {
+              throw new Error("Unsupported data type received");
+            }
+  
+            checkAndBufferAudio(audioData);
+          } catch (error) {
+            console.error("Error processing WebSocket message:", error);
+          }
+        };
+  
+        dataChannel.onclose = () => {
+          console.log("DataChannel closed:", dataChannel.label);
+        };
+      };
+    }
+  }, [peerConnection, checkAndBufferAudio]);  
 
   return {
     connectionStatus,
     isCallEnded,
     endCall: () => {
-      peerConnection.close();
+      if (peerConnection) {
+        peerConnection.close();
+      }
       setConnectionStatus("Closed");
       setIsCallEnded(true);
     },
   };
 };
+
 
 // 主组件
 export default function Home() {
