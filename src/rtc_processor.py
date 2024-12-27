@@ -278,7 +278,7 @@ class RTCProcessor(BaseProcessor):
         self.render_event.set()
         while not quit_event.is_set():
             #self.asr.run_step()
-            if video_track._queue.qsize() >= 1.5 * self.opt.batch_size:
+            if video_track._queue.qsize() >= 1.5 * self.batch_size:
                 print('Sleeping, video queue size:', video_track._queue.qsize())
                 time.sleep(0.04 * video_track._queue.qsize() * 0.8)
         self.render_event.clear()
