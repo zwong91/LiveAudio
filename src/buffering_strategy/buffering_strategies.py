@@ -61,7 +61,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.processing_flag = False
         self.processing_task = None
 
-    def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+    def process_audio(self, channel, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
         """
         Process audio chunks by checking their length and scheduling
         asynchronous processing.
@@ -70,7 +70,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         length and, if so, it schedules asynchronous processing of the audio.
 
         Args:
-            websocket: The WebSocket connection for sending transcriptions.
+            channel: The full connection for sending s2s.
             vad_pipeline: The voice activity detection pipeline.
             asr_pipeline: The automatic speech recognition pipeline.
         """
@@ -84,7 +84,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 #self.interrupt_flag = True
                 # FIXME: TO interrupt live-audio, start talking
                 # asyncio.create_task(
-                #     self._send_interrupt_signal(websocket)
+                #     self._send_interrupt_signal(channel)
                 # )
                 logging.debug("Warning in realtime processing: tried processing a new chunk while the previous one was still being processed")
                 return
@@ -96,12 +96,12 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
             if self.processing_task is None or self.processing_task.done():
                 self.processing_task = asyncio.create_task(
-                self.process_audio_async(websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
+                self.process_audio_async(channel, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
             )
 
-    async def _send_interrupt_signal(self, websocket):
+    async def _send_interrupt_signal(self, channel):
         try:
-            await websocket.send_bytes(b"END_OF_AUDIO")
+            await channel.send(b"END_OF_AUDIO")
         except Exception as e:
             print(f"Failed to send interrupt signal: {e}")
 
@@ -111,16 +111,16 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.client.scratch_buffer.clear()
         self.client.increment_file_counter()
 
-    async def process_audio_async(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+    async def process_audio_async(self, channel, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
         """
         Asynchronously process audio for activity detection and transcription.
 
         This method performs heavy processing, including voice activity
-        detection and transcription of the audio data. It sends the
-        transcription results through the WebSocket connection.
+        detection and s2s of the audio data. It sends the
+        s2s results through the channel connection.
 
         Args:
-            websocket (Websocket): The WebSocket connection for sending
+            channel (Websocket/WebRTC): The channel connection for sending
                                    s2s.
             vad_pipeline: The voice activity detection pipeline.
             asr_pipeline: The automatic speech recognition pipeline.
@@ -153,14 +153,14 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 try:
                     async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
                         if not self.interrupt_flag:
-                            await websocket.send_bytes(chunk)
+                            await channel.send(chunk)
                         else:
                             raise StopAsyncIteration
 
                 except StopAsyncIteration:
                     logging.warning("TTS stream interrupted.")
                     # Send stop signal
-                    # await self._send_interrupt_signal(websocket)
+                    # await self._send_interrupt_signal(channel)
                     
                 except Exception as e:
                     logging.error(f"An error occurred during TTS: {e}")

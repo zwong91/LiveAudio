@@ -31,7 +31,74 @@ from aiortc import MediaStreamTrack, VideoStreamTrack
 import aiohttp
 
 from src.client import Client
-from src.rtc_track import RTCStreamTrack
+
+class ClientStreamTrack(MediaStreamTrack):
+    """
+    A media track that receives frames from a RTCClient.
+    """
+
+    def __init__(
+            self,
+            track,
+            kind,
+            client,
+            vad_pipeline,
+            asr_pipeline,
+            llm_pipeline,
+            tts_pipeline,
+            peer_connection,
+            datachannel, 
+            signaling=None
+    ):
+        super().__init__()  # don't forget this!
+        self.kind = kind
+        self.track = track
+        self.client = client
+        self.vad_pipeline = vad_pipeline
+        self.asr_pipeline = asr_pipeline
+        self.llm_pipeline = llm_pipeline
+        self.tts_pipeline = tts_pipeline
+        self.peer_connection = peer_connection
+        self.datachannel = datachannel
+        # self.signaling = signaling
+        
+        self.sampling_rate = 16_000
+        self.resampler = av.AudioResampler(
+            format="s16",
+            layout="mono",
+            rate=self.sampling_rate,
+        )
+        self.buffer = torch.tensor(
+            [],
+            dtype=torch.float32,
+        )
+
+    async def recv(self) -> Frame:
+        frame = await self.track.recv()
+        print(frame)
+        frame = self.resampler.resample(frame)[0]
+        frame_array = frame.to_ndarray()
+        frame_array = frame_array[0].astype(np.float32)
+        # print(frame_array)
+        # s16 (signed integer 16-bit number) can store numbers in range -32 768...32 767.
+        frame_array = torch.tensor(frame_array, dtype=torch.float32) / 32_767
+
+        self.buffer = torch.cat(
+            [
+                self.buffer,
+                frame_array,
+            ]
+        )
+        print("Let's Speech to Speech!")
+        self.client.append_audio_data(torchTensor2bytes(frame_array), "default")
+        try:
+            self.client.process_audio(
+                self.datachannel, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
+            )
+        except RuntimeError as e:
+            logging.error(f"Processing error for {client.client_id}: {e}")
+        return frame
+
 
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
 
@@ -203,7 +270,8 @@ class Server:
 
         # Generate a unique sessionid
         sessionid = str(uuid.uuid4())
-
+        client = Client(sessionid, self.sampling_rate, self.samples_width)
+        self.connected_clients[sessionid] = client
         # Create a new RTCPeerConnection
         pc = RTCPeerConnection()
         s2s_response = pc.createDataChannel(
@@ -231,17 +299,24 @@ class Server:
             if pc.connectionState in ["failed", "closed"]:
                 await pc.close()
                 self.pcs.discard(pc)
+                del self.connected_clients[sessionid]
 
         @pc.on("track")
         def on_track(track):
             logging.info(f"Track {track.kind} received")
             if track.kind == "audio":
-                audio_track = RTCStreamTrack(
+                audio_track = ClientStreamTrack(
                     self.relay.subscribe(
                         track=track,
                     ),
+                    kind="audio",
+                    client,
+                    self.vad_pipeline,
+                    self.asr_pipeline,
+                    self.llm_pipeline,
+                    self.tts_pipeline,
                     peer_connection=pc,
-                    datachannel=s2s_response,
+                    datachannel=s2s_response, 
                 )
                 recorder.addTrack(audio_track)
 
@@ -249,16 +324,18 @@ class Server:
             async def on_ended():
                 logging.info(f"Track {track.kind} ended")
                 await recorder.stop()
-
+                    
         # Add transceivers
         # pc.addTransceiver('video', direction='sendonly')
         pc.addTransceiver('audio', direction='sendrecv')
 
         # Add tracks
-        stream_track = RTCStreamTrack(
+        stream_track = ClientStreamTrack(
             self.relay.subscribe(
                 track=track,
                 ),
+            kind="audio",
+            client,
             self.vad_pipeline,
             self.asr_pipeline,
             self.llm_pipeline,
@@ -266,7 +343,7 @@ class Server:
             peer_connection=pc,
             datachannel=s2s_response,
         )
-        pc.addTrack(stream_track.video)
+        #pc.addTrack(stream_track.video)
         pc.addTrack(stream_track.audio)
 
         # Set codec preferences for video
@@ -287,9 +364,13 @@ class Server:
 
         return JSONResponse(content={"sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "sessionid": sessionid})
 
-    async def push(push_url):
+    async def push(self, push_url):
         pc = RTCPeerConnection()
         self.pcs.add(pc)
+
+        sessionid = str(uuid.uuid4())
+        client = Client(sessionid, self.sampling_rate, self.samples_width)
+        self.connected_clients[sessionid] = client
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
@@ -297,11 +378,14 @@ class Server:
             if pc.connectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)
+                del self.connected_clients[sessionid]
 
-        stream_track = RTCStreamTrack(
+        stream_track = ClientStreamTrack(
             self.relay.subscribe(
                 track=track,
                 ),
+            kind="audio",
+            client,
             self.vad_pipeline,
             self.asr_pipeline,
             self.llm_pipeline,
@@ -310,7 +394,7 @@ class Server:
             datachannel=s2s_response,
         )
         audio_sender = pc.addTrack(stream_track.audio)
-        video_sender = pc.addTrack(stream_track.video)
+        #video_sender = pc.addTrack(stream_track.video)
 
         await pc.setLocalDescription(await pc.createOffer())
         answer = await post(push_url, {"sdp": pc.localDescription.sdp})

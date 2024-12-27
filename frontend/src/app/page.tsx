@@ -163,14 +163,43 @@ export default function Home() {
   ];
 
   // Create a new RTCPeerConnection WebRTC Agent with ICE servers
-  const peerConnection = new RTCPeerConnection({ iceServers });
-  
+  //const peerConnection = new RTCPeerConnection({ iceServers });
+  const peerConnection = new RTCPeerConnection();
+
   // On inbound audio add to page
   peerConnection.ontrack = (event) => {
-    const el = document.createElement('audio');
-    el.srcObject = event.streams[0];
-    el.autoplay = el.controls = true;
-    document.body.appendChild(el);
+    // const el = document.createElement('audio');
+    // el.srcObject = event.streams[0];
+    // el.autoplay = el.controls = true;
+    // document.body.appendChild(el);
+
+    try {
+
+      setIsRecording(false);
+      setIsPlayingAudio(true);
+      let audioData: ArrayBuffer;
+
+      // 如果 event.streams[0] 是 ArrayBuffer，直接处理
+      if (event.streams[0] instanceof ArrayBuffer) {
+        audioData = event.streams[0]; // 直接是 ArrayBuffer 类型
+      } else if (event.streams[0] instanceof Blob) {
+        // 如果是 Blob 类型，使用 FileReader 将其转换为 ArrayBuffer
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          audioData = reader.result as ArrayBuffer;
+          checkAndBufferAudio(audioData);
+        };
+        reader.readAsArrayBuffer(event.streams[0]);
+        return; // 需要提前退出，等 FileReader 读取完成后再继续处理
+      } else {
+        throw new Error("Received unexpected data type from WebSocket");
+      }
+
+      // 调用 bufferAudio 处理音频数据
+      checkAndBufferAudio(audioData);
+    } catch (error) {
+      console.error("Error processing WebSocket message:", error);
+    }
   };
   
   const dataChannel = peerConnection.createDataChannel('response');
