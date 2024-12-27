@@ -320,6 +320,9 @@ class Server:
                     datachannel=s2s_response, 
                 )
                 recorder.addTrack(audio_track)
+                # Add tracks
+                #pc.addTrack(stream_track.video)
+                #pc.addTrack(stream_track.audio)
 
             @track.on("ended")
             async def on_ended():
@@ -329,23 +332,6 @@ class Server:
         # Add transceivers
         # pc.addTransceiver('video', direction='sendonly')
         pc.addTransceiver('audio', direction='sendrecv')
-
-        # Add tracks
-        stream_track = ClientStreamTrack(
-            self.relay.subscribe(
-                track=track,
-                ),
-            "audio",
-            client,
-            self.vad_pipeline,
-            self.asr_pipeline,
-            self.llm_pipeline,
-            self.tts_pipeline,
-            peer_connection=pc,
-            datachannel=s2s_response,
-        )
-        #pc.addTrack(stream_track.video)
-        pc.addTrack(stream_track.audio)
 
         # Set codec preferences for video
         for transceiver in pc.getTransceivers():
@@ -381,21 +367,29 @@ class Server:
                 self.pcs.discard(pc)
                 del self.connected_clients[sessionid]
 
-        stream_track = ClientStreamTrack(
-            self.relay.subscribe(
-                track=track,
-                ),
-            "audio",
-            client,
-            self.vad_pipeline,
-            self.asr_pipeline,
-            self.llm_pipeline,
-            self.tts_pipeline,
-            peer_connection=pc,
-            datachannel=s2s_response,
-        )
-        audio_sender = pc.addTrack(stream_track.audio)
-        #video_sender = pc.addTrack(stream_track.video)
+        @pc.on("track")
+        def on_track(track):
+            logging.info(f"Track {track.kind} received")
+            if track.kind == "audio":
+                stream_track = ClientStreamTrack(
+                    self.relay.subscribe(
+                        track=track,
+                        ),
+                    "audio",
+                    client,
+                    self.vad_pipeline,
+                    self.asr_pipeline,
+                    self.llm_pipeline,
+                    self.tts_pipeline,
+                    peer_connection=pc,
+                    datachannel=s2s_response,
+                )
+                pc.addTrack(stream_track.audio)
+                #pc.addTrack(stream_track.video)
+
+            @track.on("ended")
+            async def on_ended():
+                logging.info(f"Track {track.kind} ended")
 
         await pc.setLocalDescription(await pc.createOffer())
         answer = await post(push_url, {"sdp": pc.localDescription.sdp})
