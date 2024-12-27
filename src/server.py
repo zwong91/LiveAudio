@@ -28,6 +28,7 @@ from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
 from aiortc.rtcrtpsender import RTCRtpSender
 from aiortc import MediaStreamTrack, VideoStreamTrack
+from av.frame import Frame
 import aiohttp
 
 from src.client import Client
