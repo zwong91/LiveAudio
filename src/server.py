@@ -229,7 +229,7 @@ class Server:
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
-            allow_credentials=True,
+            allow_credentials=False,
             allow_methods=["*"],
             allow_headers=["*"],
         )
@@ -273,7 +273,6 @@ class Server:
         # Generate a unique sessionid
         sessionid = str(uuid.uuid4())
         client = Client(sessionid, self.sampling_rate, self.samples_width)
-        self.connected_clients[sessionid] = client
         # Create a new RTCPeerConnection
         pc = RTCPeerConnection()
         s2s_response = pc.createDataChannel(
@@ -301,7 +300,6 @@ class Server:
             if pc.connectionState in ["failed", "closed"]:
                 await pc.close()
                 self.pcs.discard(pc)
-                del self.connected_clients[sessionid]
 
         @pc.on("track")
         def on_track(track):
@@ -358,7 +356,6 @@ class Server:
 
         sessionid = str(uuid.uuid4())
         client = Client(sessionid, self.sampling_rate, self.samples_width)
-        self.connected_clients[sessionid] = client
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
@@ -366,7 +363,6 @@ class Server:
             if pc.connectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)
-                del self.connected_clients[sessionid]
 
         @pc.on("track")
         def on_track(track):
