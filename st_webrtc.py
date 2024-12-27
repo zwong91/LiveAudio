@@ -94,9 +94,9 @@ def process_audio_file(audio_file):
 
 async def send_audio_data(audio_stream):
     # Connect to the server's WebSocket endpoint
-    ws_url = "ws://localhost:8010/ws"  # Adjust the URL to match your server
+    ws_url = "wss://localhost:20000/stream"  # Adjust the URL to match your server
     async with aiohttp.ClientSession() as session:
-        async with session.ws_connect(ws_url) as websocket:
+        async with session.ws_connect(ws_url, ssl=False) as websocket:
             try:
                 while True:
                     # Read audio frame from the media player

@@ -184,7 +184,7 @@ class Server:
         self.app.websocket("/stream-vc")(self.websocket_endpoint)
         
         self.app.post("/offer")(self.offer_endpoint)
-        self.app.post("/audio/{session_id}")(self.form_audio)
+        self.app.post("/audio")(self.form_audio)
         self.app.post("/set_audiotype")(self.set_audiotype)
         self.app.post("/record")(self.record)
         self.app.post("/is_speaking")(self.is_speaking)
@@ -197,7 +197,7 @@ class Server:
 
         # Assign a unique sessionid for each RTCProcessor instance
         sessionid = str(uuid.uuid4())
-        self.connected_rtcclients[sessionid] = RTCProcessor(opt)
+        self.connected_rtcclients[sessionid] = RTCProcessor(None)
         
         # Yield to let the app run
         yield 
@@ -218,7 +218,7 @@ class Server:
         sessionid = str(uuid.uuid4())
 
         # Create a new rtc processor instance
-        processor = RTCProcessor(self.app.state.opt)
+        processor = RTCProcessor(None)
         self.connected_rtcclients[sessionid] = processor
 
         # Create a new RTCPeerConnection
@@ -309,7 +309,7 @@ class Server:
                     if sessionid is not None:
                         if sessionid not in self.connected_rtcclients:
                             # Initialize a new RTCProcessor instance for this session
-                            rtc_client = RTCProcessor(app.state.opt)
+                            rtc_client = RTCProcessor(None)
                             self.connected_rtcclients[sessionid] = rtc_client
                             print(f"Session {sessionid} connected.")
                             # Start rendering for the new session

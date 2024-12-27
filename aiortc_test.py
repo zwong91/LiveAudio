@@ -31,7 +31,7 @@ async def send_offer(session, url):
     async with session.post(f'{url}/offer', json={
         'sdp': pc.localDescription.sdp,
         'type': pc.localDescription.type
-    }) as response:
+    }, ssl=False) as response:
         answer = await response.json()
 
     # Set the remote description
@@ -70,9 +70,9 @@ async def receive_video(track):
         # For this example, we will just print a message
         print("Received video frame")
 
-async def main(audio_file_path="data/audio/elon.wav"):
-    url = "http://localhost:8010"  # Replace with your server's address
-    ws_url = "ws://localhost:8010/ws"  # WebSocket URL
+async def main(audio_file_path="vc/liuyifei.wav"):
+    url = "https://localhost:20000"  # Replace with your server's address
+    ws_url = "wss://localhost:20000/stream"  # WebSocket URL
 
     async with aiohttp.ClientSession() as session:
         # Establish WebRTC connection
