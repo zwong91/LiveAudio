@@ -34,6 +34,7 @@ import aiohttp
 
 from src.client import Client
 
+relay = MediaRelay()
 class ClientStreamTrack(MediaStreamTrack):
     """
     A media track that receives frames from a RTCClient.
@@ -212,7 +213,6 @@ class Server:
         self.connected_clients = {}
         
         self.pcs = set()
-        self.relay = MediaRelay()
         self.app = FastAPI(
             title="Audio AI Server",
             description='',
@@ -369,7 +369,7 @@ class Server:
             logging.info(f"Track {track.kind} received")
             if track.kind == "audio":
                 stream_track = ClientStreamTrack(
-                    self.relay.subscribe(
+                    relay.subscribe(
                         track=track,
                         ),
                     "audio",
