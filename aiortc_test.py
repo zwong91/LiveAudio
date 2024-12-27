@@ -19,7 +19,7 @@ async def send_offer(session, url):
 
     # Add transceivers for video (recvonly) and audio (sendonly)
     pc.addTransceiver('video', direction='recvonly')
-    pc.addTransceiver('audio', direction='sendonly')
+    pc.addTransceiver('audio', direction='sendrecv')
 
     # Create an offer and set the local description
     offer = await pc.createOffer()

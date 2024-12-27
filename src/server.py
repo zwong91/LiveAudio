@@ -31,7 +31,7 @@ from aiortc import MediaStreamTrack, VideoStreamTrack
 import aiohttp
 
 from src.client import Client
-from src.client_rtc import RTCClient
+from src.rtc_stream_track import RTCStreamTrack
 from src.rtc_processor import RTCProcessor
 
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
@@ -236,12 +236,12 @@ class Server:
         
         # Add transceivers
         pc.addTransceiver('video', direction='sendonly')
-        pc.addTransceiver('audio', direction='sendonly')
+        pc.addTransceiver('audio', direction='sendrecv')
 
         # Add tracks
-        rtc_client = RTCClient(processor)
-        pc.addTrack(rtc_client.video)
-        pc.addTrack(rtc_client.audio)
+        stream_track = RTCStreamTrack(processor)
+        pc.addTrack(stream_track.video)
+        pc.addTrack(stream_track.audio)
 
         # Set codec preferences for video
         for transceiver in pc.getTransceivers():
@@ -251,7 +251,7 @@ class Server:
                 transceiver.setCodecPreferences(preferences)
                 transceiver.direction = 'sendonly'
             elif transceiver.kind == 'audio':
-                transceiver.direction = 'sendonly'
+                transceiver.direction = 'sendrecv'
 
         await pc.setRemoteDescription(offer)
         answer = await pc.createAnswer()
@@ -270,9 +270,9 @@ class Server:
                 await pc.close()
                 self.pcs.discard(pc)
 
-        rtc_client = RTCClient(self.connected_rtcclients[0])
-        audio_sender = pc.addTrack(rtc_client.audio)
-        video_sender = pc.addTrack(rtc_client.video)
+        stream_track = RTCStreamTrack(self.connected_rtcclients[0])
+        audio_sender = pc.addTrack(stream_track.audio)
+        video_sender = pc.addTrack(stream_track.video)
 
         await pc.setLocalDescription(await pc.createOffer())
         answer = await post(push_url, {"sdp": pc.localDescription.sdp})
@@ -309,8 +309,8 @@ class Server:
                     if sessionid is not None:
                         if sessionid not in self.connected_rtcclients:
                             # Initialize a new RTCProcessor instance for this session
-                            rtc_client = RTCProcessor(None)
-                            self.connected_rtcclients[sessionid] = rtc_client
+                            processor = RTCProcessor(None)
+                            self.connected_rtcclients[sessionid] = processor
                             print(f"Session {sessionid} connected.")
                             # Start rendering for the new session
                             self.connected_rtcclients[sessionid].start_rendering()
