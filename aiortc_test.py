@@ -7,6 +7,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaPlayer
 import websockets
+import ssl
 import os
 
 pc = None
@@ -79,7 +80,10 @@ async def main(audio_file_path="vc/liuyifei.wav"):
         sessionid, pc = await send_offer(session, url)
 
         # Set up WebSocket connection
-        async with websockets.connect(ws_url) as websocket:
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        async with websockets.connect(ws_url, ssl=ssl_context) as websocket:
             # Send session ID to associate with server-side processing
             await websocket.send(json.dumps({'type': 'session', 'sessionid': sessionid}))
 
