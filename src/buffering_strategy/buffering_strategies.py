@@ -5,7 +5,7 @@ import time
 import logging
 from .buffering_strategy_interface import BufferingStrategyInterface
 import ormsgpack
-import wave
+from collections import deque
 import io
 
 class SilenceAtEndOfChunk(BufferingStrategyInterface):
@@ -59,6 +59,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         self.interrupt_flag = False
         self.processing_flag = False
+        self.processing_task = None
 
     def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
         """
@@ -80,23 +81,23 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         )
         if len(self.client.buffer) > chunk_length_in_bytes:
             if self.processing_flag:
-                self.interrupt_flag = True
+                #self.interrupt_flag = True
                 # FIXME: TO interrupt live-audio, start talking
-                self.client.buffer.clear()
-                asyncio.create_task(
-                    self._send_interrupt_signal(websocket)
-                )
-                logging.warning("Warning in realtime processing: tried processing a new chunk while the previous one was still being processed")
+                # asyncio.create_task(
+                #     self._send_interrupt_signal(websocket)
+                # )
+                logging.debug("Warning in realtime processing: tried processing a new chunk while the previous one was still being processed")
                 return
-            self.client.scratch_buffer += self.client.buffer
+
+            # 处理累积的buffer
+            self.client.scratch_buffer.extend(self.client.buffer)
             self.client.buffer.clear()
             self.processing_flag = True
-            # schedule the processing in a separate task
-            asyncio.create_task(
+
+            if self.processing_task is None or self.processing_task.done():
+                self.processing_task = asyncio.create_task(
                 self.process_audio_async(websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
             )
-
-
 
     async def _send_interrupt_signal(self, websocket):
         try:
@@ -141,35 +142,33 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             / (self.client.sampling_rate * self.client.samples_width)
         ) - self.chunk_offset_seconds
         if vad_results[-1]["end"] < last_segment_should_end_before:
-            if not self.interrupt_flag:
-                transcription = await asr_pipeline.transcribe(self.client)
-                if transcription["text"] != "":
-                    if not self.interrupt_flag:
-                        tts_text, updated_history = await llm_pipeline.generate_response(
-                            self.client.history, transcription["text"], True
-                        )
-                        # Stream audio chunks
-                        try:
-                            if tts_text != "":
-                                async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
-                                    if not self.interrupt_flag:
-                                        await websocket.send_bytes(chunk)
-                                    else:
-                                        raise StopAsyncIteration
+            # Step 1: Transcribe audio
+            transcription = await asr_pipeline.transcribe(self.client)
+            if transcription["text"] != "":
+                # Step 2: Generate response
+                tts_text, updated_history = await llm_pipeline.generate_response(
+                    self.client.history, transcription["text"], True
+                )
+                # Step 3: Stream audio chunks
+                try:
+                    async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
+                        if not self.interrupt_flag:
+                            await websocket.send_bytes(chunk)
+                        else:
+                            raise StopAsyncIteration
 
-                        except StopAsyncIteration:
-                            logging.warning("TTS stream interrupted.")
-                            # Send stop signal
-                            await self._send_interrupt_signal(websocket)
-                            
-                        except Exception as e:
-                            logging.error(f"An error occurred during TTS: {e}")
-                        finally:
-                            # Always clean up, no matter success or failure
-                            end = time.time()
-                            print(f"Total processing time: {end - start:.2f}s, text: {tts_text}")
-                            self._update_client_state(updated_history)
+                except StopAsyncIteration:
+                    logging.warning("TTS stream interrupted.")
+                    # Send stop signal
+                    # await self._send_interrupt_signal(websocket)
+                    
+                except Exception as e:
+                    logging.error(f"An error occurred during TTS: {e}")
+                finally:
+                    # Always clean up, no matter success or failure
+                    end = time.time()
+                    print(f"Total processing time: {end - start:.2f}s, text: {tts_text}")
+                    self._update_client_state(updated_history)
 
         self.processing_flag = False
         self.interrupt_flag = False
-
