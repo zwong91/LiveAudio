@@ -96,10 +96,13 @@ const useWebRTC = (
 
       const setupConnection = async () => {
         try {
+          // 获取音频流
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          stream.getTracks().forEach((track) =>
-            pc.addTransceiver(track, { direction: "sendrecv" })
-          );
+          // 添加音频轨道到 PeerConnection
+          stream.getTracks().forEach((track) => {
+            console.log("Adding track to connection:", track);
+            pc.addTransceiver(track, { direction: "sendrecv" });
+          });
 
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
