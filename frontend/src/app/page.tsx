@@ -8,7 +8,6 @@ export default function Home() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(true); // true means listening, false means speaking
   const [isPlayingAudio, setIsPlayingAudio] = useState(false); // State to track audio playback
-  const [socket, setSocket] = useState<WebSocket | null>(null);
   const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
   const [audioDuration, setAudioDuration] = useState<number>(0); // State to track audio duration
 
@@ -131,10 +130,143 @@ export default function Home() {
     }
   }
 
-  //const SOCKET_URL = "wss://gtp.aleopool.cc/stream";
-  const SOCKET_URL = "wss://audio.enty.services/stream";
+  const fns = {
+    // Function to get the HTML of the page
+    getPageHTML: () => {
+      return { success: true, html: document.documentElement.outerHTML };
+    },
+    
+    // Function to change the background color
+    changeBackgroundColor: ({ color }: { color: string }) => {
+      document.body.style.backgroundColor = color;
+      return { success: true, color };
+    },
+    
+    // Function to change the text color
+    changeTextColor: ({ color }: { color: string }) => {
+      document.body.style.color = color;
+      return { success: true, color };
+    },
+  };
+  
+  
+  const BASE_URL = "https://audio.enty.services";
 
- let websocket: WebSocket | null = null;
+  // ICE server configuration (STUN/TURN servers)
+  const iceServers = [
+    { urls: 'stun:stun.l.google.com:19302' }, // STUN server
+    // { 
+    //   urls: 'turn:your.turnserver.com', // TURN server
+    //   username: 'your_username',
+    //   credential: 'your_credential'
+    // }
+  ];
+
+  // Create a new RTCPeerConnection WebRTC Agent with ICE servers
+  const peerConnection = new RTCPeerConnection({ iceServers });
+  
+  // On inbound audio add to page
+  peerConnection.ontrack = (event) => {
+    const el = document.createElement('audio');
+    el.srcObject = event.streams[0];
+    el.autoplay = el.controls = true;
+    document.body.appendChild(el);
+  };
+  
+  const dataChannel = peerConnection.createDataChannel('response');
+  
+  function configureData() {
+    console.log('Configuring data channel');
+    const event = {
+      type: 'session.update',
+      session: {
+        modalities: ['text', 'audio'],
+        // Provide the tools. Note they match the keys in the `fns` object above
+        tools: [
+          {
+            type: 'function',
+            name: 'changeBackgroundColor',
+            description: 'Changes the background color of a web page',
+            parameters: {
+              type: 'object',
+              properties: {
+                color: { type: 'string', description: 'A hex value of the color' },
+              },
+            },
+          },
+          {
+            type: 'function',
+            name: 'changeTextColor',
+            description: 'Changes the text color of a web page',
+            parameters: {
+              type: 'object',
+              properties: {
+                color: { type: 'string', description: 'A hex value of the color' },
+              },
+            },
+          },
+          {
+            type: 'function',
+            name: 'getPageHTML',
+            description: 'Gets the HTML for the current page',
+          },
+        ],
+      },
+    };
+    dataChannel.send(JSON.stringify(event));
+  }
+  
+  dataChannel.addEventListener('open', (ev) => {
+    console.log('Opening data channel', ev);
+    configureData();
+  });
+  
+  // {
+  //     "type": "response.function_call_arguments.done",
+  //     "event_id": "event_Ad2gt864G595umbCs2aF9",
+  //     "response_id": "resp_Ad2griUWUjsyeLyAVtTtt",
+  //     "item_id": "item_Ad2gsxA84w9GgEvFwW1Ex",
+  //     "output_index": 1,
+  //     "call_id": "call_PG12S5ER7l7HrvZz",
+  //     "name": "get_weather",
+  //     "arguments": "{\"location\":\"Portland, Oregon\"}"
+  // }
+  interface FunctionResponse {
+    type: string;
+    event_id: string;
+    response_id: string;
+    item_id: string;
+    output_index: number;
+    call_id: string;
+    name: keyof typeof fns;  // `name` is one of the keys in `fns`
+    arguments: string;
+  }
+
+  dataChannel.addEventListener('message', async (ev) => {
+    const msg: FunctionResponse = JSON.parse(ev.data);
+  
+    // Handle function calls
+    if (msg.type === 'response.function_call_arguments.done') {
+      const fn = fns[msg.name];
+      if (fn !== undefined) {
+        console.log(`Calling local function ${msg.name} with ${msg.arguments}`);
+        const args = JSON.parse(msg.arguments);
+        const result = await fn(args);
+        console.log('result', result);
+  
+        // Let OpenAI know that the function has been called and share its output
+        const event = {
+          type: 'conversation.item.create',
+          item: {
+            type: 'function_call_output',
+            call_id: msg.call_id, // call_id from the function_call message
+            output: JSON.stringify(result), // result of the function
+          },
+        };
+        dataChannel.send(JSON.stringify(event));
+      }
+    }
+  });
 
   // Initialize WebSocket and media devices
   useEffect(() => {
@@ -145,133 +277,33 @@ export default function Home() {
       try {
         wakeLock = await navigator.wakeLock.request("screen");
         console.log("Screen wake lock acquired");
+        // Capture microphone
+        navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+          // Add microphone to PeerConnection
+          stream.getTracks().forEach((track) => peerConnection.addTransceiver(track, { direction: 'sendrecv' }));
 
-        const script = document.createElement("script");
-        script.src = "https://www.WebRTC-Experiment.com/RecordRTC.js";
-        script.onload = () => {
-          const RecordRTC = (window as any).RecordRTC;
-          const StereoAudioRecorder = (window as any).StereoAudioRecorder;
-    
-          if (navigator) {
-            navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-            console.log("RecordRTC start.");
-              const reconnectWebSocket = () => {
-                if (manualClose || isCallEnded) {
-                  console.log("Reconnection prevented by manualClose or isCallEnded flag.");
-                  return;
-                }
-    
-                if (websocket) websocket.close();
-                websocket = new WebSocket(SOCKET_URL);
-                setSocket(websocket);
-    
-                websocket.onopen = () => {
-                  console.log("client connected to websocket");
-                  setConnectionStatus("Connected");
-                  setIsInCall(true);
-                  const recorder = new RecordRTC(stream, {
-                    type: 'audio',
-                    recorderType: StereoAudioRecorder,
-                    mimeType: 'audio/wav',
-                    timeSlice: 100,
-                    desiredSampRate: 16000,
-                    numberOfAudioChannels: 1,
-                    ondataavailable: (blob: Blob) => {
-                      if (blob.size > 0) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          if (reader.result) {
-                            const base64data = arrayBufferToBase64(reader.result as ArrayBuffer);
-    
-                            const message = {
-                              event: "start",
-                              request: {
-                                audio: base64data,  // Audio data as a binary array or ArrayBuffer
-                                latency: "normal",       // Latency type
-                                format: "opus",          // Audio format (opus, mp3, or wav)
-                                prosody: {               // Optional prosody settings
-                                  speed: 1.0,            // Speech speed
-                                  volume: 0              // Volume adjustment in dB
-                                },
-                                vc_uid: "c9cf4e49"   // A unique reference ID
-                              }
-                            };
-                            // Encode the data using MessagePack
-                            // const encodedData = msgpack.encode(message);
-                            const encodedData = JSON.stringify(message);
-                            if (websocket) {
-                              websocket.send(encodedData);
-                            } else {
-                              console.error("WebSocket is null, cannot send data.");
-                            }
-                          } else {
-                            console.error("FileReader result is null");
-                          }
-                        };
-                        reader.readAsArrayBuffer(blob);
-                      }
-                    }
-                  });
-    
-                  recorder.startRecording();
-                };
-    
-                websocket.onmessage = (event) => {
-                  try {
+          peerConnection.createOffer().then((offer) => {
+            peerConnection.setLocalDescription(offer);
 
-                    setIsRecording(false);
-                    setIsPlayingAudio(true);
-                    let audioData: ArrayBuffer;
-    
-                    // 如果 event.data 是 ArrayBuffer，直接处理
-                    if (event.data instanceof ArrayBuffer) {
-                      audioData = event.data; // 直接是 ArrayBuffer 类型
-                    } else if (event.data instanceof Blob) {
-                      // 如果是 Blob 类型，使用 FileReader 将其转换为 ArrayBuffer
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        audioData = reader.result as ArrayBuffer;
-                        checkAndBufferAudio(audioData);
-                      };
-                      reader.readAsArrayBuffer(event.data);
-                      return; // 需要提前退出，等 FileReader 读取完成后再继续处理
-                    } else {
-                      throw new Error("Received unexpected data type from WebSocket");
-                    }
-    
-                    // 调用 bufferAudio 处理音频数据
-                    checkAndBufferAudio(audioData);
-                  } catch (error) {
-                    console.error("Error processing WebSocket message:", error);
-                  }
-                };
-    
-                websocket.onclose = () => {
-                  if (manualClose || isCallEnded) return; // Don't reconnect if the call has ended
-                  if (connectionStatus === "Closed") {
-                    console.log("WebSocket 已关闭");
-                    return;
-                  }
-                  console.log("WebSocket connection closed...");
-                  setConnectionStatus("Reconnecting...");
-                  setTimeout(reconnectWebSocket, 5000);
-                };
-    
-                websocket.onerror = (error) => {
-                  console.error("WebSocket error:", error);
-                  websocket?.close();
-                };
-              };
-    
-              if (manualClose || isCallEnded) return;
-              console.log("client start connect to websocket");
-              reconnectWebSocket();
-            }).catch((error) => {
-              console.error("Error with getUserMedia", error);
-            });
-          }
-        };
-        document.body.appendChild(script);
+            // Send WebRTC Offer to Workers Realtime WebRTC API Relay
+            fetch(`${BASE_URL}/offer`, {
+              method: 'POST',
+              body: offer.sdp,
+              headers: {
+                'Content-Type': 'application/sdp',
+              },
+            })
+              .then((r) => r.text())
+              .then((answer) => {
+                // Accept answer from Realtime WebRTC API
+                peerConnection.setRemoteDescription({
+                  sdp: answer,
+                  type: 'answer',
+                });
+              });
+          });
+        });
+
       } catch (error) {
         console.error("Failed to acquire wake lock", error);
       }
@@ -319,14 +351,9 @@ export default function Home() {
     setConnectionStatus("Closed");
     setIsCallEnded(true); // Set isCallEnded to true to prevent reconnection
 
-    if (socket) {
-      socket.close();
-      setSocket(null);
-    }
-
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      mediaRecorder.stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
       setMediaRecorder(null);
     }
 
