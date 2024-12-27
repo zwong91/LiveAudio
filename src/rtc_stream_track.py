@@ -25,72 +25,93 @@ class ClientStreamTrack(MediaStreamTrack):
     A media track that receives frames from a RTCClient.
     """
 
-    def __init__(self, player, kind):
-        super().__init__()
+    def __init__(self, kind, track, peer_connection, datachannel, signaling=None):
+        super().__init__()  # don't forget this!
         self.kind = kind
-        self._player = player
-        self._queue = asyncio.Queue()
-        self._started = False
-        self._timestamp = 0
-        self._start_time = None
+        self.track = track        
+        self.peer_connection = peer_connection
+        self.datachannel = datachannel
+        # self.signaling = signaling
+        
+        self.sampling_rate = 16_000
+        self.resampler = av.AudioResampler(
+            format="s16",
+            layout="mono",
+            rate=self.sampling_rate,
+        )
+        self.buffer = torch.tensor(
+            [],
+            dtype=torch.float32,
+        )
 
     async def recv(self) -> Frame:
-        if not self._started:
-            loop = asyncio.get_running_loop()
-            self._player._start(self, loop)
-            self._started = True
+        frame = await self.track.recv()
+        # print(frame)
+        frame = self.resampler.resample(frame)[0]
+        frame_array = frame.to_ndarray()
+        frame_array = frame_array[0].astype(np.float32)
+        # print(frame_array)
+        # s16 (signed integer 16-bit number) can store numbers in range -32 768...32 767.
+        frame_array = torch.tensor(frame_array, dtype=torch.float32) / 32_767
 
-        try:
-            frame = await self._queue.get()
-            if frame is None:
-                await asyncio.sleep(0)
-                self.stop()
-                raise MediaStreamError("End of stream")
+        self.buffer = torch.cat(
+            [
+                self.buffer,
+                frame_array,
+            ]
+        )
 
-            # Set timestamp and time_base
-            if self._start_time is None:
-                self._start_time = time.time()
-                self._timestamp = 0
-            else:
-                if self.kind == 'audio':
-                    self._timestamp += int(AUDIO_PTIME * SAMPLE_RATE)
-                else:
-                    self._timestamp += int(VIDEO_PTIME * VIDEO_CLOCK_RATE)
+        if not speech_prob is None:
+            is_speech = speech_prob >= 0.4
+            if (
+                np.mean(self.segments) <= 0.4
+                and self.is_activated
+                and len(self.segments) == self.segments_amount
+            ):
+                print("Let's Speech to text!")
+                # asyncio.create_task(
+                #     asyncio.to_thread(self.extract_text),
+                # )
 
-            frame.pts = self._timestamp
-            frame.time_base = AUDIO_TIME_BASE if self.kind == 'audio' else VIDEO_TIME_BASE
+            # 新的数据
+            self.buffer = frame_array
 
-            return frame
-        except asyncio.CancelledError:
-            self.stop()
-            raise
-        except Exception as e:
-            logger.error(f"Error while receiving frame: {e}")
-            raise MediaStreamError("Error in receiving frame")
+        return frame
+    
+    def extract_text(self):
+        print("Extract text")
 
-    def stop(self):
-        super().stop()
-        if self._player is not None:
-            self._player._stop(self)
-            self._player = None
+        # llm_text = llm_chat_v1(user_text=speech_rec_text)
+        # result = f"xxx: {speech_rec_text}\n\n yyy:\n{llm_text}"
+        # sf.write(
+        #     "bot/experiments/aiortc_vad_stt_llm_tts/temp_speech.wav",
+        #     data=self.non_silent_segments,
+        #     samplerate=self.sampling_rate,
+        # )
+        # sample_rate, all_speech = speech_generation.generate(
+        #     text=llm_text,
+        # )
+        # temp_audio_name = str(uuid.uuid4())
+        # temp_audio_path = f"bot/experiments/aiortc_vad_stt_llm_tts/temp_audio_name.wav"
+        # sf.write(
+        #     temp_audio_path,
+        #     data=all_speech,
+        #     samplerate=sample_rate,
+        # )
+        # player = MediaPlayer(temp_audio_path)
 
-
-def player_worker_thread(quit_event, loop, container, audio_track, video_track):
-    """Worker thread to render and process frames."""
-    container.render(quit_event, loop, audio_track, video_track)
-
+        # self.peer_connection.addTrack(player.audio)
+        # # player._start()
+        # self.datachannel.send(result)
+        
+        pass
 
 class RTCStreamTrack:
-    def __init__(self, rtc_processor, format=None, options=None, timeout=None, loop=False, decode=True):
-        self.__thread: Optional[threading.Thread] = None
-        self.__thread_quit: Optional[threading.Event] = None
+    def __init__(self, track, peer_connection, datachannel, signaling=None):
 
         # Examine streams
-        self.__started: Set[ClientStreamTrack] = set()
-        self.__audio: Optional[ClientStreamTrack] = ClientStreamTrack(self, kind="audio")
-        self.__video: Optional[ClientStreamTrack] = ClientStreamTrack(self, kind="video")
-
-        self.__container = rtc_processor
+        self.__audio: Optional[ClientStreamTrack] = ClientStreamTrack(self, kind="audio", track=track, peer_connection=peer_connection, datachannel=datachannel)
+        self.__video: Optional[ClientStreamTrack] = ClientStreamTrack(self, kind="video", track=track, peer_connection=peer_connection, datachannel=datachannel)
 
     @property
     def audio(self) -> MediaStreamTrack:
@@ -101,37 +122,6 @@ class RTCStreamTrack:
     def video(self) -> MediaStreamTrack:
         """A MediaStreamTrack instance if the player provides video."""
         return self.__video
-
-    def _start(self, track: ClientStreamTrack, loop: asyncio.AbstractEventLoop) -> None:
-        self.__started.add(track)
-        if self.__thread is None:
-            self.__log_debug("Starting worker thread")
-            self.__thread_quit = threading.Event()
-            self.__thread = threading.Thread(
-                name="media-player",
-                target=player_worker_thread,
-                args=(
-                    self.__thread_quit,
-                    loop,
-                    self.__container,
-                    self.__audio,
-                    self.__video
-                ),
-            )
-            self.__thread.start()
-
-    def _stop(self, track: ClientStreamTrack) -> None:
-        self.__started.discard(track)
-
-        if not self.__started and self.__thread is not None:
-            self.__log_debug("Stopping worker thread")
-            self.__thread_quit.set()
-            self.__thread.join()
-            self.__thread = None
-
-        if not self.__started and self.__container is not None:
-            # Clean up container if needed
-            self.__container = None
 
     def __log_debug(self, msg: str, *args) -> None:
         logger.debug(f"RTCStreamTrack {msg}", *args)

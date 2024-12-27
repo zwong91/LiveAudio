@@ -24,15 +24,14 @@ from typing import List
 import shutil
 
 
-from aiortc import RTCPeerConnection, RTCSessionDescription
-from aiortc.contrib.media import MediaPlayer, MediaRelay
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
+from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
 from aiortc.rtcrtpsender import RTCRtpSender
 from aiortc import MediaStreamTrack, VideoStreamTrack
 import aiohttp
 
 from src.client import Client
 from src.rtc_stream_track import RTCStreamTrack
-from src.rtc_processor import RTCProcessor
 
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
 
@@ -143,9 +142,8 @@ class Server:
         self.keyfile = keyfile
         self.connected_clients = {}
         
-        self.connected_rtcclients: Dict[str, RTCProcessor] = {}
         self.pcs = set()
-
+        self.relay = MediaRelay()
         self.app = FastAPI(
             title="Audio AI Server",
             description='',
@@ -184,10 +182,6 @@ class Server:
         self.app.websocket("/stream-vc")(self.websocket_endpoint)
         
         self.app.post("/offer")(self.offer_endpoint)
-        self.app.post("/audio")(self.form_audio)
-        self.app.post("/set_audiotype")(self.set_audiotype)
-        self.app.post("/record")(self.record)
-        self.app.post("/is_speaking")(self.is_speaking)
 
     async def startup(self):
         """Called on startup to set up additional services."""
@@ -195,19 +189,12 @@ class Server:
         # 启动任务处理的后台任务
         asyncio.create_task(self.tts_manager.start_processing())
 
-        # Assign a unique sessionid for each RTCProcessor instance
-        sessionid = str(uuid.uuid4())
-        self.connected_rtcclients[sessionid] = RTCProcessor(None)
-        
-        # Yield to let the app run
-        yield 
+    async def shutdown(self):
+        logging.info(f"shutdown server ...")
         # Shutdown tasks: Close WebRTC connections
         coros = [pc.close() for pc in self.pcs]
         await asyncio.gather(*coros)
         self.pcs.clear()
-
-    async def shutdown():
-        logging.info(f"shutdown server ...")
 
     async def offer_endpoint(self, request: Request):
         
@@ -217,13 +204,26 @@ class Server:
         # Generate a unique sessionid
         sessionid = str(uuid.uuid4())
 
-        # Create a new rtc processor instance
-        processor = RTCProcessor(None)
-        self.connected_rtcclients[sessionid] = processor
-
         # Create a new RTCPeerConnection
         pc = RTCPeerConnection()
+        s2s_response = pc.createDataChannel(
+            label="response",
+            ordered=True,
+        )
         self.pcs.add(pc)
+
+        # signaling = create_signaling()
+        # prepare local media
+        recorder = MediaBlackhole()
+
+        @pc.on("datachannel")
+        def on_datachannel(channel):
+            logging.info(f"on_datachannel {channel}")
+
+            @channel.on("message")
+            def on_message(message):
+                if isinstance(message, str):
+                    channel.send("pong" + message)
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
@@ -231,15 +231,37 @@ class Server:
             if pc.connectionState in ["failed", "closed"]:
                 await pc.close()
                 self.pcs.discard(pc)
-                if sessionid in self.connected_rtcclients:
-                    del self.connected_rtcclients[sessionid]
-        
+
+        @pc.on("track")
+        def on_track(track):
+            logging.info(f"Track {track.kind} received")
+            if track.kind == "audio":
+                audio_track = RTCStreamTrack(
+                    self.relay.subscribe(
+                        track=track,
+                    ),
+                    peer_connection=pc,
+                    datachannel=s2s_response,
+                )
+                recorder.addTrack(audio_track)
+
+            @track.on("ended")
+            async def on_ended():
+                logging.info(f"Track {track.kind} ended")
+                await recorder.stop()
+
         # Add transceivers
-        pc.addTransceiver('video', direction='sendonly')
+        # pc.addTransceiver('video', direction='sendonly')
         pc.addTransceiver('audio', direction='sendrecv')
 
         # Add tracks
-        stream_track = RTCStreamTrack(processor)
+        stream_track = RTCStreamTrack(
+            self.relay.subscribe(
+                track=track,
+                ),
+            peer_connection=pc,
+            datachannel=s2s_response,
+        )
         pc.addTrack(stream_track.video)
         pc.addTrack(stream_track.audio)
 
@@ -254,6 +276,8 @@ class Server:
                 transceiver.direction = 'sendrecv'
 
         await pc.setRemoteDescription(offer)
+        await recorder.start()
+
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
 
@@ -270,7 +294,13 @@ class Server:
                 await pc.close()
                 self.pcs.discard(pc)
 
-        stream_track = RTCStreamTrack(self.connected_rtcclients[0])
+        stream_track = RTCStreamTrack(
+            self.relay.subscribe(
+                track=track,
+                ),
+            peer_connection=pc,
+            datachannel=s2s_response,
+        )
         audio_sender = pc.addTrack(stream_track.audio)
         video_sender = pc.addTrack(stream_track.video)
 
@@ -307,18 +337,8 @@ class Server:
                 if msg_type == 'session':
                     sessionid = data.get("sessionid")
                     if sessionid is not None:
-                        if sessionid not in self.connected_rtcclients:
-                            # Initialize a new RTCProcessor instance for this session
-                            processor = RTCProcessor(None)
-                            self.connected_rtcclients[sessionid] = processor
-                            print(f"Session {sessionid} connected.")
-                            # Start rendering for the new session
-                            self.connected_rtcclients[sessionid].start_rendering()
-                            # Optionally, send confirmation back to the client
-                            await websocket.send_json({"type": "session_ack", "sessionid": sessionid})
-                        else:
-                            print(f"Session {sessionid} already exists.")
-                            await websocket.send_json({"type": "session_ack", "sessionid": sessionid})
+                        # Optionally, send confirmation back to the client
+                        await websocket.send_json({"type": "session_ack", "sessionid": sessionid})
                     else:
                         await websocket.send_json({"type": "error", "message": "No rtc sessionid provided."})              
 
@@ -336,7 +356,6 @@ class Server:
                     logging.debug(f"Prosody: {prosody}, VC UID: {vc_uid}")
 
                     #TODO: Pass the message to your processing function
-                    ##self.connected_rtcclients[sessionid].put_audio_frame(audio_data)
                     client.append_audio_data(audio_data, vc_uid)
                     # 异步task处理音频
                     self._process_audio(client, websocket)
@@ -344,9 +363,6 @@ class Server:
                 elif msg_type == 'stop':
                     if sessionid is not None:
                         logging.info(f"Session {sessionid} ended.")
-                        # Clean up session
-                        if sessionid in self.connected_rtcclients:
-                            del self.connected_rtcclients[sessionid]
                 else:
                     await websocket.send_json({"type": "error", "message": f"Unknown message type: {msg_type}"})
 
@@ -396,50 +412,6 @@ class Server:
                 'Content-Disposition': 'inline'
             }
         )
-
-    async def form_audio(
-        self,
-        file: UploadFile = File(...), 
-        sessionid: int = Form(0),
-    ):
-        try:
-            # Check if sessionid is valid
-            if sessionid < 0 or sessionid >= len(self.connected_rtcclients):
-                return JSONResponse(content={"session_id": sessionid, "code": -1, "msg": "Invalid session ID"})
-            
-            filebytes = await file.read()
-            # TODO: process audio stream
-            #self.connected_rtcclients[sessionid].put_audio_file(filebytes)
-
-            return JSONResponse(content={"code": 0, "msg": "ojjk"})
-        except Exception as e:
-            return JSONResponse(content={"code": -1, "msg": "err", "data": str(e)})
-
-    async def set_audiotype(self, request: Request):
-        params = await request.json()
-        sessionid = params.get('sessionid', 0)
-        if params['type'] == 'start_record':
-            self.connected_rtcclients[sessionid].start_recording("data/record_lasted.mp4")
-        elif params['type'] == 'end_record':
-            self.connected_rtcclients[sessionid].stop_recording()
-            
-        return JSONResponse(content={"code": 0, "data": "ojjk"})
-
-    async def record(self, request: Request):
-        params = await request.json()
-        sessionid = params.get('sessionid', 0)
-        if params['type'] == 'start_record':
-            self.connected_rtcclients[sessionid].start_recording("data/record_lasted.mp4")
-        elif params['type'] == 'end_record':
-            self.connected_rtcclients[sessionid].stop_recording()
-        return JSONResponse(content={"code": 0, "data": "ojjk"})
-
-    async def is_speaking(self, request: Request):
-        params = await request.json()
-        sessionid = params.get('sessionid', 0)
-        is_speaking = self.connected_rtcclients[sessionid].is_speaking()
-
-        return JSONResponse(content={"code": 0, "data": is_speaking})
 
     async def post(self, url, data):
         try:
