@@ -185,7 +185,7 @@ const useWebRTC = (
 // 主组件
 export default function Home() {
   //const BASE_URL = "https://audio.enty.services";
-  const BASE_URL = "wss://gtp.aleopool.cc/stream";
+  const BASE_URL = "https://gtp.aleopool.cc";
   const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(true);
 
