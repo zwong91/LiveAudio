@@ -10,6 +10,9 @@ import torch
 import numpy as np
 import pyloudnorm as pyln
 
+# 2^(16-1)
+INT16_MAX_ABS_VALUE = 32768.0
+
 def calculate_audio_volume(audio: bytes, sample_rate: int) -> float:
     audio_np = np.frombuffer(audio, dtype=np.int16)
     audio_float = audio_np.astype(np.float64)
@@ -127,6 +130,40 @@ def pack_audio(io_buffer:BytesIO, data:np.ndarray, rate:int, media_type:str):
         io_buffer = pack_raw(io_buffer, data, rate)
     io_buffer.seek(0)
     return io_buffer
+
+
+
+def bytes2NpArrayWith16(frames: bytes | bytearray):
+    # Convert the buffer frames to a NumPy array
+    audio_array = np.frombuffer(frames, dtype=np.int16)
+    # Normalize the array to a [-1, 1] range
+    float_data = audio_array.astype(np.float32) / INT16_MAX_ABS_VALUE
+    return float_data
+
+
+def bytes2TorchTensorWith16(frames: bytes | bytearray):
+    float_data = bytes2NpArrayWith16(frames)
+    waveform_tensor = torch.tensor(float_data, dtype=torch.float32)
+    # don't Stereo, just Mono, reshape(1,-1) (1(channel),size(time))
+    if waveform_tensor.ndim == 1:
+        # float_data= float_data.reshape(1, -1)
+        waveform_tensor = waveform_tensor.reshape(1, -1)
+    return waveform_tensor
+
+
+def npArray2bytes(np_arr: np.ndarray) -> bytearray:
+    # Convert a NumPy array to bytes
+    bytes_obj = np_arr.tobytes()
+    # bytes -> bytearray
+    byte_arr = bytearray(bytes_obj)
+    return byte_arr
+
+
+def torchTensor2bytes(tensor: torch.Tensor) -> bytearray:
+    # Convert a torch tensor to bytes
+    np_arr = tensor.numpy()
+
+    return npArray2bytes(np_arr)
 
 
 def postprocess_tts_wave_int16(chunk: torch.Tensor | list) -> bytes:

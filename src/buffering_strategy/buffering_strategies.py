@@ -121,7 +121,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         Args:
             websocket (Websocket): The WebSocket connection for sending
-                                   transcriptions.
+                                   s2s.
             vad_pipeline: The voice activity detection pipeline.
             asr_pipeline: The automatic speech recognition pipeline.
             llm_pipeline: The language model pipeline.

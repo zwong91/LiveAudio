@@ -31,7 +31,7 @@ from aiortc import MediaStreamTrack, VideoStreamTrack
 import aiohttp
 
 from src.client import Client
-from src.rtc_stream_track import RTCStreamTrack
+from src.rtc_track import RTCStreamTrack
 
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
 
@@ -259,6 +259,10 @@ class Server:
             self.relay.subscribe(
                 track=track,
                 ),
+            self.vad_pipeline,
+            self.asr_pipeline,
+            self.llm_pipeline,
+            self.tts_pipeline,
             peer_connection=pc,
             datachannel=s2s_response,
         )
@@ -298,6 +302,10 @@ class Server:
             self.relay.subscribe(
                 track=track,
                 ),
+            self.vad_pipeline,
+            self.asr_pipeline,
+            self.llm_pipeline,
+            self.tts_pipeline,
             peer_connection=pc,
             datachannel=s2s_response,
         )
