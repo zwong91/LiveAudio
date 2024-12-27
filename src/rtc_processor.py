@@ -212,10 +212,10 @@ class RTCProcessor(BaseProcessor):
     @torch.no_grad()
     def __init__(self, opt):
         super().__init__(opt)
-        self.W = opt.W
-        self.H = opt.H
+        self.W = 1920
+        self.H = 1080
 
-        self.fps = opt.fps
+        self.fps = 30
         self.video_path = ''
         self.idx = 0
         self.res_frame_queue = mp.Queue(self.batch_size * 2)
