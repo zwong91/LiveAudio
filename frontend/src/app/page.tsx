@@ -104,10 +104,15 @@ const useWebRTC = (
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
 
+          // 将 SDP 和 type 数据包装成一个 JSON 对象
+          const offerData = {
+            sdp: offer.sdp,
+            type: offer.type  // 添加 type 字段
+          };
           const response = await fetch(`${BASE_URL}/offer`, {
             method: "POST",
-            body: offer.sdp,
-            headers: { "Content-Type": "application/sdp" },
+            body: JSON.stringify(offerData),  // 转换为 JSON 字符串
+            headers: { "Content-Type": "application/json" },
           });
 
           const answer = await response.text();
