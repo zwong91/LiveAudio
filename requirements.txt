@@ -37,7 +37,5 @@ aiohttp
 
 streamlit
 streamlit-webrtc
-moviepy
-pyaudio
 gdown
 requests
