@@ -7,8 +7,8 @@ import numpy as np
 import subprocess
 import os
 import time
-import torch.nn.functional as F
 import cv2
+import torch.nn.functional as F
 import glob
 import pickle
 import copy
@@ -267,68 +267,7 @@ class RTCProcessor(BaseProcessor):
     @torch.no_grad()
     def process_frames(self, quit_event, loop=None, audio_track=None, video_track=None):
         """Process frames and put them into the video and audio tracks."""
-        while not self.quit_event.is_set():
-            try:
-                res_frame, idx, audio_frames = self.res_frame_queue.get(block=True, timeout=1)
-            except queue.Empty:
-                continue
-            
-            # Check if the event loop is running
-            if self.loop.is_closed():
-                print("Event loop is closed, stopping process_frames")
-                break
-            
-            if audio_frames[0][1] != 0 and audio_frames[1][1] != 0:
-                self.speaking = False
-                combine_frame = self.frame_list_cycle[idx]
-            else:
-                self.speaking = True
-                bbox = self.coord_list_cycle[idx]
-                ori_frame = self.frame_list_cycle[idx].copy()
-                x1, y1, x2, y2 = bbox
-                try:
-                    if res_frame is None:
-                        print("res_frame is None, skipping frame.")
-                        continue
-
-                    if isinstance(res_frame, torch.Tensor):
-                        res_frame = res_frame.cpu().numpy().astype(np.uint8)
-                    elif isinstance(res_frame, np.ndarray):
-                        res_frame = res_frame.astype(np.uint8)
-                    else:
-                        print(f"Unexpected type for res_frame: {type(res_frame)}")
-                        continue
-
-                    res_frame = cv2.resize(res_frame, (x2 - x1, y2 - y1))
-                except Exception as e:
-                    print(f"Error resizing frame: {e}")
-                    continue
-
-            # Create VideoFrame
-            image = combine_frame
-            new_video_frame = VideoFrame.from_ndarray(image, format="bgr24")
-            new_video_frame.pts = None
-            new_video_frame.time_base = fractions.Fraction(1, self.fps)
-
-            # Put the video frame into the video track queue safely
-            asyncio.run_coroutine_threadsafe(video_track._queue.put(new_video_frame), loop)
-            
-            if self.recording:
-                self.recordq_video.put(new_video_frame)
-
-            # Handle audio frames
-            for audio_frame_data, frame_type in audio_frames:
-                audio_samples = (audio_frame_data * 32767).astype(np.int16)
-                audio_samples = audio_samples.reshape(1, -1)  # Reshape to (channels, samples)
-                new_audio_frame = AudioFrame.from_ndarray(audio_samples, format='s16', layout='mono')
-                new_audio_frame.sample_rate = self.sample_rate
-
-                # Put the audio frame into the audio track queue safely
-                asyncio.run_coroutine_threadsafe(audio_track._queue.put(new_audio_frame), loop)
-
-                if self.recording:
-                    self.recordq_audio.put(new_audio_frame)
-        print('rtc process_frames thread stop')
+        pass
 
     def render(self, quit_event, loop=None, audio_track=None, video_track=None):
         self.init_customindex()

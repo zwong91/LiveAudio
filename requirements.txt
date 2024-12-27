@@ -34,6 +34,9 @@ uvicorn[standard]
 aiortc
 av
 aiohttp
+opencv-python==4.9.0.80
+resampy
+
 
 streamlit
 streamlit-webrtc

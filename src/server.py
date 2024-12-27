@@ -7,7 +7,7 @@ import base64
 import uvicorn
 import os
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, Request, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, Form, Request, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from starlette.staticfiles import StaticFiles
