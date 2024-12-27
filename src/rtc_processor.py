@@ -218,6 +218,7 @@ class RTCProcessor(BaseProcessor):
         self.fps = 30
         self.video_path = ''
         self.idx = 0
+        self.batch_size = 1
         self.res_frame_queue = mp.Queue(self.batch_size * 2)
 
         self.render_event = mp.Event()
