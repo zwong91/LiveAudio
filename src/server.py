@@ -90,6 +90,8 @@ class ClientStreamTrack(MediaStreamTrack):
             )
         except RuntimeError as e:
             logging.error(f"Processing error for {client.client_id}: {e}")
+        
+        self.start()
         return frame
     
     def start(self):
