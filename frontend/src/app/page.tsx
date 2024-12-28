@@ -92,21 +92,6 @@ const useWebRTC = (
     // Ensure WebRTC only runs in the browser
     if (typeof window !== "undefined" && window.RTCPeerConnection) {
       const pc = new RTCPeerConnection();
-      // Handle inbound tracks
-      pc.ontrack = (event: RTCTrackEvent) => {
-        console.log("Inbound track:", event.track.kind);
-
-        // Create an <audio> element for audio tracks
-        if (event.track.kind === "audio") {
-          const el = document.createElement('audio');
-          el.srcObject = event.streams[0];
-          el.autoplay = el.controls = true;
-          el.style.maxWidth = "100%";
-          document.body.appendChild(el); // Append to the body or any other container you prefer
-          console.log("Audio track added to page");
-        }
-      };
-  
       setPeerConnection(pc);
 
       const setupConnection = async () => {
@@ -155,6 +140,20 @@ const useWebRTC = (
 
   useEffect(() => {
     if (peerConnection) {
+      // Handle inbound tracks
+      peerConnection.ontrack = (event: RTCTrackEvent) => {
+        console.log("Inbound track:", event.track.kind);
+
+        // Create an <audio> element for audio tracks
+        if (event.track.kind === "audio") {
+          const el = document.createElement('audio');
+          el.srcObject = event.streams[0];
+          el.autoplay = el.controls = true;
+          el.style.maxWidth = "100%";
+          document.body.appendChild(el); // Append to the body or any other container you prefer
+          console.log("Audio track added to page");
+        }
+      };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
   
