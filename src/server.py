@@ -282,8 +282,7 @@ class Server:
         self.pcs.add(pc)
 
         # signaling = create_signaling()
-        # prepare local media
-        recorder = MediaBlackhole()
+        # recorder = MediaBlackhole()
 
         @pc.on("datachannel")
         def on_datachannel(channel):
@@ -318,7 +317,7 @@ class Server:
                     peer_connection=pc,
                     datachannel=s2s_response, 
                 )
-                recorder.addTrack(audio_track)
+                #recorder.addTrack(audio_track)
                 # Add tracks
                 #pc.addTrack(stream_track.video)
                 #pc.addTrack(stream_track.audio)
@@ -326,7 +325,7 @@ class Server:
             @track.on("ended")
             async def on_ended():
                 logging.info(f"Track {track.kind} ended")
-                await recorder.stop()
+                #await recorder.stop()
                     
         # Add transceivers
         # pc.addTransceiver('video', direction='sendonly')
@@ -343,7 +342,7 @@ class Server:
                 transceiver.direction = 'sendrecv'
 
         await pc.setRemoteDescription(offer)
-        await recorder.start()
+        #await recorder.start()
 
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
