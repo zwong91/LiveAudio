@@ -30,6 +30,8 @@ from aiortc.rtcrtpsender import RTCRtpSender
 from aiortc import MediaStreamTrack, VideoStreamTrack
 import av
 from av.frame import Frame
+import numpy as np
+
 import aiohttp
 
 from src.client import Client
