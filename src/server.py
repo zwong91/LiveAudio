@@ -278,11 +278,20 @@ class Server:
         client = Client(sessionid, self.sampling_rate, self.samples_width)
         # Create a new RTCPeerConnection
         pc = RTCPeerConnection()
+        self.pcs.add(pc)
+        # Create a new DataChannel
         s2s_response = pc.createDataChannel(
             label="response",
             ordered=True,
         )
-        self.pcs.add(pc)
+        @s2s_response.on("open")
+        def on_open():
+            logging.info("DataChannel opened")
+        @s2s_response.on("message")
+        def on_message(message):
+            # 处理接收到的音频数据
+            if isinstance(message, bytes):
+                pass
 
         # signaling = create_signaling()
         # recorder = MediaBlackhole()
