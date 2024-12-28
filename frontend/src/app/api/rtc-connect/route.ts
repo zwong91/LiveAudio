@@ -23,11 +23,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // 创建 URL 并设置查询参数
-    const url = new URL(BASE_URL);
-    url.searchParams.set('voice', 'ash');
+    //const url = new URL(BASE_URL);
+    //url.searchParams.set('voice', 'ash');
 
     // 发送请求到外部 API
-    const response = await fetch(url.toString(), {
+    const response = await fetch(BASE_URL, {
       method: 'POST',
       body: JSON.stringify(body), // 确保请求体是 JSON 格式
       headers: {
