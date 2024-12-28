@@ -74,10 +74,6 @@ class ClientStreamTrack(MediaStreamTrack):
             layout="mono",
             rate=self.sampling_rate,
         )
-        # self.buffer = torch.tensor(
-        #     [],
-        #     dtype=torch.float32,
-        # )
 
     async def recv(self) -> Frame:
         frame = await self.track.recv()
@@ -85,16 +81,8 @@ class ClientStreamTrack(MediaStreamTrack):
         frame = self.resampler.resample(frame)[0]
         frame_array = frame.to_ndarray()
         frame_array = frame_array[0].astype(np.int16)
-        # print(frame_array)
         # s16 (signed integer 16-bit number) can store numbers in range -32 768...32 767.
-        #frame_array = torch.tensor(frame_array, dtype=torch.float32) / 32_767
-
-        # self.buffer = torch.cat(
-        #     [
-        #         self.buffer,
-        #         frame_array,
-        #     ]
-        # )
+        # print(frame_array)
         self.client.append_audio_data(frame_array.tobytes(), "default")
         try:
             self.client.process_audio(
