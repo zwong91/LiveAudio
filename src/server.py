@@ -95,7 +95,7 @@ class ClientStreamTrack(MediaStreamTrack):
         return frame
     
     def start(self):
-        player = MediaPlayer("vc/liuyifei.wav")
+        player = MediaPlayer("/home/ubuntu/last/LiveAudio/vc/liuyifei.wav")
         self.peer_connection.addTrack(player.audio)
         #self.datachannel.send(b"hah ha"")
 
