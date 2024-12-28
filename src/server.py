@@ -74,10 +74,10 @@ class ClientStreamTrack(MediaStreamTrack):
             layout="mono",
             rate=self.sampling_rate,
         )
-        self.buffer = torch.tensor(
-            [],
-            dtype=torch.float32,
-        )
+        # self.buffer = torch.tensor(
+        #     [],
+        #     dtype=torch.float32,
+        # )
 
     async def recv(self) -> Frame:
         frame = await self.track.recv()
@@ -95,7 +95,7 @@ class ClientStreamTrack(MediaStreamTrack):
         #         frame_array,
         #     ]
         # )
-        self.client.append_audio_data(frame_array.tobytes()), "default")
+        self.client.append_audio_data(frame_array.tobytes(), "default")
         try:
             self.client.process_audio(
                 self.datachannel, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
