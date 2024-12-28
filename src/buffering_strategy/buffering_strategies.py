@@ -101,7 +101,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
     async def _send_interrupt_signal(self, channel):
         try:
-            await channel.send(b"END_OF_AUDIO")
+            channel.send(b"END_OF_AUDIO")
         except Exception as e:
             print(f"Failed to send interrupt signal: {e}")
 
@@ -153,7 +153,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 try:
                     async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
                         if not self.interrupt_flag:
-                            await channel.send(chunk)
+                            channel.send(chunk)
                         else:
                             raise StopAsyncIteration
 
