@@ -84,10 +84,10 @@ class ClientStreamTrack(MediaStreamTrack):
         #print(frame)
         frame = self.resampler.resample(frame)[0]
         frame_array = frame.to_ndarray()
-        frame_array = frame_array[0].astype(np.float32)
+        frame_array = frame_array[0].astype(np.int16)
         # print(frame_array)
         # s16 (signed integer 16-bit number) can store numbers in range -32 768...32 767.
-        # frame_array = torch.tensor(frame_array, dtype=torch.float32) / 32_767
+        #frame_array = torch.tensor(frame_array, dtype=torch.float32) / 32_767
 
         # self.buffer = torch.cat(
         #     [
