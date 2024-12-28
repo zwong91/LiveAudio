@@ -119,7 +119,7 @@ const useWebRTC = (
           });
 
           const answer = await response.json();
-          await pc.setRemoteDescription({ sdp: answer.sdp, type: answer.type });
+          await pc.setRemoteDescription({ sdp: answer.sdp, type: "answer" });
           setConnectionStatus("Connected");
         } catch (error) {
           console.error("WebRTC 初始化失败:", error);
