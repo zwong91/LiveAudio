@@ -9,22 +9,20 @@ In the tools you have the ability to control a robot hand.
 
 const BASE_URL = "https://gtp.aleopool.cc/offer";
 
-export async function handle(req: NextRequest, { params }: { params: { path: string[] } }) {
-  if (req.method === "OPTIONS") {
-    return new NextResponse(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    });
-  }
+// 处理 OPTIONS 请求，用于 CORS 预检
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
 
-  if (req.method !== "POST") {
-    return new NextResponse('Method Not Allowed', { status: 4088 });
-  }
-
+// 处理 POST 请求
+export async function POST(req: NextRequest) {
   try {
     // 读取请求体，假设是 JSON 格式
     const body = await req.json();
@@ -60,3 +58,27 @@ export async function handle(req: NextRequest, { params }: { params: { path: str
     return new NextResponse(`Error: ${(error as Error).message}`, { status: 500 });
   }
 }
+
+// 处理其他方法，返回 405 Method Not Allowed
+export async function GET(req: NextRequest) {
+  return new NextResponse('Method Not Allowed', { status: 405 });
+}
+
+export async function PUT(req: NextRequest) {
+  return new NextResponse('Method Not Allowed', { status: 405 });
+}
+
+export async function DELETE(req: NextRequest) {
+  return new NextResponse('Method Not Allowed', { status: 405 });
+}
+
+// 其他方法也可以统一处理
+export async function defaultHandler(req: NextRequest) {
+  return new NextResponse('Method Not Allowed', { status: 405 });
+}
+
+// 使用 defaultHandler 处理所有未定义的方法
+export { defaultHandler as PATCH };
+export { defaultHandler as HEAD };
+export { defaultHandler as CONNECT };
+export { defaultHandler as TRACE };
