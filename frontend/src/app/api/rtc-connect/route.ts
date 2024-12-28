@@ -7,7 +7,7 @@ const DEFAULT_INSTRUCTIONS = `You are helpful and have some tools installed.
 In the tools you have the ability to control a robot hand.
 `;
 
-const BASE_URL = "https://gtp.aleopool.cc";
+const BASE_URL = "https://gtp.aleopool.cc/offer";
 
 export async function POST(req: Request) {
   try {
