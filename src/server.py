@@ -317,7 +317,7 @@ class Server:
                     peer_connection=pc,
                     datachannel=s2s_response, 
                 )
-                #recorder.addTrack(audio_track)
+                pc.addTrack(audio_track)
                 # Add tracks
                 #pc.addTrack(stream_track.video)
                 #pc.addTrack(stream_track.audio)
