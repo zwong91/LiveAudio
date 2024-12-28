@@ -2,25 +2,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-
 const BASE_URL = "https://gtp.aleopool.cc/offer";
 
-export async function handle(req: NextRequest) {
-  if (req.method === "OPTIONS") {
-    return new NextResponse(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    });
-  }
+// 处理 OPTIONS 请求，用于 CORS 预检请求
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
 
-  if (req.method !== "POST") {
-    return new NextResponse('Method Not Allowed', { status: 405 });
-  }
-
+// 处理 POST 请求
+export async function POST(req: NextRequest) {
   try {
     // 读取请求体，假设是 JSON 格式
     const body = await req.json();
@@ -55,4 +52,33 @@ export async function handle(req: NextRequest) {
   } catch (error) {
     return new NextResponse(`Error: ${(error as Error).message}`, { status: 500 });
   }
+}
+
+// 处理其他方法，返回 405 Method Not Allowed
+export async function GET(req: NextRequest) {
+  return new NextResponse('Method Not Allowed', { status: 405 });
+}
+
+export async function PUT(req: NextRequest) {
+  return new NextResponse('Method Not Allowed', { status: 405 });
+}
+
+export async function DELETE(req: NextRequest) {
+  return new NextResponse('Method Not Allowed', { status: 405 });
+}
+
+export async function PATCH(req: NextRequest) {
+  return new NextResponse('Method Not Allowed', { status: 405 });
+}
+
+export async function HEAD(req: NextRequest) {
+  return new NextResponse('Method Not Allowed', { status: 405 });
+}
+
+export async function CONNECT(req: NextRequest) {
+  return new NextResponse('Method Not Allowed', { status: 405 });
+}
+
+export async function TRACE(req: NextRequest) {
+  return new NextResponse('Method Not Allowed', { status: 405 });
 }
