@@ -291,7 +291,7 @@ class Server:
 
         @pc.on("datachannel")
         def on_datachannel(channel):
-            print(f"DataChannel created: {channel.label}")
+            logging.info(f"DataChannel created: {channel.label}")
             @channel.on("open")
             def on_open():
                 logging.info("DataChannel opened")
@@ -325,8 +325,8 @@ class Server:
                     self.asr_pipeline,
                     self.llm_pipeline,
                     self.tts_pipeline,
-                    peer_connection=pc,
-                    datachannel=s2s_response, 
+                    pc,
+                    s2s_response, 
                 )
                 pc.addTrack(audio_track)
                 # Add tracks
@@ -388,11 +388,10 @@ class Server:
                     self.asr_pipeline,
                     self.llm_pipeline,
                     self.tts_pipeline,
-                    peer_connection=pc,
-                    datachannel=s2s_response,
+                    pc,
+                    s2s_response,
                 )
-                pc.addTrack(stream_track.audio)
-                #pc.addTrack(stream_track.video)
+                pc.addTrack(stream_track)
 
             @track.on("ended")
             async def on_ended():
