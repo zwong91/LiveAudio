@@ -31,7 +31,7 @@ from aiortc import MediaStreamTrack, VideoStreamTrack
 import av
 from av.frame import Frame
 import numpy as np
-from src.utils.audio_utils import torchTensor2bytes
+from src.utils.audio_utils import torchTensor2bytes, convertSampleRateTo16khz
 
 import aiohttp
 
@@ -81,22 +81,21 @@ class ClientStreamTrack(MediaStreamTrack):
 
     async def recv(self) -> Frame:
         frame = await self.track.recv()
-        print(frame)
+        #print(frame)
         frame = self.resampler.resample(frame)[0]
         frame_array = frame.to_ndarray()
         frame_array = frame_array[0].astype(np.float32)
         # print(frame_array)
         # s16 (signed integer 16-bit number) can store numbers in range -32 768...32 767.
-        frame_array = torch.tensor(frame_array, dtype=torch.float32) / 32_767
+        # frame_array = torch.tensor(frame_array, dtype=torch.float32) / 32_767
 
-        self.buffer = torch.cat(
-            [
-                self.buffer,
-                frame_array,
-            ]
-        )
-        print("Let's Speech to Speech!")
-        self.client.append_audio_data(torchTensor2bytes(frame_array), "default")
+        # self.buffer = torch.cat(
+        #     [
+        #         self.buffer,
+        #         frame_array,
+        #     ]
+        # )
+        self.client.append_audio_data(frame_array.tobytes()), "default")
         try:
             self.client.process_audio(
                 self.datachannel, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
