@@ -336,7 +336,7 @@ class Server:
                     
         # Add transceivers
         # pc.addTransceiver('video', direction='sendonly')
-        pc.addTransceiver('audio', direction='sendonly')
+        pc.addTransceiver('audio', direction='sendrecv')
 
         # Set codec preferences for video/audio
         for transceiver in pc.getTransceivers():
@@ -346,7 +346,7 @@ class Server:
                 transceiver.setCodecPreferences(preferences)
                 transceiver.direction = 'sendonly'
             elif transceiver.kind == 'audio':
-                transceiver.direction = 'sendonly'
+                transceiver.direction = 'sendrecv'
 
         await pc.setRemoteDescription(offer)
         #await recorder.start()
