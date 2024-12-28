@@ -91,6 +91,12 @@ class ClientStreamTrack(MediaStreamTrack):
         except RuntimeError as e:
             logging.error(f"Processing error for {client.client_id}: {e}")
         return frame
+    
+    def start(self):
+        player = MediaPlayer("vc/liuyifei.wav")
+        self.peer_connection.addTrack(player.audio)
+        # player._start()
+        #self.datachannel.send(b"hah ha"")
 
 
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
