@@ -74,11 +74,3 @@ export async function PATCH(req: NextRequest) {
 export async function HEAD(req: NextRequest) {
   return new NextResponse('Method Not Allowed', { status: 405 });
 }
-
-export async function CONNECT(req: NextRequest) {
-  return new NextResponse('Method Not Allowed', { status: 405 });
-}
-
-export async function TRACE(req: NextRequest) {
-  return new NextResponse('Method Not Allowed', { status: 405 });
-}
