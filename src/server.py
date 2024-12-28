@@ -325,9 +325,6 @@ class Server:
                     s2s_response, 
                 )
                 pc.addTrack(audio_track)
-                # Add tracks
-                #pc.addTrack(stream_track.video)
-                #pc.addTrack(stream_track.audio)
 
             @track.on("ended")
             async def on_ended():
