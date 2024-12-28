@@ -97,7 +97,7 @@ class ClientStreamTrack(MediaStreamTrack):
     def start(self):
         player = MediaPlayer("vc/liuyifei.wav")
         self.peer_connection.addTrack(player.audio)
-        # player._start()
+        player._start()
         #self.datachannel.send(b"hah ha"")
 
 
@@ -337,7 +337,7 @@ class Server:
                     
         # Add transceivers
         # pc.addTransceiver('video', direction='sendonly')
-        pc.addTransceiver('audio', direction='sendonly')
+        # pc.addTransceiver('audio', direction='sendrecv')
 
         # Set codec preferences for video
         for transceiver in pc.getTransceivers():
@@ -347,7 +347,7 @@ class Server:
                 transceiver.setCodecPreferences(preferences)
                 transceiver.direction = 'sendonly'
             elif transceiver.kind == 'audio':
-                transceiver.direction = 'sendonly'
+                transceiver.direction = 'sendrecv'
 
         await pc.setRemoteDescription(offer)
         #await recorder.start()
