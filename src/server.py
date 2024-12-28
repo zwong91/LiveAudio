@@ -273,7 +273,9 @@ class Server:
             label="response",
             ordered=True,
         )
-
+        @s2s_response.on("open")
+        def on_open():
+            print("DataChannel opened")
         # signaling = create_signaling()
         # recorder = MediaBlackhole()
 
