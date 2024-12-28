@@ -88,9 +88,9 @@ class ClientStreamTrack(MediaStreamTrack):
             self.client.process_audio(
                 self.datachannel, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
             )
-        except RuntimeError as e:
+        except Exception as e:
             logging.error(f"Processing error for {client.client_id}: {e}")
-        
+
         self.start()
         return frame
     
@@ -336,9 +336,9 @@ class Server:
                     
         # Add transceivers
         # pc.addTransceiver('video', direction='sendonly')
-        # pc.addTransceiver('audio', direction='sendrecv')
+        pc.addTransceiver('audio', direction='sendonly')
 
-        # Set codec preferences for video
+        # Set codec preferences for video/audio
         for transceiver in pc.getTransceivers():
             if transceiver.kind == 'video':
                 capabilities = RTCRtpSender.getCapabilities('video')
@@ -346,7 +346,7 @@ class Server:
                 transceiver.setCodecPreferences(preferences)
                 transceiver.direction = 'sendonly'
             elif transceiver.kind == 'audio':
-                transceiver.direction = 'sendrecv'
+                transceiver.direction = 'sendonly'
 
         await pc.setRemoteDescription(offer)
         #await recorder.start()
