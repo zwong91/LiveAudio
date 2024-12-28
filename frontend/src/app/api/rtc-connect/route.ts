@@ -1,6 +1,6 @@
 // src/app/api/rtc-connect/route.ts
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const DEFAULT_INSTRUCTIONS = `You are helpful and have some tools installed.
 
@@ -9,7 +9,22 @@ In the tools you have the ability to control a robot hand.
 
 const BASE_URL = "https://gtp.aleopool.cc/offer";
 
-export async function POST(req: Request) {
+export async function handle(req: NextRequest, { params }: { params: { path: string[] } }) {
+  if (req.method === "OPTIONS") {
+    return new NextResponse(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    });
+  }
+
+  if (req.method !== "POST") {
+    return new NextResponse('Method Not Allowed', { status: 4088 });
+  }
+
   try {
     // 读取请求体，假设是 JSON 格式
     const body = await req.json();
