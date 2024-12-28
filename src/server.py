@@ -265,14 +265,13 @@ class Server:
         client = Client(sessionid, self.sampling_rate, self.samples_width)
         # Create a new RTCPeerConnection
         pc = RTCPeerConnection()
-        self.pcs.add(pc)
-
-
         # Create a new DataChannel after the peer connection is created
         s2s_response = pc.createDataChannel(
             label="response",
             ordered=True,
         )
+        self.pcs.add(pc)
+        
         @s2s_response.on("open")
         async def on_open():
             print("DataChannel opened")
