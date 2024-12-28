@@ -278,31 +278,31 @@ class Server:
         # Create a new RTCPeerConnection
         pc = RTCPeerConnection()
         self.pcs.add(pc)
-        # Create a new DataChannel
+
+
+        # Create a new DataChannel after the peer connection is created
         s2s_response = pc.createDataChannel(
             label="response",
             ordered=True,
         )
-        @s2s_response.on("open")
-        def on_open():
-            logging.info("DataChannel opened")
-        @s2s_response.on("message")
-        def on_message(message):
-            # 处理接收到的音频数据
-            if isinstance(message, bytes):
-                pass
 
         # signaling = create_signaling()
         # recorder = MediaBlackhole()
 
         @pc.on("datachannel")
         def on_datachannel(channel):
-            logging.info(f"on_datachannel {channel}")
-
+            print(f"DataChannel created: {channel.label}")
+            @channel.on("open")
+            def on_open():
+                logging.info("DataChannel opened")
             @channel.on("message")
             def on_message(message):
                 if isinstance(message, str):
                     channel.send("pong" + message)
+                elif isinstance(message, bytes):
+                    # 假设 message 是音频数据（如 PCM 格式）
+                    # 进行处理（例如，解码、分析或保存音频数据）
+                    logging.info(f"Received {len(message)} bytes of audio data")
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
