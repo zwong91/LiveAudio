@@ -147,9 +147,9 @@ const useWebRTC = (
 
   useEffect(() => {
     if (peerConnection) {
-      // Handle inbound tracks
-      peerConnection.ontrack = (event: RTCTrackEvent) => {
-        console.log("Inbound track:", event.track.kind);
+      // // Handle inbound tracks
+      // peerConnection.ontrack = (event: RTCTrackEvent) => {
+      //   console.log("Inbound track:", event.track.kind);
 
       //   // Create an <audio> element for audio tracks
       //   if (event.track.kind === "audio") {
