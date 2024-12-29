@@ -21,7 +21,7 @@ export default function Home() {
     model: "v5",
     baseAssetPath: "/",
     onnxWASMBasePath: "/",
-    onSpeechEnd: (audio: blob) => {
+    onSpeechEnd: (audio: Float32Array) => {
       const wavBuffer = utils.encodeWAV(audio);
       const base64 = utils.arrayBufferToBase64(wavBuffer);
       const url = `data:audio/wav;base64,${base64}`;
