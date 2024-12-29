@@ -13,7 +13,14 @@ function handleCors(req: NextRequest, res: NextResponse) {
   
   if (req.method === 'OPTIONS') {
     // 如果是 OPTIONS 请求，直接返回 200
-    return new NextResponse(null, { status: 200 });
+    return new NextResponse(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    });
   }
   return res;
 }
