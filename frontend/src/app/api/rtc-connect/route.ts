@@ -42,6 +42,11 @@ export async function OPTIONS(req: NextRequest) {
 export async function POST(req: NextRequest) {
 
   // 运行 CORS 中间件
+  // 创建一个有效的 NextResponse 默认响应对象
+  const res = NextResponse.next();
+
+  // 运行 CORS 中间件，传递有效的 res
+  await runMiddleware(req, res, cors);
   await runMiddleware(req, {}, cors);
   try {
 
