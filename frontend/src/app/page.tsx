@@ -121,7 +121,6 @@ const useWebRTC = (
 
           const answer = await response.json();
           await pc.setRemoteDescription({ sdp: answer.sdp, type: "answer" });
-          setConnectionStatus("Connected");
         } catch (error) {
           console.error("WebRTC 初始化失败:", error);
           setConnectionStatus("Disconnected");
@@ -134,6 +133,11 @@ const useWebRTC = (
       const dc = pc.createDataChannel('response');
       setDataChannel(dc);
   
+      pc.onconnectionstatechange = (event: Event) => {
+        if ((event.target as RTCPeerConnection).connectionState == 'failed')
+          setupConnection();
+      };
+
       return () => {
         pc.close();
         setConnectionStatus("Closed");
@@ -161,7 +165,7 @@ const useWebRTC = (
       // };
       peerConnection.onconnectionstatechange = (event: Event) => {
         console.log("on connectionstate changed:", (event.target as RTCPeerConnection).connectionState);
-        //getcconnectionstatus()
+        setConnectionStatus((event.target as RTCPeerConnection).connectionState);
       };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
