@@ -263,7 +263,8 @@ class Server:
 
         # Generate a unique sessionid
         sessionid = str(uuid.uuid4())
-        client = Client(sessionid, self.sampling_rate, self.samples_width)
+        use_webrtc = true
+        client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
         # Create a new RTCPeerConnection
         pc = RTCPeerConnection()
         # Create a new DataChannel after the peer connection is created
@@ -394,7 +395,8 @@ class Server:
 
         logging.info(f"accept client: {websocket.client}")
         client_id = str(uuid.uuid4())
-        client = Client(client_id, self.sampling_rate, self.samples_width)
+        use_webrtc = false
+        client = Client(use_webrtc, client_id, self.sampling_rate, self.samples_width)
         self.connected_clients[client_id] = client
         logging.info(f"Client {client_id} connected")
 
