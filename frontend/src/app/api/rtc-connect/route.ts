@@ -9,7 +9,11 @@ const cors = Cors({
   origin: '*'  // 可以根据实际需求限制允许的源
 });
 
-function runMiddleware(req: NextRequest, res: NextResponse, fn: Function) {
+function runMiddleware(
+  req: NextRequest,
+  res: NextResponse,
+  fn: (req: NextRequest, res: NextResponse, next: Function) => void
+) {
   return new Promise((resolve, reject) => {
     fn(req, res, (result: any) => {
       if (result instanceof Error) {
