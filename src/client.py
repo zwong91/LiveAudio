@@ -25,7 +25,8 @@ class Client:
         samples_width (int): The width of each audio sample in bits.
     """
 
-    def __init__(self, client_id, sampling_rate, samples_width):
+    def __init__(self, use_webrtc, client_id, sampling_rate, samples_width):
+        self.use_webrtc = use_webrtc
         self.client_id = client_id
         self.history = []
         self.speaker = None
@@ -77,7 +78,7 @@ class Client:
     def get_file_name(self):
         return f"{self.client_id}_{self.file_counter}.wav"
 
-    def process_audio(self, websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+    def process_audio(self, channel, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
         self.buffering_strategy.process_audio(
-            websocket, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline
+            channel, self.use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline
         )

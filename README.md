@@ -1,6 +1,6 @@
 # LiveAudio
 
-Welcome to the Live-Audio repository! This project hosts two exciting applications leveraging advanced audio understand and speech generation models to bring your audio experiences to life:
+Welcome to the LiveAudio repository! This project hosts two exciting applications leveraging advanced audio understand and speech generation models to bring your audio experiences to life:
 
 **Voice Chat** :  This application is designed to provide an interactive and natural chatting experience, making it easier to adopt sophisticated AI-driven dialogues in various settings.
 
@@ -17,14 +17,14 @@ For `SenseVoice`, visit [SenseVoice repo](https://github.com/FunAudioLLM/SenseVo
 #0  source code
 
 apt update
-apt-get install build-essential libopenblas-dev vim  ffmpeg  git-lfs -y
+apt-get install build-essential libopenblas-dev vim  ffmpeg portaudio19-dev  git-lfs -y
 CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python
 
 
 mkdir /asset
 chmod 777 /asset/
-git clone https://github.com/zwong91/Live-Audio.git
-cd /workspace/Live-Audio
+git clone https://github.com/zwong91/LiveAudio.git
+cd /workspace/LiveAudio
 git pull
 
 #1 pre_install.sh
@@ -38,12 +38,12 @@ conda config --set auto_activate_base false
 conda create -n rt python=3.10  -y
 conda activate rt
 
-#2  Live-Audio
-cd /workspace/Live-Audio
+#2  LiveAudio
+cd /workspace/LiveAudio
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 #3 xtts
-cd /workspace/Live-Audio/src/xtts
+cd /workspace/LiveAudio/src/xtts
 pip install -e .[all,dev,notebooks]  -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 #4. download xtts-v2 
@@ -109,12 +109,12 @@ sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE
 [pem file](generate_ssl.sh) microphone need ssl/tls
 
 ``` sh
-HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type silero --vad-args '{"auth_token": "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"}' --llm-type ollama
+HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}' --llm-type ollama
 ```
 
 ***test***
 
-```
+```bash
 export PYANNOTE_AUTH_TOKEN=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
 ASR_TYPE=sensevoice python -m unittest test.server.test_server
 ```

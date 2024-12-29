@@ -16,7 +16,7 @@ def parse_args():
         description="Audio AI Server: Real-time audio conversation "
                     "using self-hosted Sensevoice and WebSocket."
     )
-    parser.add_argument("--vad-type", type=str, default="silero", help="VAD pipeline type")
+    parser.add_argument("--vad-type", type=str, default="pyannote", help="VAD pipeline type")
     parser.add_argument("--vad-args", type=str, default='{"auth_token": "huggingface_token"}', help="VAD args (JSON string)")
     parser.add_argument("--asr-type", type=str, default="sensevoice", help="ASR pipeline type")
     parser.add_argument("--asr-args", type=str, default='{"model_size": "distil-large-v3"}', help="ASR args (JSON string)")
@@ -26,6 +26,9 @@ def parse_args():
     parser.add_argument("--port", type=int, default=8765, help="Port for the WebSocket server")
     parser.add_argument("--certfile", type=str, default=None, help="Path to SSL certificate file")
     parser.add_argument("--keyfile", type=str, default=None, help="Path to SSL key file")
+    parser.add_argument('--max_session', type=int, default=1)
+    parser.add_argument('--transport', type=str, default='webrtc')
+    parser.add_argument('--push_url', type=str, default='http://localhost:39999/rtc/v1/vc/?app=live&stream=livestream')
     parser.add_argument("--log-level", type=str, default="error", choices=["debug", "info", "warning", "error"], help="Logging level")
     return parser.parse_args()
 

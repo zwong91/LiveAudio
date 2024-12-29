@@ -8,8 +8,6 @@ ctranslate2==4.4.0,
 huggingface
 huggingface_hub
 funasr
-fastapi
-uvicorn[standard]
 python-multipart
 soundfile
 uvloop
@@ -20,6 +18,7 @@ edge-tts
 pydub
 onnx
 onnxconverter_common
+pyloudnorm
 speechbrain==1.0.0
 pyannote.audio
 asyncio==3.4.3
@@ -29,3 +28,16 @@ deepspeed==0.16.1
 langid
 PyPDF2
 ormsgpack
+
+fastapi
+uvicorn[standard]
+aiortc
+av
+aiohttp
+resampy
+
+
+streamlit
+streamlit-webrtc
+gdown
+requests

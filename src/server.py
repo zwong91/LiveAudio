@@ -7,22 +7,92 @@ import base64
 import uvicorn
 import os
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, HTTPException, Request
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, Form, Request, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from starlette.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
-
+from pydantic import BaseModel
 
 import torch
 import torchaudio
 
-from src.client import Client
+
 import ormsgpack
 
-from pydantic import BaseModel
 from typing import List
 import shutil
+
+
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
+from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
+from aiortc.rtcrtpsender import RTCRtpSender
+from aiortc import MediaStreamTrack, VideoStreamTrack
+import av
+from av.frame import Frame
+import numpy as np
+from src.utils.audio_utils import torchTensor2bytes, convertSampleRateTo16khz
+
+import aiohttp
+
+from src.client import Client
+
+relay = MediaRelay()
+class ClientStreamTrack(MediaStreamTrack):
+    """
+    A media track that receives frames from a RTCClient.
+    """
+
+    def __init__(
+            self,
+            track,
+            kind,
+            client,
+            vad_pipeline,
+            asr_pipeline,
+            llm_pipeline,
+            tts_pipeline,
+            peer_connection,
+            datachannel, 
+            signaling=None
+    ):
+        super().__init__()  # don't forget this!
+        self.kind = kind
+        self.track = track
+        self.client = client
+        self.vad_pipeline = vad_pipeline
+        self.asr_pipeline = asr_pipeline
+        self.llm_pipeline = llm_pipeline
+        self.tts_pipeline = tts_pipeline
+        self.peer_connection = peer_connection
+        self.datachannel = datachannel
+        # self.signaling = signaling
+        
+        self.sampling_rate = 16_000
+        self.resampler = av.AudioResampler(
+            format="s16",
+            layout="mono",
+            rate=self.sampling_rate,
+        )
+
+    async def recv(self) -> Frame:
+        frame = await self.track.recv()
+        #print(frame)
+        frame = self.resampler.resample(frame)[0]
+        frame_array = frame.to_ndarray()
+        frame_array = frame_array[0].astype(np.int16)
+        # s16 (signed integer 16-bit number) can store numbers in range -32 768...32 767.
+        # print(frame_array)
+        self.client.append_audio_data(frame_array.tobytes(), "default")
+        try:
+            self.client.process_audio(
+                self.datachannel, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
+            )
+        except Exception as e:
+            logging.error(f"Processing error for {client.client_id}: {e}")
+
+        return frame
+
 
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
 
@@ -120,7 +190,6 @@ class Server:
         samples_width=2,
         certfile=None,
         keyfile=None,
-        static_dir="assets",  # 静态文件目录
     ):
         self.vad_pipeline = vad_pipeline
         self.asr_pipeline = asr_pipeline
@@ -133,7 +202,8 @@ class Server:
         self.certfile = certfile
         self.keyfile = keyfile
         self.connected_clients = {}
-
+        
+        self.pcs = set()
         self.app = FastAPI(
             title="Audio AI Server",
             description='',
@@ -150,7 +220,7 @@ class Server:
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
-            allow_credentials=True,
+            allow_credentials=False,
             allow_methods=["*"],
             allow_headers=["*"],
         )
@@ -161,7 +231,6 @@ class Server:
 
         self.app.add_event_handler("startup", self.startup)
         self.app.add_event_handler("shutdown", self.shutdown)
-        #self.app.mount("/assets", StaticFiles(directory=static_dir), name="assets")
 
         self.app.get("/asset/{filename}")(self.get_asset_file)
         self.app.post("/generate_accent/{vc_name}")(self.upload_audio_files)
@@ -171,6 +240,8 @@ class Server:
 
         self.app.websocket("/stream")(self.websocket_endpoint)
         self.app.websocket("/stream-vc")(self.websocket_endpoint)
+        
+        self.app.post("/offer")(self.offer_endpoint)
 
     async def startup(self):
         """Called on startup to set up additional services."""
@@ -178,15 +249,154 @@ class Server:
         # 启动任务处理的后台任务
         asyncio.create_task(self.tts_manager.start_processing())
 
-    async def shutdown():
+    async def shutdown(self):
         logging.info(f"shutdown server ...")
+        # Shutdown tasks: Close WebRTC connections
+        coros = [pc.close() for pc in self.pcs]
+        await asyncio.gather(*coros)
+        self.pcs.clear()
+
+    async def offer_endpoint(self, request: Request):
+        
+        params = await request.json()
+        offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
+
+        # Generate a unique sessionid
+        sessionid = str(uuid.uuid4())
+        use_webrtc = True
+        client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
+        # Create a new RTCPeerConnection
+        pc = RTCPeerConnection()
+        # Create a new DataChannel after the peer connection is created
+        s2s_response = pc.createDataChannel(
+            label="response",
+            ordered=True,
+        )
+        self.pcs.add(pc)
+        
+        @s2s_response.on("open")
+        async def on_open():
+            print("DataChannel opened")
+        # signaling = create_signaling()
+        # recorder = MediaBlackhole()
+
+        @pc.on("datachannel")
+        def on_datachannel(channel):
+            logging.info(f"DataChannel created: {channel.label}")
+            @channel.on("open")
+            async def on_open():
+                logging.info("DataChannel opened")
+            @channel.on("message")
+            def on_message(message):
+                if isinstance(message, str):
+                    channel.send("pong" + message)
+                elif isinstance(message, bytes):
+                    # 假设 message 是音频数据（如 PCM 格式）
+                    # 进行处理（例如，解码、分析或保存音频数据）
+                    logging.info(f"Received {len(message)} bytes of audio data")
+
+        @pc.on("connectionstatechange")
+        async def on_connectionstatechange():
+            logging.info(f"Connection state is {pc.connectionState}")
+            if pc.connectionState in ["failed", "closed"]:
+                await pc.close()
+                self.pcs.discard(pc)
+
+        @pc.on("track")
+        def on_track(track):
+            logging.info(f"Track {track.kind} received")
+            if track.kind == "audio":
+                audio_track = ClientStreamTrack(
+                    relay.subscribe(
+                        track=track,
+                    ),
+                    "audio",
+                    client,
+                    self.vad_pipeline,
+                    self.asr_pipeline,
+                    self.llm_pipeline,
+                    self.tts_pipeline,
+                    pc,
+                    s2s_response, 
+                )
+                pc.addTrack(audio_track)
+
+            @track.on("ended")
+            async def on_ended():
+                logging.info(f"Track {track.kind} ended")
+                #await recorder.stop()
+                    
+        # Add transceivers
+        # pc.addTransceiver('video', direction='sendonly')
+        pc.addTransceiver('audio', direction='sendrecv')
+
+        # Set codec preferences for video/audio
+        for transceiver in pc.getTransceivers():
+            if transceiver.kind == 'video':
+                capabilities = RTCRtpSender.getCapabilities('video')
+                preferences = [codec for codec in capabilities.codecs if codec.name in ('H264', 'VP8')]
+                transceiver.setCodecPreferences(preferences)
+                transceiver.direction = 'sendonly'
+            elif transceiver.kind == 'audio':
+                transceiver.direction = 'sendrecv'
+
+        await pc.setRemoteDescription(offer)
+        #await recorder.start()
+
+        answer = await pc.createAnswer()
+        await pc.setLocalDescription(answer)
+
+        return JSONResponse(content={"sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "sessionid": sessionid})
+
+    async def push(self, push_url):
+        pc = RTCPeerConnection()
+        self.pcs.add(pc)
+
+        sessionid = str(uuid.uuid4())
+        client = Client(sessionid, self.sampling_rate, self.samples_width)
+
+        @pc.on("connectionstatechange")
+        async def on_connectionstatechange():
+            print(f"Connection state is {pc.connectionState}")
+            if pc.connectionState == "failed":
+                await pc.close()
+                self.pcs.discard(pc)
+
+        @pc.on("track")
+        def on_track(track):
+            logging.info(f"Track {track.kind} received")
+            if track.kind == "audio":
+                stream_track = ClientStreamTrack(
+                    relay.subscribe(
+                        track=track,
+                        ),
+                    "audio",
+                    client,
+                    self.vad_pipeline,
+                    self.asr_pipeline,
+                    self.llm_pipeline,
+                    self.tts_pipeline,
+                    pc,
+                    s2s_response,
+                )
+                pc.addTrack(stream_track)
+
+            @track.on("ended")
+            async def on_ended():
+                logging.info(f"Track {track.kind} ended")
+
+        await pc.setLocalDescription(await pc.createOffer())
+        answer = await post(push_url, {"sdp": pc.localDescription.sdp})
+        await pc.setRemoteDescription(RTCSessionDescription(sdp=answer, type='answer'))
+
 
     async def websocket_endpoint(self, websocket: WebSocket):
         await websocket.accept()
 
         logging.info(f"Client {websocket.client} accepted, waiting for messages.")
         client_id = str(uuid.uuid4())
-        client = Client(client_id, self.sampling_rate, self.samples_width)
+        use_webrtc = False
+        client = Client(use_webrtc, client_id, self.sampling_rate, self.samples_width)
         self.connected_clients[client_id] = client
         logging.info(f"Client {client_id} connected")
 
@@ -198,6 +408,7 @@ class Server:
             #await websocket.close()
 
     async def handle_audio(self, client, websocket):
+        sessionid = None  # To store the sessionid
         while True:
             try:
                 message = await websocket.receive_text()
@@ -205,10 +416,19 @@ class Server:
                 #message = await websocket.receive_bytes()
                 # Decode the MessagePack data
                 #data = ormsgpack.unpackb(message)
+                msg_type = data.get('event')
+                if msg_type == 'session':
+                    sessionid = data.get("sessionid")
+                    if sessionid is not None:
+                        # Optionally, send confirmation back to the client
+                        await websocket.send_json({"type": "session_ack", "sessionid": sessionid})
+                    else:
+                        await websocket.send_json({"type": "error", "message": "No rtc sessionid provided."})              
 
-                if data.get('event') == 'start':
+                elif msg_type == 'start':
                     request_data = data.get('request', {})
                     chunk = request_data.get('audio')
+                    audio_data = base64.b64decode(chunk)
                     audio_data = base64.b64decode(chunk)
                     latency = request_data.get('latency')
                     format = request_data.get('format')
@@ -217,11 +437,19 @@ class Server:
 
                     # Print or process the extracted data
                     logging.debug(f"Audio Data: {audio_data}, Latency: {latency}, Format: {format}")
+                    logging.debug(f"Audio Data: {audio_data}, Latency: {latency}, Format: {format}")
                     logging.debug(f"Prosody: {prosody}, VC UID: {vc_uid}")
 
+                    #TODO: Pass the message to your processing function
                     client.append_audio_data(audio_data, vc_uid)
                     # 异步task处理音频
                     self._process_audio(client, websocket)
+
+                elif msg_type == 'stop':
+                    if sessionid is not None:
+                        logging.info(f"Session {sessionid} ended.")
+                else:
+                    await websocket.send_json({"type": "error", "message": f"Unknown message type: {msg_type}"})
 
             except WebSocketDisconnect as e:
                 logging.error(f"Connection with {client.client_id} closed: {e}")
@@ -269,6 +497,15 @@ class Server:
                 'Content-Disposition': 'inline'
             }
         )
+
+    async def post(self, url, data):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, data=data) as response:
+                    return await response.text()
+        except aiohttp.ClientError as e:
+            print(f'Error: {e}')
+
 
     async def upload_audio_files(self, vc_name: str, files: List[UploadFile] = File(...)):
         file_paths = []
