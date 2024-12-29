@@ -6,9 +6,6 @@ const nextConfig = {
 
   // Static export configuration (if you're doing static export)
   output: 'export', // This is fine for static sites, if you're using dynamic server-side functionality, this may need adjustment
-  experimental: {
-    appDir: true, // App Router feature
-  },
 
   // Transpile the specific packages you need
   transpilePackages: ['onnxruntime-web', '@ricky0123/vad-web'],
@@ -27,15 +24,15 @@ const nextConfig = {
         patterns: [
           {
             from: "node_modules/onnxruntime-web/dist/*.wasm",
-            to: "public/[name][ext]",
+            to: "../public/[name][ext]",
           },
           {
             from: "node_modules/@ricky0123/vad-web/dist/vad.worklet.bundle.min.js",
-            to: "public/[name][ext]",
+            to: "../public/[name][ext]",
           },
           {
             from: "node_modules/@ricky0123/vad-web/dist/*.onnx",
-            to: "public/[name][ext]",
+            to: "../public/[name][ext]",
           },
         ],
       })
