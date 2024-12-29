@@ -35,8 +35,9 @@ export async function POST(req: NextRequest) {
   handleCors(req, res); // 处理 CORS 逻辑
 
   try {
+    console.log('Received POST request', req);
     const body = await req.json();
-
+    console.log('Request Body:', body);
     // 发送请求到外部 API
     const response = await fetch(BASE_URL, {
       method: 'POST',
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
     });
-
+    console.log('External API Response:', response);
     // 检查响应是否正常
     if (!response.ok) {
       return new NextResponse('WebRTC API error', { status: response.status });
