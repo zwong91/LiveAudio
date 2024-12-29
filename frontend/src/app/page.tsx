@@ -167,6 +167,10 @@ const useWebRTC = (
       //     console.log("Audio track added to page");
       //   }
       // };
+      peerConnection.onconnectionstatechange = (ev) => {
+          console.log("on connectionstate changed:", event.data);
+          //getcconnectionstatus()
+      }
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
   
@@ -233,13 +237,6 @@ export default function Home() {
     setIsRecording,
     checkAndBufferAudio
   );
-
-  useEffect(() => {
-    if (!isPlayingAudio && audioQueue.length > 0) {
-      const nextAudioBlob = audioQueue.shift();
-      if (nextAudioBlob) playAudio(nextAudioBlob);
-    }
-  }, [isPlayingAudio, audioQueue, playAudio]);
 
   return (
     <div className={styles.container}>
