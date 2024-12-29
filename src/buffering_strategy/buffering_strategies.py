@@ -99,27 +99,45 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.process_audio_async(channel, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
             )
 
-    async def _send_interrupt_signal(self, channel):
-        try:
-            channel.send(b"END_OF_AUDIO")
-        except Exception as e:
-            print(f"Failed to send interrupt signal: {e}")
-
-    async def _send(self, channel, use_webrtc, chunk):
+    async def _send_interrupt_signal(self, channel, use_webrtc):
         """
         Sends an audio chunk to the specified channel using either WebRTC or WebSocket.
+    
         Args:
             channel: The channel object to send the chunk to.
             use_webrtc (bool): Whether to use WebRTC for sending.
             chunk: The audio chunk to send.
         """
+        async def send_webrtc():
+            channel.send(b"END_OF_AUDIO")
+    
+        async def send_websocket():
+            await channel.send_bytes(b"END_OF_AUDIO")
+    
         try:
-            if use_webrtc:
-                channel.send(chunk)
-            else:
-                await channel.send_bytes(chunk)
+            await (send_webrtc() if use_webrtc else send_websocket())
         except Exception as e:
-            logger.error(f"Failed to send audio chunk: {e}")
+            logger.error(f"Failed to send audio chunk:{e}")
+
+    async def _send(self, channel, use_webrtc, chunk):
+        """
+        Sends an audio chunk to the specified channel using either WebRTC or WebSocket.
+    
+        Args:
+            channel: The channel object to send the chunk to.
+            use_webrtc (bool): Whether to use WebRTC for sending.
+            chunk: The audio chunk to send.
+        """
+        async def send_webrtc():
+            channel.send(chunk)
+    
+        async def send_websocket():
+            await channel.send_bytes(chunk)
+    
+        try:
+            await (send_webrtc() if use_webrtc else send_websocket())
+        except Exception as e:
+            logger.error(f"Failed to send audio chunk:{e}")
 
     def _update_client_state(self, updated_history):
         """Update client state after TTS process ends."""
