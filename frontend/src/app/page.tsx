@@ -222,6 +222,8 @@ export default function Home() {
   const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(true);
   const [audioList, setAudioList] = useState<string[]>([]);
+
+  const audioItemKey = (audioURL: string) => audioURL.substring(-10)
   const vad = useMicVAD({
     model: "v5",
     baseAssetPath: "/",
@@ -233,6 +235,7 @@ export default function Home() {
       setAudioList((old) => [url, ...old]);
     },
   });
+
 
   const { isPlayingAudio, playAudio, checkAndBufferAudio, stopCurrentAudio } = useAudioManager(
     audioQueue,
@@ -296,6 +299,7 @@ export default function Home() {
         </div>
       </div>
 
+      <div>
       {/* Add the VAD status */}
       <div>
         <h6>Listening</h6>
@@ -313,6 +317,23 @@ export default function Home() {
         <button onClick={vad.start}>Start</button>
         <button onClick={vad.toggle}>Toggle</button>
       </div>
+
+      {/* Add the audio playlist */}
+      <div>
+        <ol
+          id="playlist"
+          className="self-center pl-0 max-h-[400px] overflow-y-auto no-scrollbar list-none"
+        >
+          {audioList.map((audioURL) => {
+            return (
+              <li className="pl-0" key={audioItemKey(audioURL)}>
+                <audio src={audioURL} controls />
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </div>
 
       <div className={styles.controls}>
         <button
