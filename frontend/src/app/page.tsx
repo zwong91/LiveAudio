@@ -282,8 +282,14 @@ export default function Home() {
 
       <div className={styles.controls}>
         <button
-          className={isCallEnded ? styles.startCallButton : styles.endCallButton}
-          onClick={endCall}
+          className={isInCall ? styles.endCallButton : styles.startCallButton}
+          onClick={() => {
+            if (isInCall) {
+              endCall();
+            } else {
+              window.location.reload();
+            }
+          }}
         >
           {isCallEnded ? "重新通话" : "结束通话"}
         </button>
