@@ -121,6 +121,10 @@ class OllamaLLM(LLMInterface):
 
 
     async def generate_response(self, history: List[Dict[str, str]], query: str, stream:  bool, max_tokens: int = 128) -> Tuple[str, List[Dict[str, str]]]:
+<<<<<<<<< Temporary merge branch 1
+=========
+    async def generate_response(self, history: List[Dict[str, str]], query: str, stream:  bool, max_tokens: int = 128) -> Tuple[str, List[Dict[str, str]]]:
+>>>>>>>>> Temporary merge branch 2
         start_time = time.time()
 
         if history is None:
