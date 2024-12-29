@@ -1,4 +1,5 @@
 // src/app/api/rtc-connect/route.ts
+export const runtime = 'edge';
 
 import { NextRequest, NextResponse } from 'next/server';
 
