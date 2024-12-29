@@ -97,10 +97,6 @@ const useWebRTC = (
       const pc = new RTCPeerConnection();
       setPeerConnection(pc);
 
-      // 创建 DataChannel 对象
-      const dc = pc.createDataChannel('response');
-      setDataChannel(dc);
-
       const setupConnection = async () => {
         try {
           // 获取音频流
@@ -135,6 +131,10 @@ const useWebRTC = (
       };
 
       setupConnection();
+
+      // 创建 DataChannel 对象
+      const dc = pc.createDataChannel('response');
+      setDataChannel(dc);
   
       return () => {
         pc.close();
