@@ -175,16 +175,13 @@ const useWebRTC = (
           console.log("Received message:", event.data);
           try {
             let audioData: ArrayBuffer;
-  
             if (event.data instanceof ArrayBuffer) {
               audioData = event.data;
             } else if (event.data instanceof Blob) {
-              const arrayBuffer = await event.data.arrayBuffer();
-              audioData = arrayBuffer;
+              audioData = await event.data.arrayBuffer();
             } else {
               throw new Error("Unsupported data type received");
             }
-  
             checkAndBufferAudio(audioData);
           } catch (error) {
             console.error("Error processing WebSocket message:", error);
