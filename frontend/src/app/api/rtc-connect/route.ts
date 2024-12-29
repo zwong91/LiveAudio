@@ -42,7 +42,7 @@ export async function OPTIONS(req: NextRequest) {
 export async function POST(req: NextRequest) {
 
   // 运行 CORS 中间件
-  await runMiddleware(request, {}, cors);
+  await runMiddleware(req, {}, cors);
   try {
 
     // 读取请求体，假设是 JSON 格式
