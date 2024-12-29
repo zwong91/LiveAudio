@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 
-// 音频管理器
+import { useState } from 'react';
+
 const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecording: Function) => {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioDuration, setAudioDuration] = useState<number>(0);
@@ -16,22 +17,22 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
       setIsPlayingAudio(false);
     }
   };
-  
+
   const playAudio = async (audioBlob: Blob) => {
     const audioUrl = URL.createObjectURL(audioBlob);
     const audio = new Audio(audioUrl);
     setCurrentAudio(audio); // 设置当前播放的音频对象
-  
+
     audio.onloadedmetadata = () => setAudioDuration(audio.duration);
-  
+
     audio.onended = () => {
       URL.revokeObjectURL(audioUrl);
       setIsPlayingAudio(false);
-  
+
       if (audioQueue.length > 0) {
         const nextAudioBlob = audioQueue.shift();
         if (nextAudioBlob) {
-          //playAudio(nextAudioBlob);
+          playAudio(nextAudioBlob);
         }
       } else {
         // 播放完所有音频后清空队列
@@ -39,37 +40,42 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
         setIsRecording(true);
       }
     };
-  
+
     try {
       setIsPlayingAudio(true);
-      await audio.play();
+      await audioplay();
     } catch (error) {
       console.error("播放音频失败:", error);
       setIsPlayingAudio(false);
     }
   };
-  
+
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
     const text = new TextDecoder("utf-8").decode(audioData);
-  
+
     if (text.includes("END_OF_AUDIO")) {
-      console.log("Detected END_OF_AUDIO signal in audioData");
+      console.log("Detected ENDOfAudio signal in audioData");
       stopCurrentAudio(); // 停止当前音频播放
       setIsRecording(true);
-      setIsPlayingAudio(false);
       return;
     }
-  
-    // 如果没有检测到 "END_OF_AUDIO" 信号，继续缓存音频并立即播放
-    const audioBlob = new Blob([audioData], { type: "audio/wav" });
+
+    // 如果没有检测到 "END_OF_AUDIO" 信号，继续缓存音频并播放
+    const audioBlob = new Blob([audioData], { type: "audio/wav"});
     setAudioQueue((prevQueue: Blob[]) => {
       const newQueue = [...prevQueue, audioBlob];
-      // 播放新的音频
-      if (!isPlayingAudio) {
-        playAudio(audioBlob); // 立刻播放当前音频
-      }
+      playNextAudio();
       return newQueue;
     });
+  };
+
+  const playNextAudio = () => {
+    if (!isPlayingAudio && audioQueue.length > 0) {
+      const nextAudioBlob = audioQueue.shift();
+      if (nextAudioBlob) {
+        playAudio(nextAudioBlob);
+      }
+    }
   };
 
   return {
