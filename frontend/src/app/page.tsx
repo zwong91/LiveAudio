@@ -123,7 +123,7 @@ const useWebRTC = (
           await pc.setRemoteDescription({ sdp: answer.sdp, type: "answer" });
         } catch (error) {
           console.error("WebRTC 初始化失败:", error);
-          setConnectionStatus("Disconnected");
+          setConnectionStatus("disconnected");
         }
       };
 
@@ -135,7 +135,7 @@ const useWebRTC = (
   
       return () => {
         pc.close();
-        setConnectionStatus("failed");
+        setConnectionStatus("disconnected");
       };
     } else {
       setConnectionStatus("WebRTC not supported");
@@ -159,8 +159,11 @@ const useWebRTC = (
       //   }
       // };
       peerConnection.onconnectionstatechange = (event: Event) => {
-        console.log("on connectionstate changed:", (event.target as RTCPeerConnection).connectionState);
-        setConnectionStatus((event.target as RTCPeerConnection).connectionState);
+        let state = (event.target as RTCPeerConnection).connectionState;
+        console.log("on connectionstate changed:", state);
+        if (state == 'failed')
+          state = "disconnected"
+        setConnectionStatus(state);
       };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
@@ -204,7 +207,7 @@ const useWebRTC = (
       if (peerConnection) {
         peerConnection.close();
       }
-      setConnectionStatus("failed");
+      setConnectionStatus("disconnected");
       setIsCallEnded(true);
     },
   };
@@ -263,14 +266,14 @@ export default function Home() {
           <div className={styles.status}>
             <span
               className={
-                connectionStatus === "failed"
+                connectionStatus === "disconnected"
                   ? styles.offlineAnimation
                   : isPlayingAudio
                   ? styles.speakingAnimation
                   : styles.listeningAnimation
               }
             >
-              {connectionStatus === "failed"
+              {connectionStatus === "disconnected"
                 ? "AI 离线"
                 : isPlayingAudio
                 ? "AI正在说话"
