@@ -1,26 +1,27 @@
-const withTM = require('next-transpile-modules')([
-  'onnxruntime-web',
-  '@ricky0123/vad-web',
-]);
-
 const CopyPlugin = require("copy-webpack-plugin");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
 
-  // 合并的 output 配置和 experimental 配置
-  output: 'export', // 设置输出为静态导出
+  // Static export configuration (if you're doing static export)
+  output: 'export', // This is fine for static sites, if you're using dynamic server-side functionality, this may need adjustment
   experimental: {
-    appDir: true, // 启用 App Router
+    appDir: true, // App Router feature
   },
 
-  // webpack 自定义配置
-  webpack: (config, {}) => {
+  // Transpile the specific packages you need
+  transpilePackages: ['onnxruntime-web', '@ricky0123/vad-web'],
+
+  // Webpack custom configuration
+  webpack: (config) => {
+    // Add support for TypeScript files (.ts, .tsx)
     config.resolve.extensions.push(".ts", ".tsx");
+
+    // Fallback for Node.js modules (like `fs`) that Next.js can't handle natively in the browser
     config.resolve.fallback = { fs: false };
 
-    // 添加 CopyPlugin 配置
+    // Add CopyPlugin to handle static file copying
     config.plugins.push(
       new CopyPlugin({
         patterns: [
@@ -44,4 +45,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withTM(nextConfig);
+module.exports = nextConfig;
