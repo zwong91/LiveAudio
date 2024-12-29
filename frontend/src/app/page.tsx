@@ -87,7 +87,7 @@ const useWebRTC = (
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [isCallEnded, setIsCallEnded] = useState(false);
   const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
-  const [dataChannel, setDataChannel] = useState(null);
+  const [dataChannel, setDataChannel] = useState<RTCDataChannel | null>(null);
   useEffect(() => {
     // Ensure WebRTC only runs in the browser
     if (typeof window !== "undefined" && window.RTCPeerConnection) {
