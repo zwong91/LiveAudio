@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 
-import { useState } from 'react';
-
 const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecording: Function) => {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioDuration, setAudioDuration] = useState<number>(0);
