@@ -41,21 +41,11 @@ export async function OPTIONS(req: NextRequest) {
 // 处理 POST 请求
 export async function POST(req: NextRequest) {
 
-<<<<<<< HEAD
   // 创建一个有效的 NextResponse 默认响应对象
   const res = NextResponse.next();
 
   // 运行 CORS 中间件，传递有效的 res
   await runMiddleware(req, res, cors);
-=======
-  // 运行 CORS 中间件
-  // 创建一个有效的 NextResponse 默认响应对象
-  const res = NextResponse.next();
-
-  // 运行 CORS 中间件，传递有效的 res
-  await runMiddleware(req, res, cors);
-  await runMiddleware(req, {}, cors);
->>>>>>> 5561de34fdea7426d64b720eca435eb3f31c043b
   try {
 
     // 读取请求体，假设是 JSON 格式
