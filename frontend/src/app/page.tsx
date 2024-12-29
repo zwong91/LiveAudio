@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import styles from "./page.module.css";
 import { useMicVAD, utils } from "@ricky0123/vad-react"
 
@@ -272,11 +272,7 @@ export default function Home() {
 
       <div className={styles.mainContent}>
         <div className={styles.avatarSection}>
-          <div
-            className={`${styles.avatarContainer} ${
-              isPlayingAudio ? styles.speaking : ""
-            }`}
-          >
+          <div className={`${styles.avatarContainer} ${isPlayingAudio ? styles.speaking : ""}`}>
             <img src="/ai-avatar.png" alt="AI" className={styles.avatar} />
           </div>
           <div className={styles.status}>

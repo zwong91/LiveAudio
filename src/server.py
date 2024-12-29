@@ -393,7 +393,7 @@ class Server:
     async def websocket_endpoint(self, websocket: WebSocket):
         await websocket.accept()
 
-        logging.info(f"accept client: {websocket.client}")
+        logging.info(f"Client {websocket.client} accepted, waiting for messages.")
         client_id = str(uuid.uuid4())
         use_webrtc = False
         client = Client(use_webrtc, client_id, self.sampling_rate, self.samples_width)
@@ -405,6 +405,7 @@ class Server:
         finally:
             del self.connected_clients[client_id]
             logging.info(f"Client {client_id} disconnected")
+            #await websocket.close()
 
     async def handle_audio(self, client, websocket):
         sessionid = None  # To store the sessionid
@@ -428,12 +429,14 @@ class Server:
                     request_data = data.get('request', {})
                     chunk = request_data.get('audio')
                     audio_data = base64.b64decode(chunk)
+                    audio_data = base64.b64decode(chunk)
                     latency = request_data.get('latency')
                     format = request_data.get('format')
                     prosody = request_data.get('prosody', {})
                     vc_uid = request_data.get('vc_uid')
 
                     # Print or process the extracted data
+                    logging.debug(f"Audio Data: {audio_data}, Latency: {latency}, Format: {format}")
                     logging.debug(f"Audio Data: {audio_data}, Latency: {latency}, Format: {format}")
                     logging.debug(f"Prosody: {prosody}, VC UID: {vc_uid}")
 
