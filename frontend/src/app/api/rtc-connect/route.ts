@@ -1,6 +1,24 @@
 // src/app/api/rtc-connect/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
+import Cors from 'cors';
+
+// 初始化 CORS 中间件
+const cors = Cors({
+  methods: ['POST', 'GET', 'HEAD'],
+  origin: '*'  // 可以根据实际需求限制允许的源
+});
+
+function runMiddleware(req, res, fn) {
+  return new Promise((resolve, reject) => {
+    fn(req, res, (result) => {
+      if (result instanceof Error) {
+        return reject(result);
+      }
+      return resolve(result);
+    });
+  });
+}
 
 const BASE_URL = "https://gtp.aleopool.cc/offer";
 
@@ -18,7 +36,11 @@ export async function OPTIONS(req: NextRequest) {
 
 // 处理 POST 请求
 export async function POST(req: NextRequest) {
+
+  // 运行 CORS 中间件
+  await runMiddleware(request, {}, cors);
   try {
+
     // 读取请求体，假设是 JSON 格式
     const body = await req.json();
 
