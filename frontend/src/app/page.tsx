@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
+import { useMicVAD, utils } from "@ricky0123/vad-react"
 
 // 音频管理器
 const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecording: Function) => {
@@ -220,6 +221,18 @@ export default function Home() {
   const BASE_URL = "https://gtp.aleopool.cc";
   const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(true);
+  const [audioList, setAudioList] = useState<string[]>([]);
+  const vad = useMicVAD({
+    model: "v5",
+    baseAssetPath: "/",
+    onnxWASMBasePath: "/",
+    onSpeechEnd: (audio: Blob) => {
+      const wavBuffer = utils.encodeWAV(audio);
+      const base64 = utils.arrayBufferToBase64(wavBuffer);
+      const url = `data:audio/wav;base64,${base64}`;
+      setAudioList((old) => [url, ...old]);
+    },
+  });
 
   const { isPlayingAudio, playAudio, checkAndBufferAudio, stopCurrentAudio } = useAudioManager(
     audioQueue,
@@ -281,6 +294,24 @@ export default function Home() {
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Add the VAD status */}
+      <div>
+        <h6>Listening</h6>
+        {!vad.listening && "Not"} listening
+        <h6>Loading</h6>
+        {!vad.loading && "Not"} loading
+        <h6>Errored</h6>
+        {!vad.errored && "Not"} errored
+        <h6>User Speaking</h6>
+        {!vad.userSpeaking && "Not"} speaking
+        <h6>Audio count</h6>
+        {audioList.length}
+        <h6>Start/Pause</h6>
+        <button onClick={vad.pause}>Pause</button>
+        <button onClick={vad.start}>Start</button>
+        <button onClick={vad.toggle}>Toggle</button>
       </div>
 
       <div className={styles.controls}>
