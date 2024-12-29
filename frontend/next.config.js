@@ -1,9 +1,14 @@
+const withTM = require('next-transpile-modules')([
+  'onnxruntime-web',
+  '@ricky0123/vad-web',
+]);
+
 const CopyPlugin = require("copy-webpack-plugin");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  
+
   // 合并的 output 配置和 experimental 配置
   output: 'export', // 设置输出为静态导出
   experimental: {
@@ -39,4 +44,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withTM(nextConfig);

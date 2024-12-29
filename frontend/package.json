@@ -21,7 +21,8 @@
     "@ricky0123/vad-react": "^0.0.27",
     "onnxruntime-web": "^1.14.0",
     "typescript": "5.2.2",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "next-transpile-modules": "^8.0.0"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^11.0.0",
