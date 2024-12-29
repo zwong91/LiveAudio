@@ -179,20 +179,12 @@ const useWebRTC = (
       //     console.log("Audio track added to page");
       //   }
       // };
-      peerConnection.onconnectionstate change = (event ) => {
-        let state = ( Event.target as RTCPeerConnection ).connection state;
+      peerConnection.onconnectionstatechange = (event: Event) => {
+        let state = (event.target as RTCPeerConnection).connectionState;
         console.log("on connectionstate changed:", state);
-        if (state === "disconnected" || state === "failed") {
-          setConnectionStatus("disconnected");
-          if (reconnectAttempts < 5) { // 限制重试次数
-            setReconnectAttempts(reconnectAttempts + 1);
-            setReconnectTimer(setTimeout(() => {
-              peerConnection.close();
-              setConnectionStatus("reconnecting");
-              setupConnection();
-            }, 5000)); // 5秒后重试
-          }
-        }
+        if (state == 'failed')
+          state = "disconnected"
+        setConnectionStatus(state);
       };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
