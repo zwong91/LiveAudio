@@ -186,14 +186,14 @@ const useWebRTC = (
           state = "disconnected"
         setConnectionStatus(state);
 
-       if (reconnectAttempts < 5) { // 限制重试次数
+        if (reconnectAttempts < 5) { // 限制重试次数
             setReconnectAttempts(reconnectAttempts + 1);
             setReconnectTimer(setTimeout(() => {
               peerConnection.close();
               setConnectionStatus("reconnecting");
               setupConnection();
             }, 5000)); // 5秒后重试
-        }
+         }
       };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
