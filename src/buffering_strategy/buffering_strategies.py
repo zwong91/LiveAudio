@@ -61,7 +61,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.processing_flag = False
         self.processing_task = None
 
-    def process_audio(self, channel, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+    def process_audio(self, channel, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
         """
         Process audio chunks by checking their length and scheduling
         asynchronous processing.
@@ -96,7 +96,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
             if self.processing_task is None or self.processing_task.done():
                 self.processing_task = asyncio.create_task(
-                self.process_audio_async(channel, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
+                self.process_audio_async(channel, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
             )
 
     async def _send_interrupt_signal(self, channel):
@@ -105,13 +105,29 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         except Exception as e:
             print(f"Failed to send interrupt signal: {e}")
 
+    async def _send(self, channel, use_webrtc, chunk):
+        """
+        Sends an audio chunk to the specified channel using either WebRTC or WebSocket.
+        Args:
+            channel: The channel object to send the chunk to.
+            use_webrtc (bool): Whether to use WebRTC for sending.
+            chunk: The audio chunk to send.
+        """
+        try:
+            if use_webrtc:
+                channel.send(chunk)
+            else:
+                await channel.send_bytes(chunk)
+        except Exception as e:
+            logger.error(f"Failed to send audio chunk: {e}")
+
     def _update_client_state(self, updated_history):
         """Update client state after TTS process ends."""
         self.client.history = updated_history
         self.client.scratch_buffer.clear()
         self.client.increment_file_counter()
 
-    async def process_audio_async(self, channel, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+    async def process_audio_async(self, channel, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
         """
         Asynchronously process audio for activity detection and transcription.
 
@@ -153,7 +169,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 try:
                     async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
                         if not self.interrupt_flag:
-                            channel.send(chunk)
+                            await self.send(channel, use_webrtc, chunk)
                         else:
                             raise StopAsyncIteration
 
