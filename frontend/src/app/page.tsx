@@ -85,7 +85,7 @@ const useWebRTC = (
   setIsRecording: Function,
   checkAndBufferAudio: Function
 ) => {
-  const [connectionStatus, setConnectionStatus] = useState("Connecting...");
+  const [connectionStatus, setConnectionStatus] = useState("connecting");
   const [isCallEnded, setIsCallEnded] = useState(false);
   const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
   const [dataChannel, setDataChannel] = useState<RTCDataChannel | null>(null);
