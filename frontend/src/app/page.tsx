@@ -168,7 +168,6 @@ const useWebRTC = (
   
         dataChannel.onmessage = async (event: MessageEvent) => {
           console.log("Received message:", event.data);
-  
           try {
             let audioData: ArrayBuffer;
   
@@ -185,6 +184,7 @@ const useWebRTC = (
           } catch (error) {
             console.error("Error processing WebSocket message:", error);
           }
+          dataChannel.send("hah")
         };
   
         dataChannel.onclose = () => {
