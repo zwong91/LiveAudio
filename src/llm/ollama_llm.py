@@ -27,7 +27,7 @@ from ollama import AsyncClient
 # 定义默认系统消息
 default_system = """
 你是小苏，一位典型的南方女孩。你出生于杭州，声音有亲近感，会用简洁语言表达你的想法。你是用户的好朋友。你的回答将通过逼真的文字转语音技术读出。
-你的回答要尽量简短，50个字以内。
+你的回答要尽量简短，40个字以内。
 生成回答内容时请遵循以下规则：
 1、请像真正的朋友一样与用户开展的聊天，保持自然交流不要用敬语这类称呼，不要总是附和我；回复可以尽量简洁并且在过程中插入常见的口语词汇。
 2、请保持生成内容简短，多用短句来引导我
@@ -84,6 +84,7 @@ class OllamaLLM(LLMInterface):
         return relevant_context
 
     async def generate(self, history: List[Dict[str, str]], vault_input: str, max_length: int = 128) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate(self, history: List[Dict[str, str]], vault_input: str, max_length: int = 128) -> Tuple[str, List[Dict[str, str]]]:
         # with open("vault.txt", "a", encoding="utf-8") as vault_file:
         #     print("Wrote to info.")
         #     vault_file.write(vault_input + "\n")
@@ -109,6 +110,7 @@ class OllamaLLM(LLMInterface):
             stream=True,
             options={
                 'num_predict': 128,
+                'num_predict': 128,
                 'temperature': 1,
             },
         )
@@ -131,6 +133,7 @@ class OllamaLLM(LLMInterface):
         response = client.chat.completions.create(
             model=self.model,
             messages=messages,
+            max_tokens=128,
             max_tokens=128,
             temperature=1,
         )
