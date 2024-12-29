@@ -80,7 +80,6 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
 
 // WebRTC 管理器
 const useWebRTC = (
-  BASE_URL: string,
   audioQueue: Blob[],
   setAudioQueue: Function,
   setIsRecording: Function,
@@ -141,7 +140,7 @@ const useWebRTC = (
     } else {
       setConnectionStatus("WebRTC not supported");
     }
-  }, [BASE_URL]);
+  }, []);
 
   useEffect(() => {
     if (peerConnection) {
@@ -217,8 +216,6 @@ const useWebRTC = (
 
 // 主组件
 export default function Home() {
-  //const BASE_URL = "https://audio.enty.services";
-  const BASE_URL = "https://gtp.aleopool.cc";
   const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(true);
   const [audioList, setAudioList] = useState<string[]>([]);
@@ -243,7 +240,6 @@ export default function Home() {
     setIsRecording
   );
   const { connectionStatus, isCallEnded, endCall } = useWebRTC(
-    BASE_URL,
     audioQueue,
     setAudioQueue,
     setIsRecording,
