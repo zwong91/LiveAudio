@@ -113,7 +113,7 @@ const useWebRTC = (
             sdp: offer.sdp,
             type: offer.type  // 添加 type 字段
           };
-          const response = await fetch('https://gtp.aleopool.cc/offer', {
+          const response = await fetch('/offer', {
             method: "POST",
             body: JSON.stringify(offerData),  // 转换为 JSON 字符串
             headers: { "Content-Type": "application/json" },
