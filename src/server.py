@@ -91,13 +91,7 @@ class ClientStreamTrack(MediaStreamTrack):
         except Exception as e:
             logging.error(f"Processing error for {client.client_id}: {e}")
 
-        self.start()
         return frame
-    
-    def start(self):
-        player = MediaPlayer("/home/ubuntu/last/LiveAudio/vc/liuyifei.wav")
-        self.peer_connection.addTrack(player.audio)
-        #self.datachannel.send(b"hah ha"")
 
 
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
