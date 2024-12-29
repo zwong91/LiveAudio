@@ -132,11 +132,6 @@ const useWebRTC = (
       };
 
       setupConnection();
-
-      dc.onopen = () => {
-        console.log("DataChannel opened:", dc.label);
-        dc.send("hah")
-      };
   
       return () => {
         pc.close();
@@ -168,6 +163,7 @@ const useWebRTC = (
   
         dataChannel.onopen = () => {
           console.log("DataChannel opened:", dataChannel.label);
+          dataChannel.send("hah")
         };
   
         dataChannel.onmessage = async (event: MessageEvent) => {
