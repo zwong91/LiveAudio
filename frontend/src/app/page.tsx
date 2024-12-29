@@ -89,14 +89,30 @@ const useWebRTC = (
   const [isCallEnded, setIsCallEnded] = useState(false);
   const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
   const [dataChannel, setDataChannel] = useState<RTCDataChannel | null>(null);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [reconnectTimer, setReconnectTimer] = useState<NodeJS.Timeout | null>(null);
   useEffect(() => {
     // Ensure WebRTC only runs in the browser
     if (typeof window !== "undefined" && window.RTCPeerConnection) {
       const pc = new RTCPeerConnection();
       setPeerConnection(pc);
-
       const setupConnection = async () => {
         try {
+          pc.oniceconnectionstatechange = (event) => {
+              const state = pc.iceConnectionState;
+              console.log("ICE connection state:", state);
+              if (state === "disconnected" || state === "failed") {
+                setConnectionStatus("disconnected");
+                if (reconnectAttempts < 5) { // 限制重试次数
+                  setReconnectAttempts(reconnectAttempts + 1);
+                  setReconnectTimer(setTimeout(() => {
+                    pc.close();
+                    setConnectionStatus("reconnecting");
+                    setupConnection();
+                  }, 5000)); // 5秒后重试
+                }
+              }
+          };
           // 获取音频流
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           // 添加音频轨道到 PeerConnection
@@ -134,13 +150,18 @@ const useWebRTC = (
       setDataChannel(dc);
   
       return () => {
-        pc.close();
-        setConnectionStatus("disconnected");
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+        }
+        if (peerConnection) {
+            peerConnection.close();
+            setConnectionStatus("disconnected");
+        }
       };
     } else {
       setConnectionStatus("WebRTC not supported");
     }
-  }, []);
+  }, [reconnectAttempts]);
 
   useEffect(() => {
     if (peerConnection) {
@@ -158,12 +179,20 @@ const useWebRTC = (
       //     console.log("Audio track added to page");
       //   }
       // };
-      peerConnection.onconnectionstatechange = (event: Event) => {
-        let state = (event.target as RTCPeerConnection).connectionState;
+      peerConnection.onconnectionstate change = (event ) => {
+        let state = ( Event.target as RTCPeerConnection ).connection state;
         console.log("on connectionstate changed:", state);
-        if (state == 'failed')
-          state = "disconnected"
-        setConnectionStatus(state);
+        if (state === "disconnected" || state === "failed") {
+          setConnectionStatus("disconnected");
+          if (reconnectAttempts < 5) { // 限制重试次数
+            setReconnectAttempts(reconnectAttempts + 1);
+            setReconnectTimer(setTimeout(() => {
+              peerConnection.close();
+              setConnectionStatus("reconnecting");
+              setupConnection();
+            }, 5000)); // 5秒后重试
+          }
+        }
       };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
@@ -286,6 +315,7 @@ export default function Home() {
                 : isPlayingAudio
                 ? "AI正在说话"
                 : "AI正在听"}
+              
             </span>
           </div>
         </div>
