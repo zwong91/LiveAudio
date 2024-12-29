@@ -3,123 +3,83 @@
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 
-const [isRecording, setIsRecording] = useState(true); // true means listening, false means speaking
-const [isPlayingAudio, setIsPlayingAudio] = useState(false); // State to track audio playback
-const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
-const [audioDuration, setAudioDuration] = useState<number>(0); // State to track audio duration
-
 // 音频管理器
-let audioContext: AudioContext | null = null;
-  let audioBufferQueue: AudioBuffer[] = [];
+const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecording: Function) => {
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [audioDuration, setAudioDuration] = useState<number>(0);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null); // 追踪当前播放的音频
 
-  // Check if AudioContext is available in the browser
-  if (typeof window !== "undefined" && window.AudioContext) {
-    audioContext = new AudioContext();
-  }
-
-  const audioManager = {
-    stopCurrentAudio: () => {
-      if (isPlayingAudio) {
-        setIsPlayingAudio(false);
-      }
-    },
-
-    playNewAudio: async (audioBlob: Blob) => {
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-
-      // When the metadata of the audio is loaded, set its duration
-      audio.onloadedmetadata = () => {
-        setAudioDuration(audio.duration); // Set the audio duration after loading metadata
-      };
-
-      // Play the audio
-      setIsPlayingAudio(true);
-
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-        setIsPlayingAudio(false);
-        setIsRecording(true);
-
-        if (audioQueue.length > 0) {
-          const nextAudioBlob = audioQueue.shift();
-          if (nextAudioBlob) {
-            audioManager.playNewAudio(nextAudioBlob); // Play next audio in the queue
-          }
-        }
-      };
-
-      try {
-        await audio.play();
-      } catch (error) {
-        console.error("播放音频失败:", error);
-        audioManager.stopCurrentAudio();
-      }
+  const stopCurrentAudio = () => {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      setIsPlayingAudio(false);
     }
   };
-
-  // 检查 ArrayBuffer 是否包含 "END_OF_AUDIO" 并处理音频数据
-  function checkAndBufferAudio(audioData: ArrayBuffer) {
-    // 将 ArrayBuffer 转为字符串
+  
+  const playAudio = async (audioBlob: Blob) => {
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    setCurrentAudio(audio); // 设置当前播放的音频对象
+  
+    audio.onloadedmetadata = () => setAudioDuration(audio.duration);
+  
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl);
+      setIsPlayingAudio(false);
+  
+      if (audioQueue.length > 0) {
+        const nextAudioBlob = audioQueue.shift();
+        if (nextAudioBlob) {
+          //playAudio(nextAudioBlob);
+        }
+      } else {
+        // 播放完所有音频后清空队列
+        setAudioQueue([]);
+        setIsRecording(true);
+      }
+    };
+  
+    try {
+      setIsPlayingAudio(true);
+      await audio.play();
+    } catch (error) {
+      console.error("播放音频失败:", error);
+      setIsPlayingAudio(false);
+    }
+  };
+  
+  const checkAndBufferAudio = (audioData: ArrayBuffer) => {
     const text = new TextDecoder("utf-8").decode(audioData);
-
+  
     if (text.includes("END_OF_AUDIO")) {
       console.log("Detected END_OF_AUDIO signal in audioData");
-      // 停止当前音频播放
-      audioManager.stopCurrentAudio();
-      // 停止录音并切换状态
+      stopCurrentAudio(); // 停止当前音频播放
       setIsRecording(true);
       setIsPlayingAudio(false);
       return;
     }
-    // 如果不包含 END_OF_AUDIO，则缓冲音频数据
-    bufferAudio(audioData);
-  }
+  
+    // 如果没有检测到 "END_OF_AUDIO" 信号，继续缓存音频并立即播放
+    const audioBlob = new Blob([audioData], { type: "audio/wav" });
+    setAudioQueue((prevQueue: Blob[]) => {
+      const newQueue = [...prevQueue, audioBlob];
+      // 播放新的音频
+      if (!isPlayingAudio) {
+        playAudio(audioBlob); // 立刻播放当前音频
+      }
+      return newQueue;
+    });
+  };
 
-  // Buffer audio and add it to the queue
-  function bufferAudio(data: ArrayBuffer) {
-    if (audioContext) {
-      audioContext.decodeAudioData(data, (buffer) => {
-        // Buffer the audio chunk and push it to the queue
-        audioBufferQueue.push(buffer);
-
-        // If we are not already playing, start playing the audio
-        if (!isPlayingAudio) {
-          playAudioBufferQueue();
-        }
-      });
-    }
-  }
-
-  // Play the buffered audio chunks from the queue
-  function playAudioBufferQueue() {
-    if (audioBufferQueue.length === 0) {
-      setIsPlayingAudio(false); // Stop playback if queue is empty
-      setIsRecording(true); // Start recording again
-      return;
-    }
-
-    const buffer = audioBufferQueue.shift(); // Get the next audio buffer
-    if (buffer && audioContext) {
-      const source = audioContext.createBufferSource();
-      source.buffer = buffer;
-
-      // Connect the source to the audio context's output
-      source.connect(audioContext.destination);
-
-      // When this audio ends, play the next one
-      source.onended = () => {
-        playAudioBufferQueue(); // Continue playing the next buffer
-      };
-
-      // Start playing the audio
-      source.start();
-
-      // Update the state to reflect the playing status
-      setIsPlayingAudio(true);
-    }
-  }
-
+  return {
+    isPlayingAudio,
+    audioDuration,
+    playAudio,
+    checkAndBufferAudio,
+    stopCurrentAudio,
+  };
+};
 
 // WebRTC 管理器
 const useWebRTC = (
