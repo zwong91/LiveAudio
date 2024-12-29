@@ -133,14 +133,9 @@ const useWebRTC = (
       const dc = pc.createDataChannel('response');
       setDataChannel(dc);
   
-      pc.onconnectionstatechange = (event: Event) => {
-        if ((event.target as RTCPeerConnection).connectionState == 'failed')
-          setupConnection();
-      };
-
       return () => {
         pc.close();
-        setConnectionStatus("Closed");
+        setConnectionStatus("failed");
       };
     } else {
       setConnectionStatus("WebRTC not supported");
@@ -209,7 +204,7 @@ const useWebRTC = (
       if (peerConnection) {
         peerConnection.close();
       }
-      setConnectionStatus("Closed");
+      setConnectionStatus("failed");
       setIsCallEnded(true);
     },
   };
@@ -249,7 +244,7 @@ export default function Home() {
         <div className={styles.connectionStatus}>
           <div
             className={`${styles.statusDot} ${
-              connectionStatus === "Connected" ? styles.connected : ""
+              connectionStatus === "connected" ? styles.connected : ""
             }`}
           />
           {connectionStatus}
@@ -268,14 +263,14 @@ export default function Home() {
           <div className={styles.status}>
             <span
               className={
-                connectionStatus === "Closed"
+                connectionStatus === "failed"
                   ? styles.offlineAnimation
                   : isPlayingAudio
                   ? styles.speakingAnimation
                   : styles.listeningAnimation
               }
             >
-              {connectionStatus === "Closed"
+              {connectionStatus === "failed"
                 ? "AI 离线"
                 : isPlayingAudio
                 ? "AI正在说话"
