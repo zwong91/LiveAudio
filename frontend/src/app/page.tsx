@@ -16,25 +16,28 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
       setIsPlayingAudio(false);
     }
   };
-
+  
   const playAudio = async (audioBlob: Blob) => {
     const audioUrl = URL.createObjectURL(audioBlob);
     const audio = new Audio(audioUrl);
     setCurrentAudio(audio); // 设置当前播放的音频对象
-
+  
     audio.onloadedmetadata = () => setAudioDuration(audio.duration);
-
+  
     audio.onended = () => {
       URL.revokeObjectURL(audioUrl);
       setIsPlayingAudio(false);
-      setIsRecording(true);
-
+  
       if (audioQueue.length > 0) {
         const nextAudioBlob = audioQueue.shift();
-        if (nextAudioBlob) playAudio(nextAudioBlob);
+        if (nextAudioBlob) {
+          playAudio(nextAudioBlob);
+        }
+      } else {
+        setIsRecording(true);
       }
     };
-
+  
     try {
       setIsPlayingAudio(true);
       await audio.play();
@@ -43,10 +46,10 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
       setIsPlayingAudio(false);
     }
   };
-
+  
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
     const text = new TextDecoder("utf-8").decode(audioData);
-
+  
     if (text.includes("END_OF_AUDIO")) {
       console.log("Detected END_OF_AUDIO signal in audioData");
       stopCurrentAudio(); // 停止当前音频播放
@@ -54,7 +57,7 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
       setIsPlayingAudio(false);
       return;
     }
-
+  
     // 如果没有检测到 "END_OF_AUDIO" 信号，继续缓存音频并立即播放
     const audioBlob = new Blob([audioData], { type: "audio/wav" });
     setAudioQueue((prevQueue: Blob[]) => {
