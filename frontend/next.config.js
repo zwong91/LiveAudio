@@ -4,9 +4,6 @@ const CopyPlugin = require("copy-webpack-plugin");
 const nextConfig = {
   reactStrictMode: true,
 
-  // Static export configuration (if you're doing static export)
-  output: 'export', // This is fine for static sites, if you're using dynamic server-side functionality, this may need adjustment
-
   // Transpile the specific packages you need
   transpilePackages: ['onnxruntime-web', '@ricky0123/vad-web'],
 
