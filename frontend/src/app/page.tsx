@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 
+// 音频管理器
 const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecording: Function) => {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioDuration, setAudioDuration] = useState<number>(0);
@@ -15,18 +16,18 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
       setIsPlayingAudio(false);
     }
   };
-
+  
   const playAudio = async (audioBlob: Blob) => {
     const audioUrl = URL.createObjectURL(audioBlob);
     const audio = new Audio(audioUrl);
     setCurrentAudio(audio); // 设置当前播放的音频对象
-
+  
     audio.onloadedmetadata = () => setAudioDuration(audio.duration);
-
+  
     audio.onended = () => {
       URL.revokeObjectURL(audioUrl);
       setIsPlayingAudio(false);
-
+  
       if (audioQueue.length > 0) {
         const nextAudioBlob = audioQueue.shift();
         if (nextAudioBlob) {
@@ -38,42 +39,33 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
         setIsRecording(true);
       }
     };
-
+  
     try {
       setIsPlayingAudio(true);
-      await audioplay();
+      await audio.play();
     } catch (error) {
       console.error("播放音频失败:", error);
       setIsPlayingAudio(false);
     }
   };
-
+  
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
     const text = new TextDecoder("utf-8").decode(audioData);
-
+  
     if (text.includes("END_OF_AUDIO")) {
-      console.log("Detected ENDOfAudio signal in audioData");
+      console.log("Detected END_OF_AUDIO signal in audioData");
       stopCurrentAudio(); // 停止当前音频播放
       setIsRecording(true);
+      setIsPlayingAudio(false);
       return;
     }
-
-    // 如果没有检测到 "END_OF_AUDIO" 信号，继续缓存音频并播放
-    const audioBlob = new Blob([audioData], { type: "audio/wav"});
+  
+    // 如果没有检测到 "END_OF_AUDIO" 信号，继续缓存音频并立即播放
+    const audioBlob = new Blob([audioData], { type: "audio/wav" });
     setAudioQueue((prevQueue: Blob[]) => {
       const newQueue = [...prevQueue, audioBlob];
-      playNextAudio();
       return newQueue;
     });
-  };
-
-  const playNextAudio = () => {
-    if (!isPlayingAudio && audioQueue.length > 0) {
-      const nextAudioBlob = audioQueue.shift();
-      if (nextAudioBlob) {
-        playAudio(nextAudioBlob);
-      }
-    }
   };
 
   return {
@@ -167,10 +159,10 @@ const useWebRTC = (
       //     console.log("Audio track added to page");
       //   }
       // };
-      peerConnection.onconnectionstatechange = (ev) => {
-          console.log("on connectionstate changed:", event.data);
-          //getcconnectionstatus()
-      }
+      peerConnection.onconnectionstatechange = (event: Event) => {
+        console.log("on connectionstate changed:", (event.target as RTCPeerConnection).connectionState);
+        //getcconnectionstatus()
+      };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
   
@@ -183,6 +175,7 @@ const useWebRTC = (
           console.log("Received message:", event.data);
           try {
             let audioData: ArrayBuffer;
+  
             if (event.data instanceof ArrayBuffer) {
               audioData = event.data;
             } else if (event.data instanceof Blob) {
@@ -190,6 +183,7 @@ const useWebRTC = (
             } else {
               throw new Error("Unsupported data type received");
             }
+  
             checkAndBufferAudio(audioData);
           } catch (error) {
             console.error("Error processing WebSocket message:", error);
@@ -237,6 +231,13 @@ export default function Home() {
     setIsRecording,
     checkAndBufferAudio
   );
+
+  useEffect(() => {
+    if (!isPlayingAudio && audioQueue.length > 0) {
+      const nextAudioBlob = audioQueue.shift();
+      if (nextAudioBlob) playAudio(nextAudioBlob);
+    }
+  }, [isPlayingAudio, audioQueue, playAudio]);
 
   return (
     <div className={styles.container}>
