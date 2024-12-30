@@ -239,20 +239,20 @@ const useWebRTC = (
 export default function Home() {
   const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(true);
-  const [audioList, setAudioList] = useState<string[]>([]);
+  // const [audioList, setAudioList] = useState<string[]>([]);
 
-  const audioItemKey = (audioURL: string) => audioURL.substring(-10)
-  const vad = useMicVAD({
-    model: "v5",
-    baseAssetPath: "/",
-    onnxWASMBasePath: "/",
-    onSpeechEnd: (audio: Float32Array) => {
-      const wavBuffer = utils.encodeWAV(audio);
-      const base64 = utils.arrayBufferToBase64(wavBuffer);
-      const url = `data:audio/wav;base64,${base64}`;
-      setAudioList((old) => [url, ...old]);
-    },
-  });
+  // const audioItemKey = (audioURL: string) => audioURL.substring(-10)
+  // const vad = useMicVAD({
+  //   model: "v5",
+  //   baseAssetPath: "/",
+  //   onnxWASMBasePath: "/",
+  //   onSpeechEnd: (audio: Float32Array) => {
+  //     const wavBuffer = utils.encodeWAV(audio);
+  //     const base64 = utils.arrayBufferToBase64(wavBuffer);
+  //     const url = `data:audio/wav;base64,${base64}`;
+  //     setAudioList((old) => [url, ...old]);
+  //   },
+  // });
 
 
   const { isPlayingAudio, playAudio, checkAndBufferAudio, stopCurrentAudio } = useAudioManager(
@@ -313,7 +313,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div>
+{/*       <div>
       {/* Add the VAD status */}
       <div>
         <h6>Listening</h6>
@@ -347,7 +347,7 @@ export default function Home() {
           })}
         </ol>
       </div>
-    </div>
+    </div> */}
 
       <div className={styles.controls}>
         <button
