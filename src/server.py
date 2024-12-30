@@ -24,7 +24,7 @@ from typing import List
 import shutil
 
 
-from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel, RTCConfiguration
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
 from aiortc.rtcrtpsender import RTCRtpSender
 from aiortc import MediaStreamTrack, VideoStreamTrack
@@ -268,14 +268,17 @@ class Server:
         client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
         # STUN 和 TURN 服务器配置
         ice_servers = [
-            { 'urls': ['stun:gtp.aleopool.cc:3478'] },  # STUN 服务器
-            {
-                'urls': ['turn:gtp.aleopool.cc:3478'],  # TURN 服务器
-                'username': 'admin',                  # TURN 服务器用户名
-                'credential': 'd937d8a8e499da7e2edafd045a618175117a2956',  # TURN 服务器密码
-                'credentialType': 'password',
-            },
+            RTCIceServer(
+                urls=["stun:gtp.aleopool.cc:3478"]  # STUN 服务器
+            ),
+            RTCIceServer(
+                urls=["turn:gtp.aleopool.cc:3478"],  # TURN 服务器
+                username="admin",                    # TURN 服务器用户名
+                credential="d937d8a8e499da7e2edafd045a618175117a2956",  # TURN 服务器密码
+                credentialType="password"            # TURN 服务器凭证类型
+            ),
         ]
+
         # 使用 RTCConfiguration 配置 ICE 服务器
         config = RTCConfiguration(iceServers=ice_servers)
         
