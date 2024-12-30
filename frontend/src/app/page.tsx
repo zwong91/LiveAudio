@@ -106,12 +106,13 @@ const useWebRTC = (
         //     "stun:stun4.l.google.com:19302"    // 备用 Google STUN 服务器
         //   ]
         // },
-        { urls: 'stun:your-stun-server.com' },
+        { urls: 'stun:gtp.aleopool.cc:3478' },
         //如果需要，可以添加 TURN 服务器
         {
-          urls: "turn:your-turn-server.com",   // TURN 服务器
-          username: "your-username",            // TURN 服务器用户名
-          credential: "your-password",          // TURN 服务器密码
+          urls: "turn:gtp.aleopool.cc:3478",   // TURN 服务器
+          username: "admin",            // TURN 服务器用户名
+          credential: "d937d8a8e499da7e2edafd045a618175117a2956", // TURN 服务器密码
+          credentialType: 'password',
           //realm: 'example.com',
         },
       ];
@@ -122,8 +123,8 @@ const useWebRTC = (
         iceServers: iceServers,
       };
       
-      //const pc = new RTCPeerConnection(pcConfig);
-      const pc = new RTCPeerConnection();
+      const pc = new RTCPeerConnection(pcConfig);
+      //const pc = new RTCPeerConnection();
       setPeerConnection(pc);
       const setupConnection = async () => {
         try {
