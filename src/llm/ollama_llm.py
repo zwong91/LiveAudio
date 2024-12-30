@@ -84,7 +84,6 @@ class OllamaLLM(LLMInterface):
         return relevant_context
 
     async def generate(self, history: List[Dict[str, str]], vault_input: str, max_length: int = 128) -> Tuple[str, List[Dict[str, str]]]:
-    async def generate(self, history: List[Dict[str, str]], vault_input: str, max_length: int = 128) -> Tuple[str, List[Dict[str, str]]]:
         # with open("vault.txt", "a", encoding="utf-8") as vault_file:
         #     print("Wrote to info.")
         #     vault_file.write(vault_input + "\n")
@@ -133,7 +132,6 @@ class OllamaLLM(LLMInterface):
         response = client.chat.completions.create(
             model=self.model,
             messages=messages,
-            max_tokens=128,
             max_tokens=128,
             temperature=1,
         )
