@@ -276,7 +276,7 @@ class Server:
         
         @s2s_response.on("open")
         async def on_open():
-            print("DataChannel opened")
+            print("DataChannel s2s_response opened")
         # signaling = create_signaling()
         # recorder = MediaBlackhole()
 
