@@ -268,9 +268,9 @@ class Server:
         client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
         # STUN 和 TURN 服务器配置
         ice_servers = [
-            { 'urls': 'stun:gtp.aleopool.cc:3478' },  # STUN 服务器
+            { 'urls': ['stun:gtp.aleopool.cc:3478'] },  # STUN 服务器
             {
-                'urls': 'turn:gtp.aleopool.cc:3478',  # TURN 服务器
+                'urls': ['turn:gtp.aleopool.cc:3478'],  # TURN 服务器
                 'username': 'admin',                  # TURN 服务器用户名
                 'credential': 'd937d8a8e499da7e2edafd045a618175117a2956',  # TURN 服务器密码
                 'credentialType': 'password',
