@@ -187,7 +187,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 try:
                     async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid):
                         if not self.interrupt_flag:
-                            await self.send(channel, use_webrtc, chunk)
+                            channel.send(chunk)
                         else:
                             raise StopAsyncIteration
 
