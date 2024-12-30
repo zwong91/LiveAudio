@@ -120,7 +120,8 @@ const useWebRTC = (
         iceServers: iceServers,
       };
 
-      const pc = new RTCPeerConnection(pcConfig);
+      //const pc = new RTCPeerConnection(pcConfig);
+      const pc = new RTCPeerConnection();
       setPeerConnection(pc);
       const setupConnection = async () => {
         try {
@@ -203,6 +204,37 @@ const useWebRTC = (
       //     el.style.maxWidth = "100%";
       //     document.body.appendChild(el); // Append to the body or any other container you prefer
       //     console.log("Audio track added to page");
+      //   }
+      // };
+
+      // const sendIceCandidateToServer = async (candidate: RTCIceCandidate) => {
+      //   try {
+      //     // 创建 candidate 数据
+      //     const candidateData = {
+      //       candidate: candidate.candidate,
+      //       sdpMid: candidate.sdpMid,
+      //       sdpMLineIndex: candidate.sdpMLineIndex,
+      //     };
+      
+      //     // 将 candidate 发送到服务器
+      //     const response = await fetch('/api/rtc-ice-candidate', {
+      //       method: 'POST',
+      //       body: JSON.stringify(candidateData),
+      //       headers: { 'Content-Type': 'application/json' },
+      //     });
+      
+      //     if (!response.ok) {
+      //       console.error('Failed to send ICE candidate');
+      //     }
+      //   } catch (error) {
+      //     console.error('Error sending ICE candidate:', error);
+      //   }
+      // };
+      
+      // peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+      //   if (event.candidate) {
+      //     // 发送 ICE candidate 到远端
+      //     sendIceCandidateToServer(event.candidate);
       //   }
       // };
       peerConnection.onconnectionstatechange = (event: Event) => {
