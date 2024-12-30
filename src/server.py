@@ -256,6 +256,7 @@ class Server:
         await asyncio.gather(*coros)
         self.pcs.clear()
 
+
     async def offer_endpoint(self, request: Request):
         
         params = await request.json()
@@ -265,8 +266,20 @@ class Server:
         sessionid = str(uuid.uuid4())
         use_webrtc = True
         client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
-        # Create a new RTCPeerConnection
-        pc = RTCPeerConnection()
+        # STUN 和 TURN 服务器配置
+        ice_servers = [
+            { 'urls': 'stun:gtp.aleopool.cc:3478' },  # STUN 服务器
+            {
+                'urls': 'turn:gtp.aleopool.cc:3478',  # TURN 服务器
+                'username': 'admin',                  # TURN 服务器用户名
+                'credential': 'd937d8a8e499da7e2edafd045a618175117a2956',  # TURN 服务器密码
+                'credentialType': 'password',
+            },
+        ]
+        # Create a new RTCPeerConnection with ICE 服务器配置
+        pc = RTCPeerConnection(
+            iceServers=ice_servers  # 设置 ICE 服务器
+        )
         # Create a new DataChannel after the peer connection is created
         s2s_response = pc.createDataChannel(
             label="response",
@@ -299,6 +312,7 @@ class Server:
         async def on_connectionstatechange():
             logging.info(f"Connection state is {pc.connectionState}")
             if pc.connectionState in ["failed", "closed"]:
+                print("pc connectionstate  closed")
                 await pc.close()
                 self.pcs.discard(pc)
 
