@@ -17,18 +17,18 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
       setIsPlayingAudio(false);
     }
   };
-  
+
   const playAudio = async (audioBlob: Blob) => {
     const audioUrl = URL.createObjectURL(audioBlob);
     const audio = new Audio(audioUrl);
     setCurrentAudio(audio); // 设置当前播放的音频对象
-  
+
     audio.onloadedmetadata = () => setAudioDuration(audio.duration);
-  
+
     audio.onended = () => {
       URL.revokeObjectURL(audioUrl);
       setIsPlayingAudio(false);
-  
+
       if (audioQueue.length > 0) {
         const nextAudioBlob = audioQueue.shift();
         if (nextAudioBlob) {
@@ -40,7 +40,7 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
         setIsRecording(true);
       }
     };
-  
+
     try {
       setIsPlayingAudio(true);
       await audio.play();
@@ -49,10 +49,10 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
       setIsPlayingAudio(false);
     }
   };
-  
+
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
     const text = new TextDecoder("utf-8").decode(audioData);
-  
+
     if (text.includes("END_OF_AUDIO")) {
       console.log("Detected END_OF_AUDIO signal in audioData");
       stopCurrentAudio(); // 停止当前音频播放
@@ -60,7 +60,7 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
       setIsPlayingAudio(false);
       return;
     }
-  
+
     // 如果没有检测到 "END_OF_AUDIO" 信号，继续缓存音频并立即播放
     const audioBlob = new Blob([audioData], { type: "audio/wav" });
     setAudioQueue((prevQueue: Blob[]) => {
@@ -148,7 +148,7 @@ const useWebRTC = (
       // 创建 DataChannel 对象
       const dc = pc.createDataChannel('response');
       setDataChannel(dc);
-  
+
       return () => {
         if (reconnectTimer) {
             clearTimeout(reconnectTimer);
@@ -188,17 +188,17 @@ const useWebRTC = (
       };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
-  
+
         dataChannel.onopen = () => {
           console.log("DataChannel opened:", dataChannel.label);
           dataChannel.send("hah")
         };
-  
+
         dataChannel.onmessage = async (event: MessageEvent) => {
           console.log("Received message:", event.data);
           try {
             let audioData: ArrayBuffer;
-  
+
             if (event.data instanceof ArrayBuffer) {
               audioData = event.data;
             } else if (event.data instanceof Blob) {
@@ -206,14 +206,14 @@ const useWebRTC = (
             } else {
               throw new Error("Unsupported data type received");
             }
-  
+
             checkAndBufferAudio(audioData);
           } catch (error) {
             console.error("Error processing WebSocket message:", error);
           }
           dataChannel.send("hah")
         };
-  
+
         dataChannel.onclose = () => {
           console.log("DataChannel closed:", dataChannel.label);
         };
@@ -239,20 +239,20 @@ const useWebRTC = (
 export default function Home() {
   const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(true);
-  // const [audioList, setAudioList] = useState<string[]>([]);
+  const [audioList, setAudioList] = useState<string[]>([]);
 
-  // const audioItemKey = (audioURL: string) => audioURL.substring(-10)
-  // const vad = useMicVAD({
-  //   model: "v5",
-  //   baseAssetPath: "/",
-  //   onnxWASMBasePath: "/",
-  //   onSpeechEnd: (audio: Float32Array) => {
-  //     const wavBuffer = utils.encodeWAV(audio);
-  //     const base64 = utils.arrayBufferToBase64(wavBuffer);
-  //     const url = `data:audio/wav;base64,${base64}`;
-  //     setAudioList((old) => [url, ...old]);
-  //   },
-  // });
+  const audioItemKey = (audioURL: string) => audioURL.substring(-10)
+  const vad = useMicVAD({
+    model: "v5",
+    baseAssetPath: "/",
+    onnxWASMBasePath: "/",
+    onSpeechEnd: (audio: Float32Array) => {
+      const wavBuffer = utils.encodeWAV(audio);
+      const base64 = utils.arrayBufferToBase64(wavBuffer);
+      const url = `data:audio/wav;base64,${base64}`;
+      setAudioList((old) => [url, ...old]);
+    },
+  });
 
 
   const { isPlayingAudio, playAudio, checkAndBufferAudio, stopCurrentAudio } = useAudioManager(
@@ -307,11 +307,47 @@ export default function Home() {
                 : isPlayingAudio
                 ? "AI正在说话"
                 : "AI正在听"}
-              
+
             </span>
           </div>
         </div>
       </div>
+
+      <div>
+      {/* Add the VAD status */}
+      <div>
+        <h6>Listening</h6>
+        {!vad.listening && "Not"} listening
+        <h6>Loading</h6>
+        {!vad.loading && "Not"} loading
+        <h6>Errored</h6>
+        {!vad.errored && "Not"} errored
+        <h6>User Speaking</h6>
+        {!vad.userSpeaking && "Not"} speaking
+        <h6>Audio count</h6>
+        {audioList.length}
+        <h6>Start/Pause</h6>
+        <button onClick={vad.pause}>Pause</button>
+        <button onClick={vad.start}>Start</button>
+        <button onClick={vad.toggle}>Toggle</button>
+      </div>
+
+      {/* Add the audio playlist */}
+      <div>
+        <ol
+          id="playlist"
+          className="self-center pl-0 max-h-[400px] overflow-y-auto no-scrollbar list-none"
+        >
+          {audioList.map((audioURL) => {
+            return (
+              <li className="pl-0" key={audioItemKey(audioURL)}>
+                <audio src={audioURL} controls />
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </div>
 
       <div className={styles.controls}>
         <button
