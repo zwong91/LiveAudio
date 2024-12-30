@@ -97,21 +97,23 @@ const useWebRTC = (
 
       // ICE 服务器配置
       const iceServers = [
-        {
-          urls: [
-            "stun:stun.l.google.com:19302",    // Google STUN 服务器
-            "stun:stun1.l.google.com:19302",   // 备用 Google STUN 服务器
-            "stun:stun2.l.google.com:19302",   // 备用 Google STUN 服务器
-            "stun:stun3.l.google.com:19302",   // 备用 Google STUN 服务器
-            "stun:stun4.l.google.com:19302"    // 备用 Google STUN 服务器
-          ]
-        },
-        // 如果需要，可以添加 TURN 服务器
         // {
-        //   urls: "turn:your-turn-server.com",   // TURN 服务器
-        //   username: "your-username",            // TURN 服务器用户名
-        //   credential: "your-password",          // TURN 服务器密码
+        //   urls: [
+        //     "stun:stun.l.google.com:19302",    // Google STUN 服务器
+        //     "stun:stun1.l.google.com:19302",   // 备用 Google STUN 服务器
+        //     "stun:stun2.l.google.com:19302",   // 备用 Google STUN 服务器
+        //     "stun:stun3.l.google.com:19302",   // 备用 Google STUN 服务器
+        //     "stun:stun4.l.google.com:19302"    // 备用 Google STUN 服务器
+        //   ]
         // },
+        { urls: 'stun:your-stun-server.com' },
+        //如果需要，可以添加 TURN 服务器
+        {
+          urls: "turn:your-turn-server.com",   // TURN 服务器
+          username: "your-username",            // TURN 服务器用户名
+          credential: "your-password",          // TURN 服务器密码
+          //realm: 'example.com',
+        },
       ];
       
 
@@ -119,7 +121,7 @@ const useWebRTC = (
       const pcConfig = {
         iceServers: iceServers,
       };
-
+      
       //const pc = new RTCPeerConnection(pcConfig);
       const pc = new RTCPeerConnection();
       setPeerConnection(pc);
@@ -172,7 +174,7 @@ const useWebRTC = (
 
       setupConnection();
 
-      // 创建 DataChannel 对象
+      // 创建 DataChannel 对象, 触发ICE协商
       const dc = pc.createDataChannel('response');
       setDataChannel(dc);
 
@@ -231,12 +233,23 @@ const useWebRTC = (
       //   }
       // };
       
-      // peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
-      //   if (event.candidate) {
-      //     // 发送 ICE candidate 到远端
-      //     sendIceCandidateToServer(event.candidate);
-      //   }
-      // };
+      peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+        if (event.candidate) {
+          console.log('获取到ICE候选:', event.candidate.type, event.candidate.address);
+          if (event.candidate.type === 'srflx') {
+            console.log('STUN成功！');
+            console.log('公网IP:', event.candidate.address);
+            console.log('公网端口:', event.candidate.port);
+          }
+          if (event.candidate.type === 'relay') {
+            console.log('TURN成功！');
+            console.log('中继IP:', event.candidate.address);
+            console.log('中继端口:', event.candidate.port);
+          }
+          // 发送 ICE candidate 到远端
+          //sendIceCandidateToServer(event.candidate);
+        }
+      };
       peerConnection.onconnectionstatechange = (event: Event) => {
         let state = (event.target as RTCPeerConnection).connectionState;
         console.log("on connectionstate changed:", state);
