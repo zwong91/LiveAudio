@@ -94,7 +94,25 @@ const useWebRTC = (
   useEffect(() => {
     // Ensure WebRTC only runs in the browser
     if (typeof window !== "undefined" && window.RTCPeerConnection) {
-      const pc = new RTCPeerConnection();
+
+      // ICE 服务器配置
+      const iceServers = [
+        {
+          urls: "stun:stun.l.google.com:19302", // Google STUN 服务器
+        },
+        // {
+        //   urls: "turn:your-turn-server.com",   // TURN 服务器
+        //   username: "your-username",            // TURN 服务器用户名
+        //   credential: "your-password",          // TURN 服务器密码
+        // },
+      ];
+
+      // 配置 ICE 服务器
+      const pcConfig = {
+        iceServers: iceServers,
+      };
+
+      const pc = new RTCPeerConnection(pcConfig);
       setPeerConnection(pc);
       const setupConnection = async () => {
         try {
