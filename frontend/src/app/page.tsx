@@ -155,8 +155,7 @@ const useWebRTC = (
             sdp: offer.sdp,
             type: offer.type  // 添加 type 字段
           };
-          //const response = await fetch('api/rtc-connect', {
-          const response = await fetch('https://audio.enty.services/offer', {
+          const response = await fetch('api/rtc-connect', {
             method: "POST",
             body: JSON.stringify(offerData),  // 转换为 JSON 字符串
             headers: { "Content-Type": "application/json" },
