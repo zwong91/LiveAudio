@@ -113,7 +113,7 @@ const useWebRTC = (
           username: "admin",            // TURN 服务器用户名
           credential: "d937d8a8e499da7e2edafd045a618175117a2956", // TURN 服务器密码
           credentialType: 'password',
-          //realm: 'example.com',
+          realm: 'gtp.aleopool.cc',
         },
       ];
       
