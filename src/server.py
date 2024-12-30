@@ -24,7 +24,7 @@ from typing import List
 import shutil
 
 
-from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel, RTCConfiguration
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
 from aiortc.rtcrtpsender import RTCRtpSender
 from aiortc import MediaStreamTrack, VideoStreamTrack
@@ -276,10 +276,11 @@ class Server:
                 'credentialType': 'password',
             },
         ]
-        # Create a new RTCPeerConnection with ICE 服务器配置
-        pc = RTCPeerConnection(
-            iceServers=ice_servers  # 设置 ICE 服务器
-        )
+        # 使用 RTCConfiguration 配置 ICE 服务器
+        config = RTCConfiguration(iceServers=ice_servers)
+        
+        # 创建一个新的 RTCPeerConnection 并传递 RTCConfiguration
+        pc = RTCPeerConnection(configuration=config)
         # Create a new DataChannel after the peer connection is created
         s2s_response = pc.createDataChannel(
             label="response",
