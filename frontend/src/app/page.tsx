@@ -98,14 +98,22 @@ const useWebRTC = (
       // ICE 服务器配置
       const iceServers = [
         {
-          urls: "stun:stun.l.google.com:19302", // Google STUN 服务器
+          urls: [
+            "stun:stun.l.google.com:19302",    // Google STUN 服务器
+            "stun:stun1.l.google.com:19302",   // 备用 Google STUN 服务器
+            "stun:stun2.l.google.com:19302",   // 备用 Google STUN 服务器
+            "stun:stun3.l.google.com:19302",   // 备用 Google STUN 服务器
+            "stun:stun4.l.google.com:19302"    // 备用 Google STUN 服务器
+          ]
         },
+        // 如果需要，可以添加 TURN 服务器
         // {
         //   urls: "turn:your-turn-server.com",   // TURN 服务器
         //   username: "your-username",            // TURN 服务器用户名
         //   credential: "your-password",          // TURN 服务器密码
         // },
       ];
+      
 
       // 配置 ICE 服务器
       const pcConfig = {
