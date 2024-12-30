@@ -313,42 +313,6 @@ export default function Home() {
         </div>
       </div>
 
-{/*       <div>
-      {/* Add the VAD status */}
-      <div>
-        <h6>Listening</h6>
-        {!vad.listening && "Not"} listening
-        <h6>Loading</h6>
-        {!vad.loading && "Not"} loading
-        <h6>Errored</h6>
-        {!vad.errored && "Not"} errored
-        <h6>User Speaking</h6>
-        {!vad.userSpeaking && "Not"} speaking
-        <h6>Audio count</h6>
-        {audioList.length}
-        <h6>Start/Pause</h6>
-        <button onClick={vad.pause}>Pause</button>
-        <button onClick={vad.start}>Start</button>
-        <button onClick={vad.toggle}>Toggle</button>
-      </div>
-
-      {/* Add the audio playlist */}
-      <div>
-        <ol
-          id="playlist"
-          className="self-center pl-0 max-h-[400px] overflow-y-auto no-scrollbar list-none"
-        >
-          {audioList.map((audioURL) => {
-            return (
-              <li className="pl-0" key={audioItemKey(audioURL)}>
-                <audio src={audioURL} controls />
-              </li>
-            );
-          })}
-        </ol>
-      </div>
-    </div> */}
-
       <div className={styles.controls}>
         <button
           className={!isCallEnded ? styles.startCallButton : styles.endCallButton}
