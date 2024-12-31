@@ -10,12 +10,8 @@ services:
       # 将本地文件挂载到容器中
       - ./turnserver.conf:/etc/turnserver.conf:rw
       - ./ssl:/etc/ssl:rw  # 假设你有本地的 ssl 证书文件夹
+      - ./logs:/var/log:rw # 挂载日志目录
     cpus: 1
     mem_limit: 1g
     mem_reservation: 512m
-
-# 如果需要，定义卷 (可选)
-volumes:
-  turnserver.conf:
-  ssl:
 
