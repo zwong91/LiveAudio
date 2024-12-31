@@ -280,7 +280,6 @@ class Server:
                 urls=["turn:audio.enty.services:3478?transport=tcp"],  # TURN 服务器
                 username="admin",                    # TURN 服务器用户名
                 credential="7f0dd067662502af36934e85b43895b148edfcdb",  # TURN 服务器密码
-                transport='tcp',
             ),
         ]
 
