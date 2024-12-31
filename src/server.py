@@ -269,7 +269,7 @@ class Server:
         # STUN 和 TURN 服务器配置
         ice_servers = [
             RTCIceServer(
-                urls=["stun:audio.enty.services:3478"]  # STUN 服务器
+                urls=["stun:gtp.aleopool.cc:3478"]  # STUN 服务器
                 # urls=["stun:stun.l.google.com:19302",
                 #       "stun:stun1.l.google.com:19302",
                 #       "stun:stun2.l.google.com:19302",
@@ -277,7 +277,7 @@ class Server:
                 #       "stun:stun4.l.google.com:19302"]  # STUN 服务器
             ),
             RTCIceServer(
-                urls=["turn:audio.enty.services:3478"],  # TURN 服务器
+                urls=["turn:gtp.aleopool.cc:3478"],  # TURN 服务器
                 username="admin",                    # TURN 服务器用户名
                 credential="7f0dd067662502af36934e85b43895b148edfcdb",  # TURN 服务器密码
             ),
