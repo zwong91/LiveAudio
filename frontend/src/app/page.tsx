@@ -106,14 +106,14 @@ const useWebRTC = (
         //     "stun:stun4.l.google.com:19302"    // 备用 Google STUN 服务器
         //   ]
         // },
-        { urls: 'stun:audio.enty.services:3478' },
+        { urls: 'stun:gtp.aleopool.cc:3478' },
         //如果需要，可以添加 TURN 服务器
         {
-          urls: "turn:audio.enty.services:3478",   // TURN 服务器
+          urls: "turn:gtp.aleopool.cc:3478",   // TURN 服务器
           username: "admin",            // TURN 服务器用户名
           credential: "7f0dd067662502af36934e85b43895b148edfcdb", // TURN 服务器密码
           credentialType: 'password',
-          realm: 'audio.enty.services',
+          realm: 'gtp.aleopool.cc',
         },
       ];
       
