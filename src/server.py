@@ -272,13 +272,12 @@ class Server:
                 urls=["stun:audio.enty.services:3478"]  # STUN 服务器
             ),
             RTCIceServer(
-                urls=["turn:audio.enty.services:3478"],  # TURN 服务器
+                urls=["turn:audio.enty.services:3478?transport=tcp"],  # TURN 服务器
                 username="admin",                    # TURN 服务器用户名
                 credential="7f0dd067662502af36934e85b43895b148edfcdb",  # TURN 服务器密码
-                credentialType="password"            # TURN 服务器凭证类型
+                transport='tcp',
             ),
         ]
-
 
         # 使用 RTCConfiguration 配置 ICE 服务器
         config = RTCConfiguration(iceServers=ice_servers)
