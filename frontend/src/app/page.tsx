@@ -346,6 +346,16 @@ export default function Home() {
     }
   }, [isPlayingAudio, audioQueue, playAudio]);
 
+  // Integrate Eruda
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+    script.onload = () => {
+      window.eruda.init();
+    };
+    document.body.appendChild(script);
+  }, []);
+
   return (
     <div className={styles.container}>
       <div className={styles.statusBar}>
