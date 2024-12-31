@@ -97,16 +97,16 @@ const useWebRTC = (
 
       // ICE 服务器配置
       const iceServers = [
-        {
-          urls: [
-            "stun:stun.l.google.com:19302",    // Google STUN 服务器
-            "stun:stun1.l.google.com:19302",   // 备用 Google STUN 服务器
-            "stun:stun2.l.google.com:19302",   // 备用 Google STUN 服务器
-            "stun:stun3.l.google.com:19302",   // 备用 Google STUN 服务器
-            "stun:stun4.l.google.com:19302"    // 备用 Google STUN 服务器
-          ]
-        },
-        //{ urls: 'stun:audio.enty.services:3478?transport=tcp' },
+        // {
+        //   urls: [
+        //     "stun:stun.l.google.com:19302",    // Google STUN 服务器
+        //     "stun:stun1.l.google.com:19302",   // 备用 Google STUN 服务器
+        //     "stun:stun2.l.google.com:19302",   // 备用 Google STUN 服务器
+        //     "stun:stun3.l.google.com:19302",   // 备用 Google STUN 服务器
+        //     "stun:stun4.l.google.com:19302"    // 备用 Google STUN 服务器
+        //   ]
+        // },
+        { urls: 'stun:audio.enty.services:3478' },
         //如果需要，可以添加 TURN 服务器
         {
           urls: "turn:audio.enty.services:3478?transport=tcp",   // TURN 服务器
