@@ -327,7 +327,7 @@ class Server:
     async def post(self, url, data):
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(url, data=data) as response:
+                async with session.post(url, json=data) as response:
                     # 检查响应状态码
                     if response.status == 201:
                         # 获取响应体（SDP 数据）
