@@ -152,20 +152,20 @@ const useWebRTC = (
             pc.addTrack(track)
           });
 
-          // 等待 ICE gathering 完成
-          await new Promise<void>((resolve) => {
-            if (pc.iceGatheringState === 'complete') {
-              resolve();
-            } else {
-              const checkState = () => {
-                if (pc.iceGatheringState === 'complete') {
-                  pc.removeEventListener('icegatheringstatechange', checkState);
-                  resolve();
-                }
-              };
-              pc.addEventListener('icegatheringstatechange', checkState);
-            }
-          });
+          // // 等待 ICE gathering 完成
+          // await new Promise<void>((resolve) => {
+          //   if (pc.iceGatheringState === 'complete') {
+          //     resolve();
+          //   } else {
+          //     const checkState = () => {
+          //       if (pc.iceGatheringState === 'complete') {
+          //         pc.removeEventListener('icegatheringstatechange', checkState);
+          //         resolve();
+          //       }
+          //     };
+          //     pc.addEventListener('icegatheringstatechange', checkState);
+          //   }
+          // });
 
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
