@@ -586,7 +586,7 @@ class Server:
             ssl_certfile=self.certfile,
             ssl_keyfile=self.keyfile,
             loop="uvloop",
-            log_level="info",
+            log_level="debug",
             workers=os.cpu_count(),
             limit_concurrency=1000,
             limit_max_requests=10000,
