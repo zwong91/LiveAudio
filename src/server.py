@@ -318,6 +318,10 @@ class Server:
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
 
+        
+        # push to cloudflare calls
+        self.push('https://whip.xyz666.org/whip/my-live')
+        
         return JSONResponse(content={"sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "sessionid": sessionid})
 
     async def post(self, url, data):
