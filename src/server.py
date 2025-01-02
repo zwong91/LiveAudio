@@ -418,6 +418,8 @@ class Server:
                 logging.info(f"Track {track.kind} ended")
                 track.stop()
 
+        pc.addTransceiver('audio', direction='sendrecv')
+        pc.addTrack(MediaPlayer("vc/silence.wav", format="wav", loop=False).audio)
         await pc.setLocalDescription(await pc.createOffer())
         # whip-whep protocol to cloudflare calls 201
         answer = await self.post(push_url, {"sdp": pc.localDescription.sdp})
