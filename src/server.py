@@ -372,6 +372,20 @@ class Server:
             label="response",
             ordered=True,
         )
+        @s2s_response.on("open")
+        async def on_open():
+            print("DataChannel s2s_response opened")
+
+        @pc.on("datachannel")
+        def on_datachannel(channel):
+            logging.info(f"DataChannel created: {channel.label}")
+            @channel.on("open")
+            async def on_open():
+                logging.info("DataChannel opened")
+                channel.send('ping')
+            @channel.on("message")
+            def on_message(message):
+                logging.info("Received message on channel: %s", message)
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
