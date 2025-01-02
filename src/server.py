@@ -28,73 +28,14 @@ from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel, RTC
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
 from aiortc.rtcrtpsender import RTCRtpSender
 from aiortc import MediaStreamTrack, VideoStreamTrack
-import av
-from av.frame import Frame
-import numpy as np
-from src.utils.audio_utils import torchTensor2bytes, convertSampleRateTo16khz
+
 
 import aiohttp
 
 from src.client import Client
+from src.stream_track import ClientStreamTrack
 
 relay = MediaRelay()
-class ClientStreamTrack(MediaStreamTrack):
-    """
-    A media track that receives frames from a RTCClient.
-    """
-
-    def __init__(
-            self,
-            track,
-            kind,
-            client,
-            vad_pipeline,
-            asr_pipeline,
-            llm_pipeline,
-            tts_pipeline,
-            peer_connection,
-            datachannel, 
-            signaling=None
-    ):
-        super().__init__()  # don't forget this!
-        self.kind = kind
-        self.track = track
-        self.client = client
-        self.vad_pipeline = vad_pipeline
-        self.asr_pipeline = asr_pipeline
-        self.llm_pipeline = llm_pipeline
-        self.tts_pipeline = tts_pipeline
-        self.peer_connection = peer_connection
-        self.datachannel = datachannel
-        # self.signaling = signaling
-        
-        self.sampling_rate = 16_000
-        self.resampler = av.AudioResampler(
-            format="s16",
-            layout="mono",
-            rate=self.sampling_rate,
-        )
-
-    async def recv(self) -> Frame:
-        frame = await self.track.recv()
-        #print(frame)
-        frame = self.resampler.resample(frame)[0]
-        frame_array = frame.to_ndarray()
-        frame_array = frame_array[0].astype(np.int16)
-        # s16 (signed integer 16-bit number) can store numbers in range -32 768...32 767.
-        # print(frame_array)
-        self.client.append_audio_data(frame_array.tobytes(), "default")
-        try:
-            self.client.process_audio(
-                self.datachannel, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
-            )
-        except Exception as e:
-            logging.error(f"Processing error for {client.client_id}: {e}")
-
-        return frame
-
-
-MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
 
 class TTSRequest(BaseModel):
     tts_text: str
@@ -268,7 +209,7 @@ class Server:
         client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
         # STUN 和 TURN 服务器配置
         ice_servers = [
-            RTCIceServer(
+            RTCIceServer( 
                 urls=["stun:gtp.aleopool.cc:3478"]  # STUN 服务器
                 # urls=["stun:stun.l.google.com:19302",
                 #       "stun:stun1.l.google.com:19302",
@@ -294,33 +235,20 @@ class Server:
             ordered=True,
         )
         self.pcs.add(pc)
-        
-        @s2s_response.on("open")
-        async def on_open():
-            print("DataChannel s2s_response opened")
-        # signaling = create_signaling()
-        # recorder = MediaBlackhole()
+        logging.info(f"Peer Connection Created for: {request.remote}")
 
-        @pc.on("datachannel")
-        def on_datachannel(channel):
-            logging.info(f"DataChannel created: {channel.label}")
-            @channel.on("open")
-            async def on_open():
-                logging.info("DataChannel opened")
-            @channel.on("message")
-            def on_message(message):
-                if isinstance(message, str):
-                    channel.send("pong" + message)
-                elif isinstance(message, bytes):
-                    # 假设 message 是音频数据（如 PCM 格式）
-                    # 进行处理（例如，解码、分析或保存音频数据）
-                    logging.info(f"Received {len(message)} bytes of audio data")
+        @pc.on("iceconnectionstatechange")
+        async def on_iceconnectionstatechange():
+            logging.info("ICE connection state is %s", pc.iceConnectionState)
+            if pc.iceConnectionState == "failed":
+                await pc.close()
+                self.pcs.discard(pc)
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
             logging.info(f"Connection state is {pc.connectionState}")
             if pc.connectionState in ["failed", "closed"]:
-                print("pc connectionstate  closed")
+                logging.info("pc connectionstate  closed")
                 await pc.close()
                 self.pcs.discard(pc)
 
@@ -346,7 +274,30 @@ class Server:
             @track.on("ended")
             async def on_ended():
                 logging.info(f"Track {track.kind} ended")
+                track.stop()
                 #await recorder.stop()
+
+        @s2s_response.on("open")
+        async def on_open():
+            print("DataChannel s2s_response opened")
+        # signaling = create_signaling()
+        # recorder = MediaBlackhole()
+
+        @pc.on("datachannel")
+        def on_datachannel(channel):
+            logging.info(f"DataChannel created: {channel.label}")
+            @channel.on("open")
+            async def on_open():
+                logging.info("DataChannel opened")
+            @channel.on("message")
+            def on_message(message):
+                logging.info("Received message on channel: %s", message)
+                if isinstance(message, str):
+                    channel.send("pong" + message)
+                elif isinstance(message, bytes):
+                    # 假设 message 是音频数据（如 PCM 格式）
+                    # 进行处理（例如，解码、分析或保存音频数据）
+                    logging.info(f"Received {len(message)} bytes of audio data")
                     
         # Add transceivers
         # pc.addTransceiver('video', direction='sendonly')
@@ -532,7 +483,7 @@ class Server:
     async def upload_audio_files(self, vc_name: str, files: List[UploadFile] = File(...)):
         file_paths = []
         file_uuid = uuid.uuid4().hex[:8]
-        
+        MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
         # 检查文件是否为空以及大小是否超过20MB
         for file in files:
             if not file.filename:

@@ -118,3 +118,9 @@ HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile cf
 export PYANNOTE_AUTH_TOKEN=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
 ASR_TYPE=sensevoice python -m unittest test.server.test_server
 ```
+
+Resources
+---------
+* [WebRTC docs](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API) - on https://developer.mozilla.org
+* [Ollama](https://ollama.com/) - A local LLM inference engine for running Llama 3, Mistral, Gemma, and other LLMs
+* [aiortc](https://aiortc.readthedocs.io/en/latest/) - A Python Library for WebRTC and ORTC communication 

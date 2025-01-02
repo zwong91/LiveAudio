@@ -144,11 +144,27 @@ const useWebRTC = (
               }
           };
           // 获取音频流
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
           // 添加音频轨道到 PeerConnection
           stream.getTracks().forEach((track) => {
             console.log("Adding track to connection:", track);
-            pc.addTransceiver(track, { direction: "sendrecv" });
+            //pc.addTransceiver(track, { direction: "sendrecv" });
+            pc.addTrack(track)
+          });
+
+          // 等待 ICE gathering 完成
+          await new Promise<void>((resolve) => {
+            if (pc.iceGatheringState === 'complete') {
+              resolve();
+            } else {
+              const checkState = () => {
+                if (pc.iceGatheringState === 'complete') {
+                  pc.removeEventListener('icegatheringstatechange', checkState);
+                  resolve();
+                }
+              };
+              pc.addEventListener('icegatheringstatechange', checkState);
+            }
           });
 
           const offer = await pc.createOffer();
@@ -195,21 +211,6 @@ const useWebRTC = (
 
   useEffect(() => {
     if (peerConnection) {
-      // // Handle inbound tracks
-      // peerConnection.ontrack = (event: RTCTrackEvent) => {
-      //   console.log("Inbound track:", event.track.kind);
-
-      //   // Create an <audio> element for audio tracks
-      //   if (event.track.kind === "audio") {
-      //     const el = document.createElement('audio');
-      //     el.srcObject = event.streams[0];
-      //     el.autoplay = el.controls = true;
-      //     el.style.maxWidth = "100%";
-      //     document.body.appendChild(el); // Append to the body or any other container you prefer
-      //     console.log("Audio track added to page");
-      //   }
-      // };
-
       // const sendIceCandidateToServer = async (candidate: RTCIceCandidate) => {
       //   try {
       //     // 创建 candidate 数据
@@ -262,8 +263,8 @@ const useWebRTC = (
         const dataChannel = event.channel;
 
         dataChannel.onopen = () => {
-          console.log("DataChannel opened:", dataChannel.label);
-          dataChannel.send("hah")
+          console.log("DataChannel opened and ready to use:", dataChannel.label);
+          dataChannel.send("ping")
         };
 
         dataChannel.onmessage = async (event: MessageEvent) => {
@@ -290,6 +291,21 @@ const useWebRTC = (
           console.log("DataChannel closed:", dataChannel.label);
         };
       };
+
+       // connect audio / video handle inbound tracks
+      peerConnection.ontrack = (event: RTCTrackEvent) => {
+        console.log("Received remote stream inbound track:", event.track.kind);
+        // Create an <audio> element for audio tracks
+        if (event.track.kind === "audio") {
+          const el = document.createElement('audio');
+          el.srcObject = event.streams[0];
+          el.autoplay = el.controls = true;
+          el.style.maxWidth = "100%";
+          document.body.appendChild(el); // Append to the body or any other container you prefer
+          console.log("Audio track added to page");
+        }
+      };
+  
     }
   }, [peerConnection, checkAndBufferAudio]);  
 
