@@ -14,7 +14,7 @@ import asyncio
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Audio AI Server: Real-time audio conversation "
-                    "using self-hosted Sensevoice and WebSocket."
+                    "using self-hosted Sensevoice and WebSocket/WebRTC."
     )
     parser.add_argument("--vad-type", type=str, default="pyannote", help="VAD pipeline type")
     parser.add_argument("--vad-args", type=str, default='{"auth_token": "huggingface_token"}', help="VAD args (JSON string)")
@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument("--certfile", type=str, default=None, help="Path to SSL certificate file")
     parser.add_argument("--keyfile", type=str, default=None, help="Path to SSL key file")
     parser.add_argument('--transport', type=str, default='webrtc')
-    parser.add_argument('--push_url', type=str, default='https://whip.xyz666.org/v1/whip/?app=live&stream=livestream')
+    parser.add_argument('--push_url', type=str, default='https://whip.xyz666.org/whip/stream-live-name')
     parser.add_argument("--log-level", type=str, default="error", choices=["debug", "info", "warning", "error"], help="Logging level")
     return parser.parse_args()
 
