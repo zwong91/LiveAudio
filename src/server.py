@@ -320,6 +320,40 @@ class Server:
 
         return JSONResponse(content={"sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "sessionid": sessionid})
 
+    async def post(self, url, data):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, data=data) as response:
+                    # 检查响应状态码
+                    if response.status == 201:
+                        # 获取响应体（SDP 数据）
+                        sdp_data = await response.text()
+                        
+                        # 获取响应头
+                        protocol_version = response.headers.get('protocol-version')
+                        etag = response.headers.get('etag')
+                        location = response.headers.get('location')
+
+                        # 打印或返回结果
+                        print(f"SDP Data: {sdp_data}")
+                        print(f"Protocol Version: {protocol_version}")
+                        print(f"ETag: {etag}")
+                        print(f"Location: {location}")
+
+                        # 返回相关信息，可以根据需要自定义返回内容
+                        return {
+                            'sdp_data': sdp_data,
+                            'protocol_version': protocol_version,
+                            'etag': etag,
+                            'location': location
+                        }
+                    else:
+                        print(f"Request failed with status code {response.status}")
+                        return None
+        except aiohttp.ClientError as e:
+            print(f'Error: {e}')
+            return None
+
     async def push(self, push_url):
         #create a new RTCPeerConnection, whip to cloudflare webrtc calls livestream
         pc = RTCPeerConnection()
@@ -360,9 +394,9 @@ class Server:
                 track.stop()
 
         await pc.setLocalDescription(await pc.createOffer())
-        # whip-whep protocol to cloudflare calls
-        answer = await post(push_url, {"sdp": pc.localDescription.sdp})
-        await pc.setRemoteDescription(RTCSessionDescription(sdp=answer, type='answer'))
+        # whip-whep protocol to cloudflare calls 201
+        answer = await self.post(push_url, {"sdp": pc.localDescription.sdp})
+        await pc.setRemoteDescription(RTCSessionDescription(sdp=answer['sdp_data'], type='answer'))
 
 
     async def websocket_endpoint(self, websocket: WebSocket):
@@ -472,15 +506,6 @@ class Server:
                 'Content-Disposition': 'inline'
             }
         )
-
-    async def post(self, url, data):
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, data=data) as response:
-                    return await response.text()
-        except aiohttp.ClientError as e:
-            print(f'Error: {e}')
-
 
     async def upload_audio_files(self, vc_name: str, files: List[UploadFile] = File(...)):
         file_paths = []
