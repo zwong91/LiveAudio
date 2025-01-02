@@ -364,6 +364,7 @@ class Server:
         self.pcs.add(pc)
 
         use_webrtc = True
+        sessionid = str(uuid.uuid4())
         client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
 
         @pc.on("connectionstatechange")
