@@ -35,8 +35,6 @@ import aiohttp
 from src.client import Client
 from src.stream_track import ClientStreamTrack
 
-relay = MediaRelay()
-
 class TTSRequest(BaseModel):
     tts_text: str
     vc_uid: str
@@ -144,6 +142,7 @@ class Server:
         self.keyfile = keyfile
         self.connected_clients = {}
         
+        self.relay = MediaRelay()
         self.pcs = set()
         self.app = FastAPI(
             title="Audio AI Server",
@@ -257,7 +256,7 @@ class Server:
             logging.info(f"Track {track.kind} received")
             if track.kind == "audio":
                 audio_track = ClientStreamTrack(
-                    relay.subscribe(
+                    self.relay.subscribe(
                         track=track,
                     ),
                     "audio",
