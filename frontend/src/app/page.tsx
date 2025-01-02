@@ -292,19 +292,19 @@ const useWebRTC = (
         };
       };
 
-       // connect audio / video handle inbound tracks
-      peerConnection.ontrack = (event: RTCTrackEvent) => {
-        console.log("Received remote stream inbound track:", event.track.kind);
-        // Create an <audio> element for audio tracks
-        if (event.track.kind === "audio") {
-          const el = document.createElement('audio');
-          el.srcObject = event.streams[0];
-          el.autoplay = el.controls = true;
-          el.style.maxWidth = "100%";
-          document.body.appendChild(el); // Append to the body or any other container you prefer
-          console.log("Audio track added to page");
-        }
-      };
+      // connect audio / video handle inbound tracks
+      // peerConnection.ontrack = (event: RTCTrackEvent) => {
+      //   console.log("Received remote stream inbound track:", event.track.kind);
+      //   // Create an <audio> element for audio tracks
+      //   if (event.track.kind === "audio") {
+      //     const el = document.createElement('audio');
+      //     el.srcObject = event.streams[0];
+      //     el.autoplay = el.controls = true;
+      //     el.style.maxWidth = "100%";
+      //     document.body.appendChild(el); // Append to the body or any other container you prefer
+      //     console.log("Audio track added to page");
+      //   }
+      // };
   
     }
   }, [peerConnection, checkAndBufferAudio]);  
