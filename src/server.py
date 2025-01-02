@@ -321,6 +321,7 @@ class Server:
         return JSONResponse(content={"sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "sessionid": sessionid})
 
     async def push(self, push_url):
+        #create a new RTCPeerConnection, whip to cloudflare webrtc calls livestream
         pc = RTCPeerConnection()
         self.pcs.add(pc)
 
