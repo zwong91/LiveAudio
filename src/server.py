@@ -363,8 +363,8 @@ class Server:
         pc = RTCPeerConnection()
         self.pcs.add(pc)
 
-        sessionid = str(uuid.uuid4())
-        client = Client(sessionid, self.sampling_rate, self.samples_width)
+        use_webrtc = True
+        client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
