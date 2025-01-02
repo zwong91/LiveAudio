@@ -300,17 +300,17 @@ class Server:
                     
         # Add transceivers
         # pc.addTransceiver('video', direction='sendonly')
-        pc.addTransceiver('audio', direction='sendrecv')
+        # pc.addTransceiver('audio', direction='sendrecv')
 
         # Set codec preferences for video/audio
-        for transceiver in pc.getTransceivers():
-            if transceiver.kind == 'video':
-                capabilities = RTCRtpSender.getCapabilities('video')
-                preferences = [codec for codec in capabilities.codecs if codec.name in ('H264', 'VP8')]
-                transceiver.setCodecPreferences(preferences)
-                transceiver.direction = 'sendonly'
-            elif transceiver.kind == 'audio':
-                transceiver.direction = 'sendrecv'
+        # for transceiver in pc.getTransceivers():
+        #     if transceiver.kind == 'video':
+        #         capabilities = RTCRtpSender.getCapabilities('video')
+        #         preferences = [codec for codec in capabilities.codecs if codec.name in ('H264', 'VP8')]
+        #         transceiver.setCodecPreferences(preferences)
+        #         transceiver.direction = 'sendonly'
+        #     elif transceiver.kind == 'audio':
+        #         transceiver.direction = 'sendrecv'
 
         await pc.setRemoteDescription(offer)
         #await recorder.start()
