@@ -60,7 +60,7 @@ class ClientStreamTrack(MediaStreamTrack):
                     self.dc, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
                 )
         except Exception as e:
-            logging.error(f"Processing error for {client.client_id}: {e}")
+            logging.error(f"Processing error for {self.client.client_id}: {e}")
 
         return frame
     

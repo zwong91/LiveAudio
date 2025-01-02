@@ -339,7 +339,7 @@ class Server:
             logging.info(f"Track {track.kind} received")
             if track.kind == "audio":
                 stream_track = ClientStreamTrack(
-                    relay.subscribe(
+                    self.relay.subscribe(
                         track=track,
                         ),
                     "audio",
@@ -356,8 +356,10 @@ class Server:
             @track.on("ended")
             async def on_ended():
                 logging.info(f"Track {track.kind} ended")
+                track.stop()
 
         await pc.setLocalDescription(await pc.createOffer())
+        # whip-whep protocol to cloudflare calls
         answer = await post(push_url, {"sdp": pc.localDescription.sdp})
         await pc.setRemoteDescription(RTCSessionDescription(sdp=answer, type='answer'))
 
