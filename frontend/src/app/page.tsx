@@ -282,7 +282,7 @@ const useWebRTC = (
 
             checkAndBufferAudio(audioData);
           } catch (error) {
-            console.error("Error processing WebSocket message:", error);
+            console.error("Error processing WebRTC message:", error);
           }
           dataChannel.send("hah")
         };
