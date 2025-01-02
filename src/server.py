@@ -182,6 +182,8 @@ class Server:
         self.app.websocket("/stream-vc")(self.websocket_endpoint)
         
         self.app.post("/offer")(self.offer_endpoint)
+        
+        self.app.post("/cf-calls")(self.push)
 
     async def startup(self):
         """Called on startup to set up additional services."""
@@ -320,7 +322,7 @@ class Server:
 
         
         # push to cloudflare calls
-        await self.push('https://whip.xyz666.org/whip/my-live')
+        # await self.push('https://whip.xyz666.org/whip/my-live')
         
         return JSONResponse(content={"sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "sessionid": sessionid})
 
