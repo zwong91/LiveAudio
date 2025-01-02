@@ -320,7 +320,7 @@ class Server:
 
         
         # push to cloudflare calls
-        self.push('https://whip.xyz666.org/whip/my-live')
+        await self.push('https://whip.xyz666.org/whip/my-live')
         
         return JSONResponse(content={"sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "sessionid": sessionid})
 
