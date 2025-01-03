@@ -104,8 +104,22 @@ const useWebRTC = (
         //     "stun:stun2.l.google.com:19302",   // 备用 Google STUN 服务器
         //     "stun:stun3.l.google.com:19302",   // 备用 Google STUN 服务器
         //     "stun:stun4.l.google.com:19302"    // 备用 Google STUN 服务器
+        //     "stun:stun.cloudflare.com:3478",   // cf turn service
         //   ]
         // },
+
+        // cf turn service
+        // { urls: 'stun:stun.cloudflare.com:3478' },
+        // {
+        //   "urls":[
+        //     "turn:turn.cloudflare.com:3478?transport=udp",
+        //     "turn:turn.cloudflare.com:3478?transport=tcp",
+        //     "turns:turn.cloudflare.com:5349?transport=tcp"
+        //   ],
+        //   "username":"g024564e46fd561d7728d9b2170add06f0907dba749880ec5a47eee1422629b1",
+        //   "credential":"b02671af21caf757a82c739db804f4309a4551ceb8962bab57760ff8c5536d9c"
+        // },
+
         { urls: 'stun:gtp.aleopool.cc:3478' },
         //如果需要，可以添加 TURN 服务器
         {
