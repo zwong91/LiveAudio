@@ -148,7 +148,7 @@ class Server:
         self.samples_width = samples_width
         self.certfile = certfile
         self.keyfile = keyfile
-        self.push_url = whip_url
+        self.whip_url = whip_url
         self.connected_clients = {}
         
         self.relay = MediaRelay()
