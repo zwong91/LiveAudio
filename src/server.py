@@ -680,5 +680,5 @@ class Server:
         """Start both the server and tasks concurrently."""
         await asyncio.gather(
             self.start_server(),  # Run Uvicorn server
-            self.run_tasks()      # Run additional logic
+            #self.run_tasks()      # Run additional logic
         )
