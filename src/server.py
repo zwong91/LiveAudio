@@ -322,7 +322,7 @@ class Server:
 
         
         # push to cloudflare calls
-        # await self.push('https://whip.xyz666.org/whip/my-live')
+        # await self.push('https://whip.xyz666.org/publish/my-live')
         
         return JSONResponse(content={"sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "sessionid": sessionid})
 
@@ -396,32 +396,8 @@ class Server:
                 await pc.close()
                 self.pcs.discard(pc)
 
-        @pc.on("track")
-        def on_track(track):
-            logging.info(f"Track {track.kind} received")
-            if track.kind == "audio":
-                stream_track = ClientStreamTrack(
-                    self.relay.subscribe(
-                        track=track,
-                        ),
-                    "audio",
-                    client,
-                    self.vad_pipeline,
-                    self.asr_pipeline,
-                    self.llm_pipeline,
-                    self.tts_pipeline,
-                    pc,
-                    s2s_response,
-                )
-                pc.addTrack(stream_track)
-
-            @track.on("ended")
-            async def on_ended():
-                logging.info(f"Track {track.kind} ended")
-                track.stop()
-
         pc.addTransceiver('audio', direction='sendrecv')
-        pc.addTrack(MediaPlayer("vc/silence.wav", format="wav", loop=True).audio)
+        pc.addTrack(MediaPlayer("vc/liuyifei.wav", format="wav", loop=True).audio)
         await pc.setLocalDescription(await pc.createOffer())
         # whip-whep protocol to cloudflare calls 201
         answer = await self.post(push_url, {"sdp": pc.localDescription.sdp})
