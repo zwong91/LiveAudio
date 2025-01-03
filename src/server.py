@@ -365,7 +365,7 @@ class Server:
                         print(f"Location: {location}")
 
                         # iceServers 中提取 username 和 credential
-                        ice_servers = response_data.get('iceServers', {})
+                        ice_servers = response.get('iceServers', {})
                         username = ice_servers.get('username')
                         credential = ice_servers.get('credential')
                         print(f"Username: {username}")
