@@ -218,8 +218,7 @@ class Server:
         use_webrtc = True
         client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
         # STUN 和 TURN 服务器配置
-        #turn_url = f'https://rtc.live.cloudflare.com/v1/turn/keys/{CF_TURN_KEY}/credentials/generate'
-        #result = await self.post(turn_url, {'ttl': 86400})
+        #result = await self.post({'ttl': 86400})
         ice_servers = [
             RTCIceServer( 
                 urls=["stun:gtp.aleopool.cc:3478"]
@@ -338,46 +337,57 @@ class Server:
         
         return JSONResponse(content={"sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "sessionid": sessionid})
 
-    async def post(self, url, data):
+    async def turn(self, data):
         try:
             async with aiohttp.ClientSession() as session:
                 headers = {
                     'Authorization': 'Bearer 92d1cf73915fe293f3402775db92d40b552dd6ea84babd32d17869733cb34e2b',
                     'Content-Type': 'application/json',
                 }
-                ## test url
-                url = "https://whip.xyz666.org/publish/my-live"
-                async with session.post(url, json=data, headers=headers) as response:
+                turn_url = f'https://rtc.live.cloudflare.com/v1/turn/keys/{CF_TURN_KEY}/credentials/generate'
+                async with session.post(turn_url, json=data, headers=headers) as response:
                     # 检查响应状态码
                     if response.status == 201:
                         # 获取响应体（SDP 数据）
-                        sdp_data = await response.text()
-                        
-                        # 获取响应头
-                        protocol_version = response.headers.get('protocol-version')
-                        etag = response.headers.get('etag')
-                        location = response.headers.get('location')
-
-                        # 打印或返回结果
-                        print(f"SDP Data: {sdp_data}")
-                        print(f"Protocol Version: {protocol_version}")
-                        print(f"ETag: {etag}")
-                        print(f"Location: {location}")
-
+                        ice_servers = await response.json()
                         # iceServers 中提取 username 和 credential
-                        ice_servers = response.get('iceServers', {})
                         username = ice_servers.get('username')
                         credential = ice_servers.get('credential')
                         print(f"Username: {username}")
                         print(f"Credential: {credential}")
                         # 返回相关信息，可以根据需要自定义返回内容
                         return {
+                            'username': username,
+                            'credential': credential
+                        }
+                    else:
+                        print(f"Request failed with status code {response.status}")
+                        return None
+        except aiohttp.ClientError as e:
+            print(f'Error: {e}')
+            return None
+
+    async def post(self, url, data):
+        try:
+            async with aiohttp.ClientSession() as session:
+                ## test url
+                url = "https://whip.xyz666.org/publish/my-live"
+                async with session.post(url, json=data) as response:
+                    # 检查响应状态码
+                    if response.status == 201:
+                        sdp_data = await response.text() 
+                        protocol_version = response.headers.get('protocol-version')
+                        etag = response.headers.get('etag')
+                        location = response.headers.get('location')
+                        print(f"SDP Data: {sdp_data}")
+                        print(f"Protocol Version: {protocol_version}")
+                        print(f"ETag: {etag}")
+                        print(f"Location: {location}")
+                        return {
                             'sdp_data': sdp_data,
                             'protocol_version': protocol_version,
                             'etag': etag,
-                            'location': location,
-                            'username': username,
-                            'credential': credential
+                            'location': location
                         }
                     else:
                         print(f"Request failed with status code {response.status}")
