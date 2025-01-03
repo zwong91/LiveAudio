@@ -293,6 +293,7 @@ const useWebRTC = (
 
         dataChannel.onclose = () => {
           console.log("DataChannel closed:", dataChannel.label);
+          clearInterval(pingInterval); // Clear the ping interval when the channel closes
         };
       };
 
