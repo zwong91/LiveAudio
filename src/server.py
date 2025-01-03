@@ -423,8 +423,8 @@ class Server:
         pc.addTrack(MediaPlayer("vc/liuyifei.wav", format="wav", loop=True).audio)
         await pc.setLocalDescription(await pc.createOffer())
         # whip-whep protocol to cloudflare calls 201
-        answer = await self.post(whip_url, {"sdp": pc.localDescription.sdp})
-        await pc.setRemoteDescription(RTCSessionDescription(sdp=answer['sdp_data'], type='answer'))
+        result = await self.post(whip_url, {"sdp": pc.localDescription.sdp})
+        await pc.setRemoteDescription(RTCSessionDescription(sdp=result['sdp_data'], type='answer'))
 
 
     async def websocket_endpoint(self, websocket: WebSocket):

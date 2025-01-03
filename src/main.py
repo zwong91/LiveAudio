@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument("--certfile", type=str, default=None, help="Path to SSL certificate file")
     parser.add_argument("--keyfile", type=str, default=None, help="Path to SSL key file")
     parser.add_argument('--transport', type=str, default='webrtc')
-    parser.add_argument('--whip_url', type=str, default='http://localhost:1985/rtc/v1/whip/?app=live&stream=livestream')
+    parser.add_argument('--whip_url', type=str, default='http://108.137.9.108:1985/rtc/v1/whip/?app=live&stream=livestream')
     parser.add_argument("--log-level", type=str, default="error", choices=["debug", "info", "warning", "error"], help="Logging level")
     return parser.parse_args()
 
