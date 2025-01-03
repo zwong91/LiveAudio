@@ -431,6 +431,8 @@ class Server:
             if pc.connectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)
+            if pc.connectionState == "closed":
+                self.pcs.discard(pc)
 
         pc.addTrack(MediaPlayer("vc/liuyifei.wav", format="wav", loop=True).audio)
         await pc.setLocalDescription(await pc.createOffer())
