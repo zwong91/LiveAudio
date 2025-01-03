@@ -372,6 +372,33 @@ export default function Home() {
     document.body.appendChild(script);
   }, []);
 
+  // Add wake lock logic
+  useEffect(() => {
+    let wakeLock: WakeLockSentinel | null = null;
+
+    // Request screen wake lock to prevent the screen from going to sleep
+    const requestWakeLock = async () => {
+      try {
+        wakeLock = await navigator.wakeLock.request("screen");
+        console.log("Screen wake lock acquired");
+      } catch (error) {
+        console.error("Error with requestWakeLock", error);
+      }
+    };
+
+    requestWakeLock();
+
+    return () => {
+      if (wakeLock) {
+        wakeLock.release().then(() => {
+          console.log("Screen wake lock released");
+        }).catch((error) => {
+          console.error("Failed to release wake lock", error);
+        });
+      }
+    };
+  }, []);
+
   return (
     <div className={styles.container}>
       <div className={styles.statusBar}>
