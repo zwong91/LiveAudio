@@ -6,6 +6,7 @@ from typing import AsyncGenerator
 import sys
 import time
 import io
+import re
 import logging
 from uuid import uuid4
 from typing import Tuple
@@ -131,6 +132,13 @@ class CosyVoice_v2(TTSInterface):
 
         t0 = time.time()
         wav_chunks = []
+        processed_tts_text = ""
+        punctuation_pattern = r'([!?;。！？])'
+        parts = re.split(punctuation_pattern, tts_text)
+        if len(parts) > 2 and parts[-1]:
+            tts_text = "".join(parts[:-1])
+        processed_tts_text += tts_text
+        print(f"cur_tts_text: {tts_text}")
         pattern = r"生成风格:\s*([^\n;]+)[;\n]+播报内容:\s*(.+)"
         match = re.search(pattern, text)
         if match:
