@@ -31,6 +31,13 @@ from aiortc import MediaStreamTrack, VideoStreamTrack
 
 
 import aiohttp
+from dotenv import load_dotenv
+# 加载环境变量
+load_dotenv(override=True)
+
+#CF_TURN_KEY = os.getenv('CF_TURN_KEY')
+USERNAME = os.getenv('USERNAME')
+CREDENTIAL = os.getenv('CREDENTIAL')
 
 from src.client import Client
 from src.stream_track import ClientStreamTrack
@@ -209,23 +216,25 @@ class Server:
         use_webrtc = True
         client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
         # STUN 和 TURN 服务器配置
+        #turn_url = f'https://rtc.live.cloudflare.com/v1/turn/keys/{CF_TURN_KEY}/credentials/generate'
+        #result = await self.post(turn_url, {'ttl': 86400})
         ice_servers = [
-            # RTCIceServer( 
-            #     urls=["stun:gtp.aleopool.cc:3478"]
-            # ),
-            # RTCIceServer(
-            #     urls=["turn:gtp.aleopool.cc:3478"],
-            #     username="admin",
-            #     credential="7f0dd067662502af36934e85b43895b148edfcdb",
-            # ),
-            RTCIceServer(
-                urls=["stun:stun.cloudflare.com:3478",
-                    "turn:turn.cloudflare.com:3478?transport=udp",
-                    "turn:turn.cloudflare.com:3478?transport=tcp",
-                    "turns:turn.cloudflare.com:5349?transport=tcp"],
-                username="g024564e46fd561d7728d9b2170add06f0907dba749880ec5a47eee1422629b1",
-                credential="b02671af21caf757a82c739db804f4309a4551ceb8962bab57760ff8c5536d9c",
+            RTCIceServer( 
+                urls=["stun:gtp.aleopool.cc:3478"]
             ),
+            RTCIceServer(
+                urls=["turn:gtp.aleopool.cc:3478"],
+                username=USERNAME,
+                credential=CREDENTIAL,
+            ),
+            # RTCIceServer(
+            #     urls=["stun:stun.cloudflare.com:3478",
+            #         "turn:turn.cloudflare.com:3478?transport=udp",
+            #         "turn:turn.cloudflare.com:3478?transport=tcp",
+            #         "turns:turn.cloudflare.com:5349?transport=tcp"],
+            #     username=result['username'],
+            #     credential=result["credential"],
+            # ),
         ]
 
         # 使用 RTCConfiguration 配置 ICE 服务器
@@ -332,7 +341,11 @@ class Server:
     async def post(self, url, data):
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=data) as response:
+                headers = {
+                    'Authorization': 'Bearer 92d1cf73915fe293f3402775db92d40b552dd6ea84babd32d17869733cb34e2b',
+                    'Content-Type': 'application/json',
+                }
+                async with session.post(url, json=data, headers=headers) as response:
                     # 检查响应状态码
                     if response.status == 201:
                         # 获取响应体（SDP 数据）
@@ -349,12 +362,20 @@ class Server:
                         print(f"ETag: {etag}")
                         print(f"Location: {location}")
 
+                        # iceServers 中提取 username 和 credential
+                        ice_servers = response_data.get('iceServers', {})
+                        username = ice_servers.get('username')
+                        credential = ice_servers.get('credential')
+                        print(f"Username: {username}")
+                        print(f"Credential: {credential}")
                         # 返回相关信息，可以根据需要自定义返回内容
                         return {
                             'sdp_data': sdp_data,
                             'protocol_version': protocol_version,
                             'etag': etag,
-                            'location': location
+                            'location': location,
+                            'username': username,
+                            'credential': credential
                         }
                     else:
                         print(f"Request failed with status code {response.status}")

@@ -95,6 +95,14 @@ const useWebRTC = (
     // Ensure WebRTC only runs in the browser
     if (typeof window !== "undefined" && window.RTCPeerConnection) {
 
+      // 从环境变量中获取值
+      const username = process.env.NEXT_PUBLIC_USERNAME;
+      const credential = process.env.NEXT_PUBLIC_CREDENTIAL;
+      // Check if environment variables are set
+      if (!username || !credential) {
+        console.error("TURN server credentials are missing!");
+        return;
+      }
       // ICE 服务器配置
       const iceServers = [
         // {
@@ -108,27 +116,27 @@ const useWebRTC = (
         //   ]
         // },
 
-        // cf turn service
-        { urls: 'stun:stun.cloudflare.com:3478' },
-        {
-          "urls":[
-            "turn:turn.cloudflare.com:3478?transport=udp",
-            "turn:turn.cloudflare.com:3478?transport=tcp",
-            "turns:turn.cloudflare.com:5349?transport=tcp"
-          ],
-          "username":"g024564e46fd561d7728d9b2170add06f0907dba749880ec5a47eee1422629b1",
-          "credential":"b02671af21caf757a82c739db804f4309a4551ceb8962bab57760ff8c5536d9c"
-        },
-
-        // { urls: 'stun:gtp.aleopool.cc:3478' },
-        // //如果需要，可以添加 TURN 服务器
+        // // cf turn service
+        // { urls: 'stun:stun.cloudflare.com:3478' },
         // {
-        //   urls: "turn:gtp.aleopool.cc:3478",   // TURN 服务器
-        //   username: "admin",            // TURN 服务器用户名
-        //   credential: "7f0dd067662502af36934e85b43895b148edfcdb", // TURN 服务器密码
-        //   credentialType: 'password',
-        //   realm: 'gtp.aleopool.cc',
+        //   "urls":[
+        //     "turn:turn.cloudflare.com:3478?transport=udp",
+        //     "turn:turn.cloudflare.com:3478?transport=tcp",
+        //     "turns:turn.cloudflare.com:5349?transport=tcp"
+        //   ],
+        //   "username":"g024564e46fd561d7728d9b2170add06f0907dba749880ec5a47eee1422629b1",
+        //   "credential":"b02671af21caf757a82c739db804f4309a4551ceb8962bab57760ff8c5536d9c"
         // },
+
+        { urls: 'stun:gtp.aleopool.cc:3478' },
+        //如果需要，可以添加 TURN 服务器
+        {
+          urls: "turn:gtp.aleopool.cc:3478",   // TURN 服务器
+          username: username,            // TURN 服务器用户名
+          credential: credential, // TURN 服务器密码
+          credentialType: 'password',
+          realm: 'gtp.aleopool.cc',
+        },
       ];
       
 
