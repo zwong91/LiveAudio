@@ -345,6 +345,8 @@ class Server:
                     'Authorization': 'Bearer 92d1cf73915fe293f3402775db92d40b552dd6ea84babd32d17869733cb34e2b',
                     'Content-Type': 'application/json',
                 }
+                ## test url
+                url = "https://whip.xyz666.org/publish/my-live"
                 async with session.post(url, json=data, headers=headers) as response:
                     # 检查响应状态码
                     if response.status == 201:
@@ -423,8 +425,8 @@ class Server:
         pc.addTrack(MediaPlayer("vc/liuyifei.wav", format="wav", loop=True).audio)
         await pc.setLocalDescription(await pc.createOffer())
         # whip-whep protocol to cloudflare calls 201
-        result = await self.post(whip_url, {"sdp": pc.localDescription.sdp})
-        await pc.setRemoteDescription(RTCSessionDescription(sdp=result['sdp_data'], type='answer'))
+        answer = await self.post(whip_url, {"sdp": pc.localDescription.sdp})
+        await pc.setRemoteDescription(RTCSessionDescription(sdp=answer, type='answer'))
 
 
     async def websocket_endpoint(self, websocket: WebSocket):
