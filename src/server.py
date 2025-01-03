@@ -256,7 +256,7 @@ class Server:
             logging.info("ICE connection state is %s", pc.iceConnectionState)
             if pc.iceConnectionState == "failed":
                 await pc.close()
-                self.pcs.discard(pc)   
+                self.pcs.discard(pc)
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
