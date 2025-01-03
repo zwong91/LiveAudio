@@ -288,7 +288,6 @@ const useWebRTC = (
           } catch (error) {
             console.error("Error processing WebRTC message:", error);
           }
-          dataChannel.send("hah")
         };
 
         dataChannel.onclose = () => {
