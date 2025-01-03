@@ -261,12 +261,9 @@ const useWebRTC = (
       };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
-        // Create a ref to store the ping interval ID
-        const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
         dataChannel.onopen = () => {
           console.log("DataChannel opened and ready to use:", dataChannel.label);
-          // Send "ping" every 5 seconds
-          pingIntervalRef.current = setInterval(() => {
+          const pingInterval = setInterval(() => {
             console.log("Sending ping...");
             dataChannel.send("ping");
           }, 5000);
@@ -293,11 +290,6 @@ const useWebRTC = (
 
         dataChannel.onclose = () => {
           console.log("DataChannel closed:", dataChannel.label);
-          // Clear the ping interval when the channel is closed
-          if (pingIntervalRef.current) {
-            clearInterval(pingIntervalRef.current); // Clear the ping interval
-            pingIntervalRef.current = null; // Optionally reset the ref
-          }
         };
       };
 
