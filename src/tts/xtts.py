@@ -216,7 +216,7 @@ class XTTS_v2(TTSInterface):
             language,
             gpt_cond_latent,
             speaker_embedding,
-            # Streaming
+            # Streaming reduce it to get faster response, but degrade quality
             stream_chunk_size=128,
             overlap_wav_len=1024,
             # GPT inference
@@ -229,7 +229,7 @@ class XTTS_v2(TTSInterface):
             speed=1.0,
             enable_text_splitting=True,
         )
-
+        
         for i, chunk in enumerate(chunks):
             if i == 0:
                 print(f"Time to first chunck: {time.time() - t0} s")
@@ -237,6 +237,7 @@ class XTTS_v2(TTSInterface):
             wav_chunks.append(chunk)
             processed_bytes = postprocess_tts_wave_int16(chunk)
             pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
+            # such as chunk size 9600, (a.k.a 24K*20ms*2)
             print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
             

@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument("--certfile", type=str, default=None, help="Path to SSL certificate file")
     parser.add_argument("--keyfile", type=str, default=None, help="Path to SSL key file")
     parser.add_argument('--transport', type=str, default='webrtc')
-    parser.add_argument('--push_url', type=str, default='https://whip.xyz666.org/publish/my-live')
+    parser.add_argument('--whip_url', type=str, default='http://localhost:1985/rtc/v1/whip/?app=live&stream=livestream')
     parser.add_argument("--log-level", type=str, default="error", choices=["debug", "info", "warning", "error"], help="Logging level")
     return parser.parse_args()
 
@@ -51,7 +51,7 @@ def main():
     tts_pipeline = TTSFactory.create_tts_pipeline(args.tts_type)
 
     # Create and start server
-    server = Server(vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline, host=args.host, port=args.port, certfile=args.certfile, keyfile=args.keyfile)
+    server = Server(vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline, host=args.host, port=args.port, certfile=args.certfile, keyfile=args.keyfile, whip_url=args.whip_url)
     asyncio.run(server.start())
 
 if __name__ == "__main__":

@@ -52,8 +52,8 @@ class ClientStreamTrack(MediaStreamTrack):
         frame = self.resampler.resample(frame)[0]
         #frame.to_ndarray().flatten().astype(np.int16)
         frame_array = frame.to_ndarray()
-        frame_array = frame_array[0].astype(np.int16)
-        self.client.append_audio_data(frame_array.tobytes(), "default")
+        byte_stream = frame_array[0].astype(np.int16).tobytes()
+        self.client.append_audio_data(byte_stream, "default")
         try:
             if self.dc.readyState == "open":
                 self.client.process_audio(

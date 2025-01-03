@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 import torch
 import torchaudio
-
+import torch.multiprocessing as mp
 
 import ormsgpack
 
@@ -136,6 +136,7 @@ class Server:
         samples_width=2,
         certfile=None,
         keyfile=None,
+        whip_url=None,
     ):
         self.vad_pipeline = vad_pipeline
         self.asr_pipeline = asr_pipeline
@@ -147,6 +148,7 @@ class Server:
         self.samples_width = samples_width
         self.certfile = certfile
         self.keyfile = keyfile
+        self.push_url = whip_url
         self.connected_clients = {}
         
         self.relay = MediaRelay()
@@ -255,14 +257,15 @@ class Server:
             logging.info("ICE connection state is %s", pc.iceConnectionState)
             if pc.iceConnectionState == "failed":
                 await pc.close()
-                self.pcs.discard(pc)
+                self.pcs.discard(pc)   
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
             logging.info(f"Connection state is {pc.connectionState}")
-            if pc.connectionState in ["failed", "closed"]:
-                logging.info("pc connectionstate  closed")
+            if pc.connectionState == "failed":
                 await pc.close()
+                self.pcs.discard(pc)
+            if pc.connectionState == "closed":
                 self.pcs.discard(pc)
 
         @pc.on("track")
@@ -312,19 +315,17 @@ class Server:
                     # 进行处理（例如，解码、分析或保存音频数据）
                     logging.info(f"Received {len(message)} bytes of audio data")
                     
-        # Add transceivers
-        # pc.addTransceiver('video', direction='sendonly')
-        # pc.addTransceiver('audio', direction='sendrecv')
 
-        # Set codec preferences for video/audio
-        # for transceiver in pc.getTransceivers():
-        #     if transceiver.kind == 'video':
-        #         capabilities = RTCRtpSender.getCapabilities('video')
-        #         preferences = [codec for codec in capabilities.codecs if codec.name in ('H264', 'VP8')]
-        #         transceiver.setCodecPreferences(preferences)
-        #         transceiver.direction = 'sendonly'
-        #     elif transceiver.kind == 'audio':
-        #         transceiver.direction = 'sendrecv'
+        #audio_sender = pc.addTrack(MediaPlayer("vc/silence.wav", format="wav", loop=True).audio)
+        #video_sender = pc.addTrack(MediaPlayer("vc/silence.mp4", format="wav", loop=True).video)
+
+        # Set codec preferences for video
+        # capabilities = RTCRtpSender.getCapabilities("video")
+        # preferences = list(filter(lambda x: x.name == "H264", capabilities.codecs))
+        # preferences += list(filter(lambda x: x.name == "VP8", capabilities.codecs))
+        # preferences += list(filter(lambda x: x.name == "rtx", capabilities.codecs))
+        # transceiver = pc.getTransceivers()[1]
+        # transceiver.setCodecPreferences(preferences)
 
         await pc.setRemoteDescription(offer)
         #await recorder.start()
@@ -332,7 +333,6 @@ class Server:
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
 
-        
         # push to cloudflare calls
         # await self.push('https://whip.xyz666.org/publish/my-live')
         
@@ -384,7 +384,7 @@ class Server:
             print(f'Error: {e}')
             return None
 
-    async def push(self, push_url):
+    async def run(self, whip_url, session_id):
         #create a new RTCPeerConnection, whip to cloudflare webrtc calls livestream
         pc = RTCPeerConnection()
         self.pcs.add(pc)
@@ -420,11 +420,10 @@ class Server:
                 await pc.close()
                 self.pcs.discard(pc)
 
-        pc.addTransceiver('audio', direction='sendrecv')
         pc.addTrack(MediaPlayer("vc/liuyifei.wav", format="wav", loop=True).audio)
         await pc.setLocalDescription(await pc.createOffer())
         # whip-whep protocol to cloudflare calls 201
-        answer = await self.post(push_url, {"sdp": pc.localDescription.sdp})
+        answer = await self.post(whip_url, {"sdp": pc.localDescription.sdp})
         await pc.setRemoteDescription(RTCSessionDescription(sdp=answer['sdp_data'], type='answer'))
 
 
@@ -634,8 +633,8 @@ class Server:
     async def health(self):
         return {"status": "ojbk"}
 
-    def create_uvicorn_server(self):
-        """Creates and returns a Uvicorn server instance."""
+    async def start_server(self):
+        """Start the Uvicorn server as a coroutine."""
         uvicorn_config = uvicorn.Config(
             self.app,
             host="0.0.0.0",
@@ -650,14 +649,22 @@ class Server:
             backlog=2048
         )
         server = uvicorn.Server(uvicorn_config)
-        return server
+        await server.serve()
 
-    def start(self):
-        """Start the WebSocket server."""
-        if self.certfile and self.keyfile:
-            logging.info(f"Starting secure WebSocket server on {self.host}:{self.port}")
-        else:
-            logging.info(f"Starting WebSocket server on {self.host}:{self.port}")
+    async def run_tasks(self):
+        """Run additional asynchronous tasks."""
+        max_sessions = 1
+        whip_url = self.whip_url
+        tasks = []
+        for k in range(max_sessions):
+            url = whip_url if k == 0 else f"{whip_url}{k}"
+            tasks.append(self.run(url, k))
 
-        server = self.create_uvicorn_server()
-        server.run()
+        await asyncio.gather(*tasks)
+
+    async def start(self):
+        """Start both the server and tasks concurrently."""
+        await asyncio.gather(
+            self.start_server(),  # Run Uvicorn server
+            self.run_tasks()      # Run additional logic
+        )

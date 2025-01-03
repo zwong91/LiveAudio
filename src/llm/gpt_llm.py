@@ -120,6 +120,7 @@ class OpenAILLM(LLMInterface):
                 max_tokens=max_lengths,
                 temperature=1,
                 stream=stream_mode,
+                stream_options={"include_usage": True},
                 tools=self.tools,
                 tool_choice=self.tool_choice,
             )
