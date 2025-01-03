@@ -1,6 +1,7 @@
 import httpx
 import asyncio
 
+
 async def send_request():
     url = "https://gtp.aleopool.cc/cf-calls"  # 目标 FastAPI 服务地址
     push_url = "https://whip.xyz666.org/publish/my-live"  # 要传递的 push_url
