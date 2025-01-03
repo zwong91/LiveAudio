@@ -109,26 +109,26 @@ const useWebRTC = (
         // },
 
         // cf turn service
-        // { urls: 'stun:stun.cloudflare.com:3478' },
-        // {
-        //   "urls":[
-        //     "turn:turn.cloudflare.com:3478?transport=udp",
-        //     "turn:turn.cloudflare.com:3478?transport=tcp",
-        //     "turns:turn.cloudflare.com:5349?transport=tcp"
-        //   ],
-        //   "username":"g024564e46fd561d7728d9b2170add06f0907dba749880ec5a47eee1422629b1",
-        //   "credential":"b02671af21caf757a82c739db804f4309a4551ceb8962bab57760ff8c5536d9c"
-        // },
-
-        { urls: 'stun:gtp.aleopool.cc:3478' },
-        //如果需要，可以添加 TURN 服务器
+        { urls: 'stun:stun.cloudflare.com:3478' },
         {
-          urls: "turn:gtp.aleopool.cc:3478",   // TURN 服务器
-          username: "admin",            // TURN 服务器用户名
-          credential: "7f0dd067662502af36934e85b43895b148edfcdb", // TURN 服务器密码
-          credentialType: 'password',
-          realm: 'gtp.aleopool.cc',
+          "urls":[
+            "turn:turn.cloudflare.com:3478?transport=udp",
+            "turn:turn.cloudflare.com:3478?transport=tcp",
+            "turns:turn.cloudflare.com:5349?transport=tcp"
+          ],
+          "username":"g024564e46fd561d7728d9b2170add06f0907dba749880ec5a47eee1422629b1",
+          "credential":"b02671af21caf757a82c739db804f4309a4551ceb8962bab57760ff8c5536d9c"
         },
+
+        // { urls: 'stun:gtp.aleopool.cc:3478' },
+        // //如果需要，可以添加 TURN 服务器
+        // {
+        //   urls: "turn:gtp.aleopool.cc:3478",   // TURN 服务器
+        //   username: "admin",            // TURN 服务器用户名
+        //   credential: "7f0dd067662502af36934e85b43895b148edfcdb", // TURN 服务器密码
+        //   credentialType: 'password',
+        //   realm: 'gtp.aleopool.cc',
+        // },
       ];
       
 
