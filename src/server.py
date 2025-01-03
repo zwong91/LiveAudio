@@ -192,7 +192,7 @@ class Server:
         
         self.app.post("/offer")(self.offer_endpoint)
         
-        self.app.post("/cf-calls")(self.push)
+        self.app.post("/cf-calls")(self.whip)
 
     async def startup(self):
         """Called on startup to set up additional services."""
@@ -384,7 +384,7 @@ class Server:
             print(f'Error: {e}')
             return None
 
-    async def run(self, whip_url, session_id):
+    async def whip(self, whip_url, session_id):
         #create a new RTCPeerConnection, whip to cloudflare webrtc calls livestream
         pc = RTCPeerConnection()
         self.pcs.add(pc)
@@ -658,7 +658,7 @@ class Server:
         tasks = []
         for k in range(max_sessions):
             url = whip_url if k == 0 else f"{whip_url}{k}"
-            tasks.append(self.run(url, k))
+            tasks.append(self.whip(url, k))
 
         await asyncio.gather(*tasks)
 
