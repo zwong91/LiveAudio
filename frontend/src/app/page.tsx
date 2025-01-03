@@ -264,7 +264,11 @@ const useWebRTC = (
 
         dataChannel.onopen = () => {
           console.log("DataChannel opened and ready to use:", dataChannel.label);
-          dataChannel.send("ping")
+          // Send "ping" every 5 seconds
+          const pingInterval = setInterval(() => {
+            console.log("Sending ping...");
+            dataChannel.send("ping");
+          }, 5000);
         };
 
         dataChannel.onmessage = async (event: MessageEvent) => {
