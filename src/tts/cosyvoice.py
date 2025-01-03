@@ -17,86 +17,22 @@ import langid
 import glob
 import base64
 
-sys.path.insert(1, "../vc")
-
-from src.synthesize.xtts.TTS.api import TTS
-from src.synthesize.xtts.TTS.tts.configs.xtts_config import XttsConfig    
-from src.synthesize.xtts.TTS.tts.models.xtts import Xtts
-
-from src.synthesize.xtts.TTS.utils.generic_utils import get_user_data_dir
-from src.synthesize.xtts.TTS.utils.manage import ModelManager
+import sys
+sys.path.append('../synthesize/cosyvoice/cosyvoice')
+sys.path.append('../synthesize/cosyvoice/third_party/AcademiCodec')
+sys.path.append('../synthesize/cosyvoice/third_party/Matcha-TTS')
+from cosyvoice.cli.cosyvoice import CosyVoice, CosyVoice2
+from cosyvoice.utils.file_utils import load_wav
 
 from src.utils.audio_utils import postprocess_tts_wave_int16, convertSampleRateTo16khz, wave_header_chunk
 
-class XTTS_v2(TTSInterface):
-    def __init__(self, voice: str = 'liuyifei'):
+class CosyVoice_v2(TTSInterface):
+    def __init__(self, voice: str = '中文女'):
         device = "cuda"
         # 使用 os.path 确保路径正确拼接
         target_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "liuyifei.wav")
-        # print("Loading model...")
-        # config = XttsConfig()
-        # config.load_json("XTTS-v2/config.json")
-        # self.model = Xtts.init_from_config(config)
-        # self.model.load_checkpoint(config, checkpoint_dir="XTTS-v2", use_deepspeed=True)
-        # self.model.to(device)
-        
-        model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
-        logging.info("⏳Downloading model")
-        ModelManager().download_model(model_name)
-        model_path = os.path.join(
-            get_user_data_dir("tts"), model_name.replace("/", "--")
-        )
-
-        config = XttsConfig()
-        config.load_json(os.path.join(model_path, "config.json"))
-        self.model = Xtts.init_from_config(config)
-        self.model.load_checkpoint(config, checkpoint_dir=model_path, use_deepspeed=True)
-        self.model.to(device)
-        
-        model_million_params = sum(p.numel() for p in self.model.parameters()) / 1e6
-        logging.debug(f"{model_million_params}M parameters")
-
-        self.supported_languages = config.languages
-        self.config = config
-        print("Computing speaker latents...")
-        t_latent = time.time()
-        ## note diffusion_conditioning not used on hifigan (default mode), it will be empty but need to pass it to model.inference
-        gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(audio_path=[target_wav], gpt_cond_len=30, gpt_cond_chunk_len=4, max_ref_length=60)
-        latent_calculation_time = time.time() - t_latent
-        print(f"Embedding speaker latents computed in {latent_calculation_time:.4f} seconds")
-        self.gpt_cond_latent = gpt_cond_latent
-        self.speaker_embedding = speaker_embedding
-        
-        # 缓存 gpt_cond_latent 和 speaker_embedding
-        self.latent_cache = {}
-
-    def get_cached_latents(self, vc_uid: str, target_wav_files: list):
-        if isinstance(target_wav_files, str):
-            target_wav_files = [target_wav_files]
-        # 使用 vc_uid 和 文件MD5 作为缓存的键
-        # 获取文件名并进行 Base64 编码
-        last_filename = os.path.basename(target_wav_files[-1])
-        bs64 = base64.b64encode(last_filename.encode('utf-8')).decode('utf-8')
-        cache_key = f"{vc_uid}_{bs64}"
-        if cache_key in self.latent_cache:
-            print(f"Cache hit for {vc_uid} with encoded file names {bs64}")
-            return self.latent_cache[cache_key]
-        else:
-            print(f"Cache miss for {vc_uid} with encoded file names {bs64}")
-            # 计算并返回新的 latents 和 speaker_embedding
-            gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(audio_path=target_wav_files)
-            # 缓存结果
-            self.latent_cache[cache_key] = (gpt_cond_latent, speaker_embedding)
-            return gpt_cond_latent, speaker_embedding
-
-    def get_stream_info(self) -> dict:
-        return {
-            "format": 1, # PYAUDIO_PAFLOAT32
-            "channels": 1,
-            "sample_rate": self.config.audio.output_sample_rate,
-            "sample_width": 4,
-            "np_dtype": np.float32,
-        }
+        model_name = "iic/CosyVoice2-0.5B"
+        self.cosyvoice = CosyVoice2(model_name, load_jit=False, load_trt=False, fp16=False)
 
     async def text_to_speech(self, text: str, vc_uid: str) -> Tuple[str]: 
         start_time = time.time()
@@ -133,46 +69,34 @@ class XTTS_v2(TTSInterface):
                 if pure_target_wav_files:
                     target_wav_files = pure_target_wav_files
 
-        print("Computing speaker latents...")
-
-        # 调用模型函数，传递匹配的文件列表
-        gpt_cond_latent, speaker_embedding = self.get_cached_latents(vc_uid, target_wav_files)
         print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
         
         t0 = time.time()
-        chunks = self.model.inference_stream(
-            text,
-            language,
-            gpt_cond_latent,
-            speaker_embedding,
-            # Streaming
-            stream_chunk_size=256,
-            overlap_wav_len=1024,
-            # GPT inference
-            temperature=0.01,
-            length_penalty=1.0,
-            repetition_penalty=10.0,
-            top_k=3,
-            top_p=0.97,
-            do_sample=True,
-            speed=1.0,
-            enable_text_splitting=True,
-        )
-        wav_chunks = []
+        pattern = r"生成风格:\s*([^\n;]+)[;\n]+播报内容:\s*(.+)"
+        match = re.search(pattern, text)
+        if match:
+            style = match.group(1).strip()
+            content = match.group(2).strip()
+            tts_text = f"{style}<endofprompt>{content}"
+            print(f"生成风格: {style}")
+            print(f"播报内容: {content}")
+        else:
+            print("No match found")
+            tts_text = text
+
         output_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
-        for i, chunk in enumerate(chunks):
-            wav_chunks.append(chunk)
+
+        prompt_speech_16k = load_wav(target_wav_files[0], 16000)
+        for i, j in enumerate(self.cosyvoice.inference_cross_lingual(tts_text, prompt_speech_16k, stream=False)):
+            torchaudio.save('zero_shot_{}.wav'.format(i), j['tts_speech'], self.cosyvoice.sample_rate)
 
         wav = torch.cat(wav_chunks, dim=0)
         real_time_factor= (time.time() - t0) / wav.shape[0] * 24000
         print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
         wav_audio = wav.squeeze().unsqueeze(0).cpu()
 
-        # Saving to a file on disk
-        torchaudio.save(output_path, wav_audio, 22050, format="wav")
-
         end_time = time.time()
-        print(f"XTTSv2 text_to_speech time: {end_time - start_time:.4f} seconds")
+        print(f"CosyVoice v2 text_to_speech time: {end_time - start_time:.4f} seconds")
         return output_path
 
 
@@ -203,32 +127,27 @@ class XTTS_v2(TTSInterface):
                 if pure_target_wav_files:
                     target_wav_files = pure_target_wav_files
 
-        print("Computing speaker latents...")
-
-        # 调用模型函数，传递匹配的文件列表
-        gpt_cond_latent, speaker_embedding = self.get_cached_latents(vc_uid, target_wav_files)
         print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
 
         t0 = time.time()
         wav_chunks = []
-        chunks = self.model.inference_stream(
-            text,
-            language,
-            gpt_cond_latent,
-            speaker_embedding,
-            # Streaming reduce it to get faster response, but degrade quality
-            stream_chunk_size=128,
-            overlap_wav_len=1024,
-            # GPT inference
-            temperature=0.01,
-            length_penalty=1.0,
-            repetition_penalty=10.0,
-            top_k=3,
-            top_p=0.97,
-            do_sample=True,
-            speed=1.0,
-            enable_text_splitting=True,
-        )
+        pattern = r"生成风格:\s*([^\n;]+)[;\n]+播报内容:\s*(.+)"
+        match = re.search(pattern, text)
+        if match:
+            style = match.group(1).strip()
+            content = match.group(2).strip()
+            tts_text = f"{style}<endofprompt>{content}"
+            print(f"生成风格: {style}")
+            print(f"播报内容: {content}")
+        else:
+            print("No match found")
+            tts_text = text
+
+        text_list = [tts_text]
+        for i in text_list:
+            output_generator = cosyvoice.inference_sft(i, speaker_name)
+            for output in output_generator:
+                yield (22500, output['tts_speech'].numpy().flatten())
         
         for i, chunk in enumerate(chunks):
             if i == 0:
@@ -238,7 +157,7 @@ class XTTS_v2(TTSInterface):
             processed_bytes = postprocess_tts_wave_int16(chunk)
             pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
             # such as chunk size 9600, (a.k.a 24K*20ms*2)
-            print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
+            print(f"CosyVoice-v2 audio chunk size: {len(pcm_data_16K)} 字节")
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
             
         wav = torch.cat(wav_chunks, dim=0)
