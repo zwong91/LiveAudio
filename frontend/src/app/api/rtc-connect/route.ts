@@ -3,8 +3,8 @@ export const runtime = 'edge';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const BASE_URL = "https://audio.enty.services/offer";
-//const BASE_URL = "https://gtp.aleopool.cc/offer";
+//const BASE_URL = "https://audio.enty.services/offer";
+const BASE_URL = "https://gtp.aleopool.cc/offer";
 
 // 自定义 CORS 中间件
 function handleCors(req: NextRequest, res: NextResponse) {
