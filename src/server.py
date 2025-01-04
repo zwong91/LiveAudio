@@ -218,7 +218,7 @@ class Server:
         use_webrtc = True
         client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
         # STUN 和 TURN 服务器配置
-        #result = await self.post({'ttl': 86400})
+        #result = await self.turn({'ttl': 86400})
         ice_servers = [
             RTCIceServer( 
                 urls=["stun:gtp.aleopool.cc:3478"]
