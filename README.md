@@ -1,6 +1,6 @@
 # LiveAudio
 
-Welcome to the LiveAudio repository! This project hosts two exciting applications leveraging advanced audio understand and speech generation models to bring your audio experiences to life:
+Welcome to the LiveAudio repository! This project hosts A exciting applications leveraging advanced audio understand and speech generation models to bring your audio experiences to life:
 
 **Voice Chat** :  This application is designed to provide an interactive and natural chatting experience, making it easier to adopt sophisticated AI-driven dialogues in various settings.
 
