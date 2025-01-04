@@ -49,9 +49,9 @@ pip install -e .[all,dev,notebooks]  -i https://pypi.tuna.tsinghua.edu.cn/simple
 #4. download xtts-v2 
 HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2  --local-dir  XTTS-v2
 
-(rt) root@enty03:~/rt-audio# nvidia-smi
-(rt) root@enty03:~/rt-audio# nvcc --version
-(rt) root@enty03:~/rt-audio# pip show torch
+(rt) root@ash:~/audio# nvidia-smi
+(rt) root@ash:~/audio# nvcc --version
+(rt) root@ash:~/audio# pip show torch
 ```
 
 ## Q
