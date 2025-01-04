@@ -17,7 +17,17 @@ For `SenseVoice`, visit [SenseVoice repo](https://github.com/FunAudioLLM/SenseVo
 #0  source code
 
 apt update
-apt-get install build-essential libopenblas-dev vim  ffmpeg portaudio19-dev  git-lfs -y
+# (Ubuntu / Debian User) Install sox + ffmpeg
+apt install libsox-dev ffmpeg libopenblas-dev vim git-lfs -y
+
+# (Ubuntu / Debian User) Install pyaudio 
+apt install build-essential \
+    cmake \
+    libasound-dev \
+    portaudio19-dev \
+    libportaudio2 \
+    libportaudiocpp0
+
 CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python
 
 
@@ -60,45 +70,49 @@ HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2  --loca
 https://stackoverflow.com/questions/76974555/glibcxx-3-4-32-not-found-error-at-runtime-gcc-13-2-0
 ```
 
-## Running with Docker
+## Docker Setup
 
-This will not guide you in detail on how to use CUDA in docker, see for
-example [here](https://medium.com/@kevinsjy997/configure-docker-to-use-local-gpu-for-training-ml-models-70980168ec9b).
+1. Install NVIDIA Container Toolkit:
 
-Still, these are the commands for Linux:
+    To use GPU for model training and inference in Docker, you need to install NVIDIA Container Toolkit:
 
-```bash
-distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \
-&& curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
-&& curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
-sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+    For Ubuntu users:
 
-sudo nvidia-ctk runtime configure --runtime=docker
+    ```bash
+    # Add repository
+    curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+        && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+            sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+            sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+    # Install nvidia-container-toolkit
+    sudo apt-get update
+    sudo apt-get install -y nvidia-container-toolkit
+    # Restart Docker service
+    sudo systemctl restart docker
+    ```
 
-sudo systemctl restart docker
-```
+    For users of other Linux distributions, please refer to: [NVIDIA Container Toolkit Install-guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
 
-You can build the container image with:
+2. You can build the container image with:
 
-```bash
-sudo docker build -t LiveAudio .
-```
+    ```shell
+    sudo docker build -t LiveAudio .
+    ```
 
-After getting your VAD token (see next sections) run:
+    After getting your VAD token (see next sections) run:
 
-```bash
-sudo docker volume create huggingface
+    ```bash
+    sudo docker volume create huggingface
 
-sudo docker run --gpus all -p 8765:8765 -v huggingface:/root/.cache/huggingface  -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' LiveAudio
-```
+    sudo docker run --gpus all -p 8765:8765 -v huggingface:/root/.cache/huggingface  -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' LiveAudio
+    ```
 
-The "volume" stuff will allow you not to re-download the huggingface models each
-time you re-run the container. If you don't need this, just use:
+    The "volume" stuff will allow you not to re-download the huggingface models each
+    time you re-run the container. If you don't need this, just use:
 
-```bash
-sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' LiveAudio
-```
+    ```bash
+    sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' LiveAudio
+    ```
 
 ## Usage
 
