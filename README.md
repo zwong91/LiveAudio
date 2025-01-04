@@ -1,10 +1,6 @@
 # LiveAudio
 
-Welcome to the LiveAudio repository! This project hosts A exciting applications leveraging advanced audio understand and speech generation models to bring your audio experiences to life:
-
-**Voice Chat** :  This application is designed to provide an interactive and natural chatting experience, making it easier to adopt sophisticated AI-driven dialogues in various settings.
-
-For `SenseVoice`, visit [SenseVoice repo](https://github.com/FunAudioLLM/SenseVoice) and [SenseVoice space](https://www.modelscope.cn/studios/iic/SenseVoice).
+Welcome to the LiveAudio repository! This project hosts A exciting applications leveraging advanced audio understand and speech generation models to bring your audio experiences to life, designed to provide an interactive and natural chatting experience, making it easier to adopt sophisticated AI-driven dialogues in various settings.
 
 ## Install
 
@@ -137,5 +133,7 @@ Resources
 ---------
 * [WebRTC docs](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API) - on https://developer.mozilla.org
 * [Ollama](https://ollama.com/) - A local LLM inference engine for running Llama 3, Mistral, Gemma, and other LLMs
-* [aiortc](https://aiortc.readthedocs.io/en/latest/) - A Python Library for WebRTC and ORTC communication 
+* [aiortc](https://aiortc.readthedocs.io/en/latest/) - A Python Library for WebRTC and ORTC communication
+* [SenseVoice](https://github.com/FunAudioLLM/SenseVoice) and [SenseVoice space](https://www.modelscope.cn/studios/iic/SenseVoice).
+
 
