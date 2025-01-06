@@ -5,6 +5,7 @@ import av
 from av.frame import Frame
 import numpy as np
 
+import logging
 from aiortc import MediaStreamTrack, RTCDataChannel
 from aiortc.contrib.media import MediaPlayer
 
@@ -62,7 +63,7 @@ class ClientStreamTrack(MediaStreamTrack):
         except Exception as e:
             logging.error(f"Processing error for {self.client.client_id}: {e}")
 
-        logging.info(f"Updated config: {self.client.config}")
+        print(f"Updated config: {self.client.config}")
         return frame
     
 

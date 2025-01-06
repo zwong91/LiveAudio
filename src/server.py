@@ -253,14 +253,14 @@ class Server:
 
         @pc.on("iceconnectionstatechange")
         async def on_iceconnectionstatechange():
-            logging.debug("ICE connection state is {pc.iceConnectionState}")
+            print(f"ICE connection state is {pc.iceConnectionState}")
             if pc.iceConnectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)   
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
-            logging.debug(f"Connection state is {pc.connectionState}")
+            print(f"Connection state is {pc.connectionState}")
             if pc.connectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)
@@ -292,18 +292,14 @@ class Server:
                 track.stop()
                 #await recorder.stop()
 
-        @s2s_response.on("open")
-        async def on_open():
-            logging.debug("DataChannel s2s_response opened")
-        # signaling = create_signaling()
-        # recorder = MediaBlackhole()
-
         @pc.on("datachannel")
         def on_datachannel(channel):
             print(f"DataChannel created: {channel.label}")
+
             @channel.on("open")
             def on_open():
                 print("DataChannel opened")
+
             @channel.on("message")
             def on_message(message):
                 print(f"Received message on channel: {channel.label}")
@@ -331,7 +327,13 @@ class Server:
                         logging.error("Failed to decode JSON from string message")
                 else:
                     logging.warning("Received an unsupported message type")
+    
 
+        @s2s_response.on("open")
+        async def on_open():
+            logging.debug("DataChannel s2s_response opened")
+        # signaling = create_signaling()
+        # recorder = MediaBlackhole()
 
         #audio_sender = pc.addTrack(MediaPlayer("vc/silence.wav", format="wav", loop=True).audio)
         #video_sender = pc.addTrack(MediaPlayer("vc/silence.mp4", format="wav", loop=True).video)
