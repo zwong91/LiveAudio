@@ -287,6 +287,7 @@ const useWebRTC = (
       };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
+        setDataChannel(dataChannel);
         dataChannel.onopen = () => {
           console.log("DataChannel opened and ready to use:", dataChannel.label);
           const audioConfig = {
@@ -353,7 +354,7 @@ const useWebRTC = (
       // };
   
     }
-  }, [peerConnection, checkAndBufferAudio]);  
+  }, [peerConnection, dataChannel, sourceLang, targetLang, checkAndBufferAudio]);  
 
   return {
     connectionStatus,
@@ -365,6 +366,8 @@ const useWebRTC = (
       setConnectionStatus("disconnected");
       setIsCallEnded(true);
     },
+    peerConnection,
+    dataChannel,
   };
 };
 
@@ -381,6 +384,22 @@ export default function Home() {
     setSourceLang(newSourceLang);
     setTargetLang(newTargetLang);
     console.log('Updated Language Config:', newSourceLang, newTargetLang);
+
+  // 在语言变化后触发发送配置数据
+  if (dataChannel && dataChannel.readyState === 'open') {
+    const audioConfig = {
+      type: 'config',
+      data: {
+        source_lang: newSourceLang,
+        target_lang: newTargetLang,
+      },
+    };
+    dataChannel.send(JSON.stringify(audioConfig));
+    console.log('Language config sent:', audioConfig);
+  } else {
+    console.error("DataChannel is not open, unable to send data.");
+  }
+
   };
 
   const audioItemKey = (audioURL: string) => audioURL.substring(-10)
@@ -402,7 +421,7 @@ export default function Home() {
     setAudioQueue,
     setIsRecording
   );
-  const { connectionStatus, isCallEnded, endCall } = useWebRTC(
+  const { connectionStatus, isCallEnded, endCall, peerConnection, dataChannel } = useWebRTC(
     audioQueue,
     setAudioQueue,
     setIsRecording,
