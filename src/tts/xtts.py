@@ -2,7 +2,7 @@ import torch
 import torchaudio
 import asyncio
 import os
-from typing import AsyncGenerator
+from typing import Optional, AsyncGenerator
 import sys
 import time
 import io
