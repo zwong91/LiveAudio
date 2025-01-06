@@ -302,7 +302,7 @@ class Server:
         def on_datachannel(channel):
             print(f"DataChannel created: {channel.label}")
             @channel.on("open")
-            async def on_open():
+            def on_open():
                 print("DataChannel opened")
             @channel.on("message")
             def on_message(message):
