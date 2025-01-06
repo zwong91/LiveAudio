@@ -93,7 +93,7 @@ class OpenAILLM(LLMInterface):
         messages = [
             {"role": "system", "content": system_prompt}
         ]
-        self.messages.extend(history)
+        messages.extend(history)
 
         finished = False
         while not finished:
@@ -101,7 +101,7 @@ class OpenAILLM(LLMInterface):
             function_call_detected = False
             stream = await aclient.chat.completions.create(
                 model=self.model,
-                messages=self.messages,
+                messages=messages,
                 max_tokens=max_lengths,
                 temperature=1,
                 stream=stream_mode,
