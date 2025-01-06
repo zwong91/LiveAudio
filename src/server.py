@@ -300,10 +300,10 @@ class Server:
 
         @pc.on("datachannel")
         def on_datachannel(channel):
-            logging.debug(f"DataChannel created: {channel.label}")
+            print(f"DataChannel created: {channel.label}")
             @channel.on("open")
             async def on_open():
-                logging.debug("DataChannel opened")
+                print("DataChannel opened")
             @channel.on("message")
             def on_message(message):
                 print(f"Received message on channel: {channel.label}")
