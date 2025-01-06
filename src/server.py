@@ -298,7 +298,7 @@ class Server:
 
         @s2s_response.on("message")
         def on_message(message):
-            print(f"Received message on channel: {channel.label}")
+            print(f"Received message on channel: {s2s_response.label}")
             # 检查消息类型
             if isinstance(message, str):
                 try:
@@ -313,7 +313,7 @@ class Server:
                         logging.debug(f"Updated config: {client.config}")
                     elif message_type == "ping":
                         logging.debug("Ping received. Sending pong...")
-                        channel.send(json.dumps({"type": "pong"}))
+                        #s2s_response.send(json.dumps({"type": "pong"}))
                     elif message.type == "start":
                         logger.debug(f'RTC DC: Recording started with track')
                     elif message.type == "stop":
