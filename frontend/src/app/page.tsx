@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import styles from "./page.module.css";
 import { useMicVAD, utils } from "@ricky0123/vad-react"
 
+import LanguageSelection from './languageselect';
+
 // 音频管理器
 const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecording: Function) => {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -83,7 +85,9 @@ const useWebRTC = (
   audioQueue: Blob[],
   setAudioQueue: Function,
   setIsRecording: Function,
-  checkAndBufferAudio: Function
+  checkAndBufferAudio: Function,
+  sourceLang: string,
+  targetLang: string
 ) => {
   const [connectionStatus, setConnectionStatus] = useState("connecting");
   const [isCallEnded, setIsCallEnded] = useState(false);
@@ -285,9 +289,17 @@ const useWebRTC = (
         const dataChannel = event.channel;
         dataChannel.onopen = () => {
           console.log("DataChannel opened and ready to use:", dataChannel.label);
+          const audioConfig = {
+            type: 'config',
+            data: {
+                source_lang: sourceLang,
+                target_lang: targetLang,
+            }
+        };
+        dataChannel.send(JSON.stringify(audioConfig));     
           const pingInterval = setInterval(() => {
             console.log("Sending ping...");
-            dataChannel.send("ping");
+            dataChannel.send(JSON.stringify({ type: "ping" }));
           }, 5000);
         };
 
@@ -352,6 +364,14 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(true);
   const [audioList, setAudioList] = useState<string[]>([]);
 
+  const [sourceLang, setSourceLang] = useState('cn');
+  const [targetLang, setTargetLang] = useState('en');
+  const handleLanguageChange = (newSourceLang: string, newTargetLang: string) => {
+    setSourceLang(newSourceLang);
+    setTargetLang(newTargetLang);
+    console.log('Updated Language Config:', newSourceLang, newTargetLang);
+  };
+
   const audioItemKey = (audioURL: string) => audioURL.substring(-10)
   const vad = useMicVAD({
     model: "v5",
@@ -375,7 +395,9 @@ export default function Home() {
     audioQueue,
     setAudioQueue,
     setIsRecording,
-    checkAndBufferAudio
+    checkAndBufferAudio,
+    sourceLang,
+    targetLang
   );
 
   useEffect(() => {
@@ -459,6 +481,12 @@ export default function Home() {
             </span>
           </div>
         </div>
+      </div>
+
+      <div className={styles.langContent}>
+        <LanguageSelection
+          onLanguageChange={handleLanguageChange} // Pass the language change handler
+        />
       </div>
 
       <div>

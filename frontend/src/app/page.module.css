@@ -91,6 +91,38 @@
   text-align: center;
 }
 
+/* 新增 langContent 样式 */
+.langContent {
+  position: absolute;
+  top: 40px; /* 向下移动一点 */
+  left: 40px; /* 向右移动一点 */
+  padding: 10px 15px; /* 调整内边距 */
+  background: rgba(0, 0, 0, 0.5); /* 半透明黑色背景 */
+  border-radius: 8px; /* 更加圆滑的边角 */
+  color: white; /* 白色字体 */
+  font-size: 14px; /* 字体大小 */
+  z-index: 1000; /* 保证层级最高 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* 添加柔和阴影 */
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* 选项间距 */
+}
+
+.langContent select {
+  border: none; /* 移除边框 */
+  background: rgba(255, 255, 255, 0.2); /* 浅色背景 */
+  color: white; /* 字体颜色白色 */
+  padding: 5px 10px; /* 按钮内边距 */
+  border-radius: 6px; /* 按钮圆角 */
+  font-size: 14px;
+  outline: none;
+}
+
+.langContent select:hover {
+  background: rgba(255, 255, 255, 0.3); /* 鼠标悬停时增加亮度 */
+  cursor: pointer;
+}
+
 .controls {
   position: absolute;
   bottom: 160px; /* 将按钮进一步上移 */
