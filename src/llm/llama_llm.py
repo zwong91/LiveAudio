@@ -14,7 +14,7 @@ import asyncio
 
 from llama_cpp import Llama
 
-from prompt import translation_prompt, chat_prompt
+from .prompt import translation_prompt, chat_prompt
 
 class LlamaLLM(LLMInterface):
     def __init__(
