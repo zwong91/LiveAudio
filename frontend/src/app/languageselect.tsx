@@ -5,7 +5,7 @@ interface LanguageSelectionProps {
 }
 
 const LanguageSelection = ({ onLanguageChange }: LanguageSelectionProps) => {
-  const [sourceLang, setSourceLang] = useState('en');
+  const [sourceLang, setSourceLang] = useState('zh-cn');
   const [targetLang, setTargetLang] = useState('en');
 
   const handleSourceLangChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
