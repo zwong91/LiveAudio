@@ -196,12 +196,12 @@ class Server:
 
     async def startup(self):
         """Called on startup to set up additional services."""
-        print(f"Starting server at {self.host}:{self.port}")
+        logging.debug(f"Starting server at {self.host}:{self.port}")
         # 启动任务处理的后台任务
         asyncio.create_task(self.tts_manager.start_processing())
 
     async def shutdown(self):
-        print(f"shutdown server ...")
+        logging.debug(f"shutdown server ...")
         # Shutdown tasks: Close WebRTC connections
         coros = [pc.close() for pc in self.pcs]
         await asyncio.gather(*coros)
@@ -249,18 +249,18 @@ class Server:
             ordered=True,
         )
         self.pcs.add(pc)
-        print(f"Peer Connection Created for: {request}")
+        logging.debug(f"Peer Connection Created for: {request}")
 
         @pc.on("iceconnectionstatechange")
         async def on_iceconnectionstatechange():
-            print("ICE connection state is %s", pc.iceConnectionState)
+            logging.debug("ICE connection state is {pc.iceConnectionState}")
             if pc.iceConnectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)   
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
-            print(f"Connection state is {pc.connectionState}")
+            logging.debug(f"Connection state is {pc.connectionState}")
             if pc.connectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)
@@ -269,7 +269,7 @@ class Server:
 
         @pc.on("track")
         def on_track(track):
-            print(f"Track {track.kind} received")
+            logging.debug(f"Track {track.kind} received")
             if track.kind == "audio":
                 audio_track = ClientStreamTrack(
                     self.relay.subscribe(
@@ -288,25 +288,25 @@ class Server:
 
             @track.on("ended")
             async def on_ended():
-                print(f"Track {track.kind} ended")
+                logging.debug(f"Track {track.kind} ended")
                 track.stop()
                 #await recorder.stop()
 
         @s2s_response.on("open")
         async def on_open():
-            print("DataChannel s2s_response opened")
+            logging.debug("DataChannel s2s_response opened")
         # signaling = create_signaling()
         # recorder = MediaBlackhole()
 
         @pc.on("datachannel")
         def on_datachannel(channel):
-            print(f"DataChannel created: {channel.label}")
+            logging.debug(f"DataChannel created: {channel.label}")
             @channel.on("open")
             async def on_open():
-                print("DataChannel opened")
+                logging.debug("DataChannel opened")
             @channel.on("message")
             def on_message(message):
-                print("Received message on channel: %s", channel.label)
+                logging.debug("Received message on channel: %s", channel.label)
                 # 检查消息类型
                 if isinstance(message, str):
                     try:
@@ -318,12 +318,12 @@ class Server:
                             # 处理配置消息
                             source_lang = parsed_message["data"].get("source_lang")
                             target_lang = parsed_message["data"].get("target_lang")
-                            print(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
+                            logging.debug(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
                             client.update_config(parsed_message["data"])
                             logging.debug(f"Updated config: {client.config}")
                         elif message_type == "ping":
                             # 处理 ping 消息
-                            print("Ping received. Sending pong...")
+                            logging.debug("Ping received. Sending pong...")
                             channel.send(json.dumps({"type": "pong"}))
                         else:
                             # 未知消息类型
@@ -372,18 +372,18 @@ class Server:
                         # iceServers 中提取 username 和 credential
                         username = ice_servers.get('username')
                         credential = ice_servers.get('credential')
-                        print(f"Username: {username}")
-                        print(f"Credential: {credential}")
+                        logging.debug(f"Username: {username}")
+                        logging.debug(f"Credential: {credential}")
                         # 返回相关信息，可以根据需要自定义返回内容
                         return {
                             'username': username,
                             'credential': credential
                         }
                     else:
-                        print(f"Request failed with status code {response.status}")
+                        logging.debug(f"Request failed with status code {response.status}")
                         return None
         except aiohttp.ClientError as e:
-            print(f'Error: {e}')
+            logging.debug(f'Error: {e}')
             return None
 
     async def post(self, url, data):
@@ -398,10 +398,10 @@ class Server:
                         protocol_version = response.headers.get('protocol-version')
                         etag = response.headers.get('etag')
                         location = response.headers.get('location')
-                        print(f"SDP Data: {sdp_data}")
-                        print(f"Protocol Version: {protocol_version}")
-                        print(f"ETag: {etag}")
-                        print(f"Location: {location}")
+                        logging.debug(f"SDP Data: {sdp_data}")
+                        logging.debug(f"Protocol Version: {protocol_version}")
+                        logging.debug(f"ETag: {etag}")
+                        logging.debug(f"Location: {location}")
                         return {
                             'sdp_data': sdp_data,
                             'protocol_version': protocol_version,
@@ -409,10 +409,10 @@ class Server:
                             'location': location
                         }
                     else:
-                        print(f"Request failed with status code {response.status}")
+                        logging.debug(f"Request failed with status code {response.status}")
                         return None
         except aiohttp.ClientError as e:
-            print(f'Error: {e}')
+            logging.debug(f'Error: {e}')
             return None
 
     async def whip(self, whip_url, session_id):
@@ -431,22 +431,22 @@ class Server:
         )
         @s2s_response.on("open")
         async def on_open():
-            print("DataChannel s2s_response opened")
+            logging.debug("DataChannel s2s_response opened")
 
         @pc.on("datachannel")
         def on_datachannel(channel):
-            print(f"DataChannel created: {channel.label}")
+            logging.debug(f"DataChannel created: {channel.label}")
             @channel.on("open")
             async def on_open():
-                print("DataChannel opened")
+                logging.debug("DataChannel opened")
                 channel.send('ping')
             @channel.on("message")
             def on_message(message):
-                print("Received message on channel: %s", message)
+                logging.debug("Received message on channel: %s", message)
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
-            print(f"Connection state is {pc.connectionState}")
+            logging.debug(f"Connection state is {pc.connectionState}")
             if pc.connectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)
@@ -463,18 +463,18 @@ class Server:
     async def websocket_endpoint(self, websocket: WebSocket):
         await websocket.accept()
 
-        print(f"Client {websocket.client} accepted, waiting for messages.")
+        logging.debug(f"Client {websocket.client} accepted, waiting for messages.")
         client_id = str(uuid.uuid4())
         use_webrtc = False
         client = Client(use_webrtc, client_id, self.sampling_rate, self.samples_width)
         self.connected_clients[client_id] = client
-        print(f"Client {client_id} connected")
+        logging.debug(f"Client {client_id} connected")
 
         try:
             await self.handle_audio(client, websocket)
         finally:
             del self.connected_clients[client_id]
-            print(f"Client {client_id} disconnected")
+            logging.debug(f"Client {client_id} disconnected")
             #await websocket.close()
 
     async def handle_audio(self, client, websocket):
@@ -491,12 +491,12 @@ class Server:
                     # 处理配置消息
                     source_lang = parsed_message["data"].get("source_lang")
                     target_lang = parsed_message["data"].get("target_lang")
-                    print(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
+                    logging.debug(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
                     client.update_config(parsed_message["data"])
                     logging.debug(f"Updated config: {client.config}")
                 elif message_type == "ping":
                     # 处理 ping 消息
-                    print("Ping received. Sending pong...")
+                    logging.debug("Ping received. Sending pong...")
                     await websocket.send(json.dumps({"type": "pong"}))
                 elif msg_type == 'session':
                     sessionid = parsed_message.get("sessionid")
@@ -528,7 +528,7 @@ class Server:
 
                 elif msg_type == 'stop':
                     if sessionid is not None:
-                        print(f"Session {sessionid} ended.")
+                        logging.debug(f"Session {sessionid} ended.")
                 else:
                     await websocket.send_json({"type": "error", "message": f"Unknown message type: {msg_type}"})
 
@@ -646,11 +646,11 @@ class Server:
                     text=True,
                     check=True,
                 )
-                print(f"Filtered audio saved to: {out_filename}")
+                logging.debug(f"Filtered audio saved to: {out_filename}")
                 return out_filename
             except subprocess.CalledProcessError:
                 # There was an error in the ffmpeg command
-                print("Error: failed to filter audio, returning original file")
+                logging.debug("Error: failed to filter audio, returning original file")
                 return speaker_wav
         else:
             # If no cleanup is requested, return the original file
