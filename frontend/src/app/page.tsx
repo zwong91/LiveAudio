@@ -296,10 +296,21 @@ const useWebRTC = (
                 target_lang: targetLang,
             }
         };
+        // 发送配置数据
+        if (dataChannel.readyState === 'open') {
+          dataChannel.send(JSON.stringify(audioConfig));
+        } else {
+          console.error("DataChannel is not open, unable to send data.");
+        }      
+        
         dataChannel.send(JSON.stringify(audioConfig));     
           const pingInterval = setInterval(() => {
-            console.log("Sending ping...");
-            dataChannel.send(JSON.stringify({ type: "ping" }));
+            if (dataChannel.readyState === 'open') {
+              console.log("Sending ping...");
+              dataChannel.send(JSON.stringify({ type: "ping" }));
+            } else {
+              console.error("DataChannel is not open, unable to send data.");
+            }
           }, 5000);
         };
 
