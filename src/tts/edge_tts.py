@@ -10,6 +10,35 @@ from src.utils.audio_utils import wave_header_chunk
 
 import langid
 
+language_list = [
+    'en-US-JennyNeural', 'en-US-GuyNeural', 'en-US-AnaNeural', 'en-US-AriaNeural', 
+    'en-US-ChristopherNeural', 'en-US-EricNeural', 'en-US-MichelleNeural', 'en-US-RogerNeural',
+    'es-MX-DaliaNeural', 'es-MX-JorgeNeural', 'ko-KR-SunHiNeural', 'ko-KR-InJoonNeural',
+    'ja-JP-NanamiNeural', 'ja-JP-KeitaNeural', 'fr-FR-DeniseNeural', 'fr-FR-EloiseNeural',
+    'fr-FR-HenriNeural', 'pt-BR-FranciscaNeural', 'pt-BR-AntonioNeural', 'id-ID-ArdiNeural',
+    'id-ID-GadisNeural', 'he-IL-AvriNeural', 'he-IL-HilaNeural', 'it-IT-IsabellaNeural',
+    'it-IT-DiegoNeural', 'it-IT-ElsaNeural', 'nl-NL-ColetteNeural', 'nl-NL-FennaNeural',
+    'nl-NL-MaartenNeural', 'nb-NO-FinnNeural', 'sv-SE-SofieNeural', 'sv-SE-MattiasNeural',
+    'ar-SA-HamedNeural', 'ar-SA-ZariyahNeural', 'el-GR-AthinaNeural', 'el-GR-NestorasNeural',
+    'de-DE-KatjaNeural', 'de-DE-AmalaNeural', 'de-DE-ConradNeural', 'de-DE-KillianNeural',
+    'ar-AE-FatimaNeural', 'ar-AE-HamdanNeural', 'ar-EG-SalmaNeural', 'ar-EG-ShakirNeural',
+    'ar-IQ-BasselNeural', 'ar-IQ-RanaNeural', 'da-DK-ChristelNeural', 'da-DK-JeppeNeural',
+    'de-AT-IngridNeural', 'de-AT-JonasNeural', 'de-CH-JanNeural', 'de-CH-LeniNeural',
+    'en-AU-NatashaNeural', 'en-AU-WilliamNeural', 'en-CA-ClaraNeural', 'en-CA-LiamNeural',
+    'en-GB-LibbyNeural', 'en-GB-MaisieNeural', 'en-GB-RyanNeural', 'en-GB-SoniaNeural',
+    'en-GB-ThomasNeural', 'en-HK-SamNeural', 'en-HK-YanNeural', 'en-IN-NeerjaNeural',
+    'en-IN-PrabhatNeural', 'en-SG-LunaNeural', 'en-SG-WayneNeural', 'es-AR-ElenaNeural',
+    'es-AR-TomasNeural', 'es-ES-AlvaroNeural', 'es-ES-ElviraNeural', 'es-US-AlonsoNeural',
+    'es-US-PalomaNeural', 'fr-CH-ArianeNeural', 'fr-CH-FabriceNeural', 'ga-IE-ColmNeural',
+    'ga-IE-OrlaNeural', 'gl-ES-RoiNeural', 'gl-ES-SabelaNeural', 'hi-IN-MadhurNeural',
+    'hi-IN-SwaraNeural', 'hr-HR-GabrijelaNeural', 'hr-HR-SreckoNeural', 'hu-HU-NoemiNeural',
+    'hu-HU-TamasNeural', 'ru-RU-SvetlanaNeural', 'ru-RU-DmitryNeural', 'tr-TR-AhmetNeural',
+    'tr-TR-EmelNeural', 'zh-CN-XiaoxiaoNeural', 'zh-CN-YunyangNeural', 'zh-CN-YunxiNeural',
+    'zh-CN-XiaoyiNeural', 'zh-CN-YunjianNeural', 'zh-CN-YunxiaNeural', 'zh-CN-liaoning-XiaobeiNeural',
+    'zh-CN-shaanxi-XiaoniNeural', 'zh-HK-HiuMaanNeural', 'zh-HK-HiuGaaiNeural', 'zh-HK-WanLungNeural',
+    'zh-TW-HsiaoChenNeural', 'zh-TW-HsiaoYuNeural', 'zh-TW-YunJheNeural'
+]
+
 class EdgeTTS(TTSInterface):
     def __init__(self, voice: str = 'zh-CN-XiaoxiaoNeural'):
         self.voice = voice
@@ -24,9 +53,6 @@ class EdgeTTS(TTSInterface):
         with open(vit_file, "w", encoding="utf-8") as file:
             file.write(self.submaker.generate_subs())
 
-    def set_voice(self, voice: str):
-        self.args.voice_name = voice
-
     def get_stream_info(self) -> dict:
         return {
             "sample_rate": 16000,
@@ -34,13 +60,20 @@ class EdgeTTS(TTSInterface):
             "channels": 1,
         }
 
-    async def text_to_speech(self, text: str, vc_uid: str) -> Tuple[str]:
+    async def text_to_speech(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> Tuple[str]:
+        """使用 edge_tts 库将文本转语音"""
         start_time = time.time()
         audio_buffer = io.BytesIO()
         language, _ = langid.classify(text)
         if language == "zh":
             language = "zh-CN"
-        """使用 edge_tts 库将文本转语音"""
+
+        voices = [voice for voice in language_list if voice.startswith(language)]
+        voice = self.voice
+        if voices:
+            # 如果存在，取第一个语音
+            print(f"选中的语音：{voices[0]}")
+            voice = voices[0]
         rate: int = 15
         pitch: int = 20
         volume: int = 110
@@ -52,7 +85,7 @@ class EdgeTTS(TTSInterface):
         # 初始化 Communicate 对象，设置语音、语速、音调和音量参数
         communicate = edge_tts.Communicate(
             text=text,
-            voice=self.voice,
+            voice=voice,
             rate=rate_str,
             pitch=pitch_str,
             volume=volume_str
@@ -64,7 +97,7 @@ class EdgeTTS(TTSInterface):
         # 返回原始文件名
         return output_path
 
-    async def text_to_speech_stream(self, text: str, vc_uid: str) -> AsyncGenerator[bytes, None]:
+    async def text_to_speech_stream(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
         audio_buffer = io.BytesIO()
         language, _ = langid.classify(text)
@@ -72,6 +105,13 @@ class EdgeTTS(TTSInterface):
         if language == "zh":
             language = "zh-CN"
 
+        voices = [voice for voice in language_list if voice.startswith(language)]
+        voice = self.voice
+        if voices:
+            # 如果存在，取第一个语音
+            print(f"选中的语音：{voices[0]}")
+            voice = voices[0]
+    
         rate: int = 15
         pitch: int = 20
         volume: int = 110
@@ -83,7 +123,7 @@ class EdgeTTS(TTSInterface):
         # 初始化 Communicate 对象，设置语音、语速、音调和音量参数
         communicate = edge_tts.Communicate(
             text=text,
-            voice=self.voice,
+            voice=voice,
             rate=rate_str,
             pitch=pitch_str,
             volume=volume_str

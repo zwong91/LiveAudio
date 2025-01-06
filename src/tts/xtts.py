@@ -98,7 +98,7 @@ class XTTS_v2(TTSInterface):
             "np_dtype": np.float32,
         }
 
-    async def text_to_speech(self, text: str, vc_uid: str) -> Tuple[str]: 
+    async def text_to_speech(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> Tuple[str]: 
         start_time = time.time()
         language = langid.classify(text)[0].strip()
         if language == 'zh':
@@ -176,7 +176,7 @@ class XTTS_v2(TTSInterface):
         return output_path
 
 
-    async def text_to_speech_stream(self, text: str, vc_uid: str) -> AsyncGenerator[bytes, None]:
+    async def text_to_speech_stream(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
         language = langid.classify(text)[0].strip()
         if language == 'zh':

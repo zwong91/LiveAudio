@@ -29,7 +29,7 @@ const LanguageSelection = ({ onLanguageChange }: LanguageSelectionProps) => {
           value={sourceLang}
           onChange={handleSourceLangChange}
         >
-          <option value="zh-cn">Chinese (zh-cn)</option>
+          <option value="zh">Chinese (zh)</option>
           <option value="en">English (en)</option>
           <option value="ko">Korean (ko)</option>
           <option value="ja">Japanese (ja)</option>
@@ -57,7 +57,7 @@ const LanguageSelection = ({ onLanguageChange }: LanguageSelectionProps) => {
           onChange={handleTargetLangChange}
         >
           <option value="en">English (en)</option>
-          <option value="zh-cn">Chinese (zh-cn)</option>
+          <option value="zh">Chinese (zh)</option>
           <option value="ko">Korean (ko)</option>
           <option value="ja">Japanese (ja)</option>
           <option value="es">Spanish (es)</option>

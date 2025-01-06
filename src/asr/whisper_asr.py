@@ -25,10 +25,10 @@ class WhisperASR(ASRInterface):
             client.scratch_buffer, client.get_file_name()
         )
 
-        if client.config["language"] is not None:
+        if client.config["source_lang"] is not None:
             to_return = self.asr_pipeline(
                 file_path,
-                generate_kwargs={"language": client.config["language"]},
+                generate_kwargs={"language": client.config["source_lang"]},
             )["text"]
         else:
             to_return = self.asr_pipeline(file_path)["text"]
@@ -36,7 +36,8 @@ class WhisperASR(ASRInterface):
         os.remove(file_path)
 
         to_return = {
-            "language": "UNSUPPORTED_BY_HUGGINGFACE_WHISPER",
+            "source_lang": "UNSUPPORTED_BY_HUGGINGFACE_WHISPER",
+            "target_lang": "UNSUPPORTED_BY_HUGGINGFACE_WHISPER",
             "language_probability": None,
             "text": to_return.strip(),
             "words": "UNSUPPORTED_BY_HUGGINGFACE_WHISPER",

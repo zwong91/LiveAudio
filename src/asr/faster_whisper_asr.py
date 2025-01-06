@@ -130,8 +130,8 @@ class FasterWhisperASR(ASRInterface):
 
         language = (
             None
-            if client.config["language"] is None
-            else language_codes.get(client.config["language"].lower())
+            if client.config["source_lang"] is None
+            else language_codes.get(client.config["source_lang"].lower())
         )
         segments, info = self.asr_pipeline.transcribe(
             file_path, beam_size=5, word_timestamps=True,
@@ -150,7 +150,8 @@ class FasterWhisperASR(ASRInterface):
         ]
 
         to_return = {
-            "language": info.language,
+            "source_lang": info.language,
+            "target_lang": client.config["target_lang"],
             "language_probability": info.language_probability,
             "text": " ".join([s.text.strip() for s in segments]),
             "words": [
