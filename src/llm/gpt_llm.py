@@ -22,7 +22,7 @@ MODEL = os.getenv('MODEL')
 BASE_URL = os.getenv('BASE_URL')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
-from prompt import translation_prompt, chat_prompt
+from .prompt import translation_prompt, chat_prompt
 
 class OpenAILLM(LLMInterface):
     def __init__(
