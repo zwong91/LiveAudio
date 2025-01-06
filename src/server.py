@@ -253,7 +253,7 @@ class Server:
 
         @pc.on("iceconnectionstatechange")
         async def on_iceconnectionstatechange():
-            print(f"ICE connection state is %s", pc.iceConnectionState)
+            print(f"ICE connection state is {pc.iceConnectionState}")
             if pc.iceConnectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)   
