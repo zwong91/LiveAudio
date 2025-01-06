@@ -72,7 +72,7 @@ class OpenAILLM(LLMInterface):
         relevant_context = [self.vault_content[idx].strip() for idx in top_indices]
         return relevant_context
 
-    async def generate(self, history: List[Dict[str, str]], vault_input: str, simultaneous: bool, stream_mode: bool, max_lengths: int = 128) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate(self, history: List[Dict[str, str]], vault_input: str, simultaneous: bool, lang_tag: str, stream_mode: bool, max_lengths: int = 128) -> Tuple[str, List[Dict[str, str]]]:
         # with open("vault.txt", "a", encoding="utf-8") as vault_file:
         #     print("Wrote to info.")
         #     vault_file.write(vault_input + "\n")
@@ -86,7 +86,8 @@ class OpenAILLM(LLMInterface):
         #     query = "\n".join(relevant_context) + "\n\n" + vault_input
 
         print(f"query: {query}")
-        system_prompt = translation_prompt if simultaneous else chat_prompt
+        template = translation_prompt if simultaneous else chat_prompt
+        system_prompt = template.replace("{{target_lang}}", lang_tag)
         if history is None:
             history = []
         history.append({"role": "user", "content": query})
@@ -159,10 +160,10 @@ class OpenAILLM(LLMInterface):
                 if finish_reason == "stop":
                     finished = True
 
-    async def generate_response(self, history: List[Dict[str, str]], query: str, simultaneous: bool, stream:  bool, max_lengths: int = 32) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate_response(self, history: List[Dict[str, str]], query: str, simultaneous: bool, lang_tag: str, stream:  bool, max_lengths: int = 32) -> Tuple[str, List[Dict[str, str]]]:
         start_time = time.time()
 
-        out = self.generate(history, query, simultaneous, stream, max_lengths)
+        out = self.generate(history, query, simultaneous, lang_tag, stream, max_lengths)
         response = ""
         async for text in out:
             # which stores the transcription if interruption occurred. stop generating
