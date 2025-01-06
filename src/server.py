@@ -313,8 +313,7 @@ class Server:
                             logging.debug("Ping received. Sending pong...")
                             channel.send(json.dumps({"type": "pong"}))
                         elif message.type == "start":
-                            nonlocal top_track
-                            logger.debug(f'RTC DC: Recording started with track {top_track}')
+                            logger.debug(f'RTC DC: Recording started with track')
                         elif message.type == "stop":
                             logger.debug('RTC DC: Recording stopped')
                         else:
