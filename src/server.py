@@ -196,12 +196,12 @@ class Server:
 
     async def startup(self):
         """Called on startup to set up additional services."""
-        logging.info(f"Starting server at {self.host}:{self.port}")
+        print(f"Starting server at {self.host}:{self.port}")
         # 启动任务处理的后台任务
         asyncio.create_task(self.tts_manager.start_processing())
 
     async def shutdown(self):
-        logging.info(f"shutdown server ...")
+        print(f"shutdown server ...")
         # Shutdown tasks: Close WebRTC connections
         coros = [pc.close() for pc in self.pcs]
         await asyncio.gather(*coros)
@@ -249,18 +249,18 @@ class Server:
             ordered=True,
         )
         self.pcs.add(pc)
-        logging.info(f"Peer Connection Created for: {request}")
+        print(f"Peer Connection Created for: {request}")
 
         @pc.on("iceconnectionstatechange")
         async def on_iceconnectionstatechange():
-            logging.info("ICE connection state is %s", pc.iceConnectionState)
+            print("ICE connection state is %s", pc.iceConnectionState)
             if pc.iceConnectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)   
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
-            logging.info(f"Connection state is {pc.connectionState}")
+            print(f"Connection state is {pc.connectionState}")
             if pc.connectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)
@@ -269,7 +269,7 @@ class Server:
 
         @pc.on("track")
         def on_track(track):
-            logging.info(f"Track {track.kind} received")
+            print(f"Track {track.kind} received")
             if track.kind == "audio":
                 audio_track = ClientStreamTrack(
                     self.relay.subscribe(
@@ -288,7 +288,7 @@ class Server:
 
             @track.on("ended")
             async def on_ended():
-                logging.info(f"Track {track.kind} ended")
+                print(f"Track {track.kind} ended")
                 track.stop()
                 #await recorder.stop()
 
@@ -300,13 +300,13 @@ class Server:
 
         @pc.on("datachannel")
         def on_datachannel(channel):
-            logging.info(f"DataChannel created: {channel.label}")
+            print(f"DataChannel created: {channel.label}")
             @channel.on("open")
             async def on_open():
-                logging.info("DataChannel opened")
+                print("DataChannel opened")
             @channel.on("message")
             def on_message(message):
-                logging.info("Received message on channel: %s", channel.label)
+                print("Received message on channel: %s", channel.label)
                 # 检查消息类型
                 if isinstance(message, str):
                     try:
@@ -318,12 +318,12 @@ class Server:
                             # 处理配置消息
                             source_lang = parsed_message["data"].get("source_lang")
                             target_lang = parsed_message["data"].get("target_lang")
-                            logging.info(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
+                            print(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
                             client.update_config(parsed_message["data"])
                             logging.debug(f"Updated config: {client.config}")
                         elif message_type == "ping":
                             # 处理 ping 消息
-                            logging.info("Ping received. Sending pong...")
+                            print("Ping received. Sending pong...")
                             channel.send(json.dumps({"type": "pong"}))
                         else:
                             # 未知消息类型
@@ -435,14 +435,14 @@ class Server:
 
         @pc.on("datachannel")
         def on_datachannel(channel):
-            logging.info(f"DataChannel created: {channel.label}")
+            print(f"DataChannel created: {channel.label}")
             @channel.on("open")
             async def on_open():
-                logging.info("DataChannel opened")
+                print("DataChannel opened")
                 channel.send('ping')
             @channel.on("message")
             def on_message(message):
-                logging.info("Received message on channel: %s", message)
+                print("Received message on channel: %s", message)
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
@@ -463,18 +463,18 @@ class Server:
     async def websocket_endpoint(self, websocket: WebSocket):
         await websocket.accept()
 
-        logging.info(f"Client {websocket.client} accepted, waiting for messages.")
+        print(f"Client {websocket.client} accepted, waiting for messages.")
         client_id = str(uuid.uuid4())
         use_webrtc = False
         client = Client(use_webrtc, client_id, self.sampling_rate, self.samples_width)
         self.connected_clients[client_id] = client
-        logging.info(f"Client {client_id} connected")
+        print(f"Client {client_id} connected")
 
         try:
             await self.handle_audio(client, websocket)
         finally:
             del self.connected_clients[client_id]
-            logging.info(f"Client {client_id} disconnected")
+            print(f"Client {client_id} disconnected")
             #await websocket.close()
 
     async def handle_audio(self, client, websocket):
@@ -491,12 +491,12 @@ class Server:
                     # 处理配置消息
                     source_lang = parsed_message["data"].get("source_lang")
                     target_lang = parsed_message["data"].get("target_lang")
-                    logging.info(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
+                    print(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
                     client.update_config(parsed_message["data"])
                     logging.debug(f"Updated config: {client.config}")
                 elif message_type == "ping":
                     # 处理 ping 消息
-                    logging.info("Ping received. Sending pong...")
+                    print("Ping received. Sending pong...")
                     await websocket.send(json.dumps({"type": "pong"}))
                 elif msg_type == 'session':
                     sessionid = parsed_message.get("sessionid")
@@ -528,7 +528,7 @@ class Server:
 
                 elif msg_type == 'stop':
                     if sessionid is not None:
-                        logging.info(f"Session {sessionid} ended.")
+                        print(f"Session {sessionid} ended.")
                 else:
                     await websocket.send_json({"type": "error", "message": f"Unknown message type: {msg_type}"})
 
