@@ -86,7 +86,7 @@ const useWebRTC = (
   setAudioQueue: Function,
   setIsRecording: Function,
   checkAndBufferAudio: Function,
-  isSimultaneous: string,
+  isSimultaneous: boolean,
   targetLang: string
 ) => {
   const [connectionStatus, setConnectionStatus] = useState("connecting");
