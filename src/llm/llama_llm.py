@@ -73,7 +73,7 @@ class LlamaLLM(LLMInterface):
         stream,
         max_length=100,
     ):
-
+        query += f"\n\nalways use {lang_tag} answer"
         template = translation_prompt if simultaneous else chat_prompt
         system_prompt = template.replace("{{target_lang}}", lang_tag)
         messages = [{"role": "system", "content": system_prompt}]
