@@ -24,7 +24,7 @@ client = OpenAI(
 
 from ollama import AsyncClient
 
-from prompt import translation_prompt, chat_prompt
+from .prompt import translation_prompt, chat_prompt
 class OllamaLLM(LLMInterface):
     def __init__(
         self,
