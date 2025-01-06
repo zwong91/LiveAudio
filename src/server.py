@@ -295,11 +295,16 @@ class Server:
         @pc.on("datachannel")
         def on_datachannel(channel):
             print(f"DataChannel created: {channel.label}")
-
-            @channel.on("open")
-            def on_open():
-                print("DataChannel opened")
+            # 检查 DataChannel 状态，是否处于 open 状态
+            if channel.readyState == "open":
+                print("DataChannel is already open")
                 channel.send(json.dumps({"type": "pong"}))
+            else:
+                print("DataChannel is not open yet")
+                @channel.on("open")
+                def on_open():
+                    print("DataChannel opened")
+                    channel.send(json.dumps({"type": "pong"}))
 
             @channel.on("message")
             def on_message(message):
