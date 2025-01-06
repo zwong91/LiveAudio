@@ -295,11 +295,11 @@ class Server:
         @pc.on("datachannel")
         def on_datachannel(channel):
             print(f"DataChannel created: {channel.label}")
-            # 发送 pong 消息
-            channel.send(json.dumps({"type": "pong"}))
+
             @channel.on("open")
             def on_open():
                 print("DataChannel opened")
+                channel.send(json.dumps({"type": "pong"}))
 
             @channel.on("message")
             def on_message(message):
