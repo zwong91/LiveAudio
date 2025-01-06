@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 import torch
 import torchaudio
-import torch.multiprocessing as mp
+
 
 import ormsgpack
 
@@ -31,13 +31,6 @@ from aiortc import MediaStreamTrack, VideoStreamTrack
 
 
 import aiohttp
-from dotenv import load_dotenv
-# 加载环境变量
-load_dotenv(override=True)
-
-#CF_TURN_KEY = os.getenv('CF_TURN_KEY')
-USERNAME = os.getenv('USERNAME')
-CREDENTIAL = os.getenv('CREDENTIAL')
 
 from src.client import Client
 from src.stream_track import ClientStreamTrack
@@ -102,7 +95,7 @@ class TTSManager:
                     "media_type": task['media_type'],
                     "message": "Task completed successfully."
                 }, status_code=200)
-            
+
             # 如果任务失败，返回错误信息
             elif task.get('status') == 'failed':
                 return JSONResponse(content={
@@ -130,13 +123,12 @@ class Server:
         asr_pipeline,
         llm_pipeline,
         tts_pipeline,
-        host="0.0.0.0",
+        host="localhost",
         port=8765,
         sampling_rate=16000,
         samples_width=2,
         certfile=None,
         keyfile=None,
-        whip_url=None,
     ):
         self.vad_pipeline = vad_pipeline
         self.asr_pipeline = asr_pipeline
@@ -148,9 +140,8 @@ class Server:
         self.samples_width = samples_width
         self.certfile = certfile
         self.keyfile = keyfile
-        self.whip_url = whip_url
         self.connected_clients = {}
-        
+
         self.relay = MediaRelay()
         self.pcs = set()
         self.app = FastAPI(
@@ -189,19 +180,17 @@ class Server:
 
         self.app.websocket("/stream")(self.websocket_endpoint)
         self.app.websocket("/stream-vc")(self.websocket_endpoint)
-        
+
         self.app.post("/offer")(self.offer_endpoint)
-        
-        self.app.post("/cf-calls")(self.whip)
 
     async def startup(self):
         """Called on startup to set up additional services."""
-        print(f"Starting server at {self.host}:{self.port}")
+        logging.info(f"Starting server at {self.host}:{self.port}")
         # 启动任务处理的后台任务
         asyncio.create_task(self.tts_manager.start_processing())
 
     async def shutdown(self):
-        print(f"shutdown server ...")
+        logging.info(f"shutdown server ...")
         # Shutdown tasks: Close WebRTC connections
         coros = [pc.close() for pc in self.pcs]
         await asyncio.gather(*coros)
@@ -209,7 +198,7 @@ class Server:
 
 
     async def offer_endpoint(self, request: Request):
-        
+
         params = await request.json()
         offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
@@ -218,29 +207,25 @@ class Server:
         use_webrtc = True
         client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
         # STUN 和 TURN 服务器配置
-        #result = await self.turn({'ttl': 86400})
         ice_servers = [
             RTCIceServer( 
-                urls=["stun:gtp.aleopool.cc:3478"]
+                urls=["stun:gtp.aleopool.cc:3478"]  # STUN 服务器
+                # urls=["stun:stun.l.google.com:19302",
+                #       "stun:stun1.l.google.com:19302",
+                #       "stun:stun2.l.google.com:19302",
+                #       "stun:stun3.l.google.com:19302",
+                #       "stun:stun4.l.google.com:19302"]  # STUN 服务器
             ),
             RTCIceServer(
-                urls=["turn:gtp.aleopool.cc:3478"],
-                username=USERNAME,
-                credential=CREDENTIAL,
+                urls=["turn:gtp.aleopool.cc:3478"],  # TURN 服务器
+                username="admin",                    # TURN 服务器用户名
+                credential="7f0dd067662502af36934e85b43895b148edfcdb",  # TURN 服务器密码
             ),
-            # RTCIceServer(
-            #     urls=["stun:stun.cloudflare.com:3478",
-            #         "turn:turn.cloudflare.com:3478?transport=udp",
-            #         "turn:turn.cloudflare.com:3478?transport=tcp",
-            #         "turns:turn.cloudflare.com:5349?transport=tcp"],
-            #     username=result['username'],
-            #     credential=result["credential"],
-            # ),
         ]
 
         # 使用 RTCConfiguration 配置 ICE 服务器
         config = RTCConfiguration(iceServers=ice_servers)
-        
+
         # 创建一个新的 RTCPeerConnection 并传递 RTCConfiguration
         pc = RTCPeerConnection(configuration=config)
         # Create a new DataChannel after the peer connection is created
@@ -249,27 +234,26 @@ class Server:
             ordered=True,
         )
         self.pcs.add(pc)
-        print(f"Peer Connection Created for: {request}")
+        logging.info(f"Peer Connection Created for: {request.remote}")
 
         @pc.on("iceconnectionstatechange")
         async def on_iceconnectionstatechange():
-            print(f"ICE connection state is {pc.iceConnectionState}")
+            logging.info("ICE connection state is %s", pc.iceConnectionState)
             if pc.iceConnectionState == "failed":
                 await pc.close()
-                self.pcs.discard(pc)   
+                self.pcs.discard(pc)
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
-            print(f"Connection state is {pc.connectionState}")
-            if pc.connectionState == "failed":
+            logging.info(f"Connection state is {pc.connectionState}")
+            if pc.connectionState in ["failed", "closed"]:
+                logging.info("pc connectionstate  closed")
                 await pc.close()
-                self.pcs.discard(pc)
-            if pc.connectionState == "closed":
                 self.pcs.discard(pc)
 
         @pc.on("track")
         def on_track(track):
-            print(f"Track {track.kind} received")
+            logging.info(f"Track {track.kind} received")
             if track.kind == "audio":
                 audio_track = ClientStreamTrack(
                     self.relay.subscribe(
@@ -282,14 +266,14 @@ class Server:
                     self.llm_pipeline,
                     self.tts_pipeline,
                     pc,
-                    s2s_response,
+                    s2s_response, 
                 )
                 pc.addTrack(audio_track)
 
             @track.on("ended")
             async def on_ended():
-                print(f"Track {track.kind} ended")
-                #track.stop()
+                logging.info(f"Track {track.kind} ended")
+                track.stop()
                 #await recorder.stop()
 
         @s2s_response.on("open")
@@ -300,49 +284,33 @@ class Server:
 
         @pc.on("datachannel")
         def on_datachannel(channel):
-            print(f"DataChannel created: {channel.label}")
+            logging.info(f"DataChannel created: {channel.label}")
             @channel.on("open")
             async def on_open():
-                print("DataChannel opened")
+                logging.info("DataChannel opened")
             @channel.on("message")
             def on_message(message):
-                print("Received message on channel: %s", channel.label)
-                # 检查消息类型
+                logging.info("Received message on channel: %s", message)
                 if isinstance(message, str):
-                    try:
-                        # 尝试解析 JSON 格式的字符串消息
-                        parsed_message = json.loads(message)
-                        message_type = parsed_message.get("type")     
-                        if message_type == "config":
-                            # 处理配置消息
-                            source_lang = parsed_message["data"].get("source_lang")
-                            target_lang = parsed_message["data"].get("target_lang")
-                            print(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
-                            client.update_config(parsed_message["data"])
-                            logging.debug(f"Updated config: {client.config}")
-                        elif message_type == "ping":
-                            # 处理 ping 消息
-                            print("Ping received. Sending pong...")
-                            channel.send(json.dumps({"type": "pong"}))
-                        else:
-                            # 未知消息类型
-                            logging.warning(f"Unknown message type: {message_type}")
-                    except json.JSONDecodeError:
-                        logging.error("Failed to decode JSON from string message")
-                else:
-                    logging.warning("Received an unsupported message type")
-                    
+                    channel.send("pong" + message)
+                elif isinstance(message, bytes):
+                    # 假设 message 是音频数据（如 PCM 格式）
+                    # 进行处理（例如，解码、分析或保存音频数据）
+                    logging.info(f"Received {len(message)} bytes of audio data")
 
-        #audio_sender = pc.addTrack(MediaPlayer("vc/silence.wav", format="wav", loop=True).audio)
-        #video_sender = pc.addTrack(MediaPlayer("vc/silence.mp4", format="wav", loop=True).video)
+        # Add transceivers
+        # pc.addTransceiver('video', direction='sendonly')
+        pc.addTransceiver('audio', direction='sendrecv')
 
-        # Set codec preferences for video
-        # capabilities = RTCRtpSender.getCapabilities("video")
-        # preferences = list(filter(lambda x: x.name == "H264", capabilities.codecs))
-        # preferences += list(filter(lambda x: x.name == "VP8", capabilities.codecs))
-        # preferences += list(filter(lambda x: x.name == "rtx", capabilities.codecs))
-        # transceiver = pc.getTransceivers()[1]
-        # transceiver.setCodecPreferences(preferences)
+        # Set codec preferences for video/audio
+        for transceiver in pc.getTransceivers():
+            if transceiver.kind == 'video':
+                capabilities = RTCRtpSender.getCapabilities('video')
+                preferences = [codec for codec in capabilities.codecs if codec.name in ('H264', 'VP8')]
+                transceiver.setCodecPreferences(preferences)
+                transceiver.direction = 'sendonly'
+            elif transceiver.kind == 'audio':
+                transceiver.direction = 'sendrecv'
 
         await pc.setRemoteDescription(offer)
         #await recorder.start()
@@ -350,98 +318,14 @@ class Server:
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
 
-        # push to cloudflare calls
-        # await self.push('https://whip.xyz666.org/publish/my-live')
-        
         return JSONResponse(content={"sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "sessionid": sessionid})
 
-    async def turn(self, data):
-        try:
-            async with aiohttp.ClientSession() as session:
-                headers = {
-                    'Authorization': 'Bearer 92d1cf73915fe293f3402775db92d40b552dd6ea84babd32d17869733cb34e2b',
-                    'Content-Type': 'application/json',
-                }
-                turn_url = f'https://rtc.live.cloudflare.com/v1/turn/keys/{CF_TURN_KEY}/credentials/generate'
-                async with session.post(turn_url, json=data, headers=headers) as response:
-                    # 检查响应状态码
-                    if response.status == 201:
-                        # 获取响应体（SDP 数据）
-                        ice_servers = await response.json()
-                        # iceServers 中提取 username 和 credential
-                        username = ice_servers.get('username')
-                        credential = ice_servers.get('credential')
-                        print(f"Username: {username}")
-                        print(f"Credential: {credential}")
-                        # 返回相关信息，可以根据需要自定义返回内容
-                        return {
-                            'username': username,
-                            'credential': credential
-                        }
-                    else:
-                        print(f"Request failed with status code {response.status}")
-                        return None
-        except aiohttp.ClientError as e:
-            print(f'Error: {e}')
-            return None
-
-    async def post(self, url, data):
-        try:
-            async with aiohttp.ClientSession() as session:
-                ## test url
-                url = "https://whip.xyz666.org/publish/my-live"
-                async with session.post(url, json=data) as response:
-                    # 检查响应状态码
-                    if response.status == 201:
-                        sdp_data = await response.text() 
-                        protocol_version = response.headers.get('protocol-version')
-                        etag = response.headers.get('etag')
-                        location = response.headers.get('location')
-                        print(f"SDP Data: {sdp_data}")
-                        print(f"Protocol Version: {protocol_version}")
-                        print(f"ETag: {etag}")
-                        print(f"Location: {location}")
-                        return {
-                            'sdp_data': sdp_data,
-                            'protocol_version': protocol_version,
-                            'etag': etag,
-                            'location': location
-                        }
-                    else:
-                        print(f"Request failed with status code {response.status}")
-                        return None
-        except aiohttp.ClientError as e:
-            print(f'Error: {e}')
-            return None
-
-    async def whip(self, whip_url, session_id):
-        #create a new RTCPeerConnection, whip to cloudflare webrtc calls livestream
+    async def push(self, push_url):
         pc = RTCPeerConnection()
         self.pcs.add(pc)
 
-        use_webrtc = True
         sessionid = str(uuid.uuid4())
-        client = Client(use_webrtc, sessionid, self.sampling_rate, self.samples_width)
-
-        # Create a new DataChannel after the peer connection is created
-        s2s_response = pc.createDataChannel(
-            label="response",
-            ordered=True,
-        )
-        @s2s_response.on("open")
-        async def on_open():
-            print("DataChannel s2s_response opened")
-
-        @pc.on("datachannel")
-        def on_datachannel(channel):
-            print(f"DataChannel created: {channel.label}")
-            @channel.on("open")
-            async def on_open():
-                print("DataChannel opened")
-                channel.send('ping')
-            @channel.on("message")
-            def on_message(message):
-                print("Received message on channel: %s", message)
+        client = Client(sessionid, self.sampling_rate, self.samples_width)
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
@@ -449,31 +333,50 @@ class Server:
             if pc.connectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)
-            if pc.connectionState == "closed":
-                self.pcs.discard(pc)
 
-        pc.addTrack(MediaPlayer("vc/liuyifei.wav", format="wav", loop=True).audio)
+        @pc.on("track")
+        def on_track(track):
+            logging.info(f"Track {track.kind} received")
+            if track.kind == "audio":
+                stream_track = ClientStreamTrack(
+                    relay.subscribe(
+                        track=track,
+                        ),
+                    "audio",
+                    client,
+                    self.vad_pipeline,
+                    self.asr_pipeline,
+                    self.llm_pipeline,
+                    self.tts_pipeline,
+                    pc,
+                    s2s_response,
+                )
+                pc.addTrack(stream_track)
+
+            @track.on("ended")
+            async def on_ended():
+                logging.info(f"Track {track.kind} ended")
+
         await pc.setLocalDescription(await pc.createOffer())
-        # whip-whep protocol to cloudflare calls 201
-        result = await self.post(whip_url, {"sdp": pc.localDescription.sdp})
-        await pc.setRemoteDescription(RTCSessionDescription(sdp=result["sdp_data"], type='answer'))
+        answer = await post(push_url, {"sdp": pc.localDescription.sdp})
+        await pc.setRemoteDescription(RTCSessionDescription(sdp=answer, type='answer'))
 
 
     async def websocket_endpoint(self, websocket: WebSocket):
         await websocket.accept()
 
-        print(f"Client {websocket.client} accepted, waiting for messages.")
+        logging.info(f"Client {websocket.client} accepted, waiting for messages.")
         client_id = str(uuid.uuid4())
         use_webrtc = False
         client = Client(use_webrtc, client_id, self.sampling_rate, self.samples_width)
         self.connected_clients[client_id] = client
-        print(f"Client {client_id} connected")
+        logging.info(f"Client {client_id} connected")
 
         try:
             await self.handle_audio(client, websocket)
         finally:
             del self.connected_clients[client_id]
-            print(f"Client {client_id} disconnected")
+            logging.info(f"Client {client_id} disconnected")
             #await websocket.close()
 
     async def handle_audio(self, client, websocket):
@@ -481,24 +384,13 @@ class Server:
         while True:
             try:
                 message = await websocket.receive_text()
-                parsed_message = json.loads(message)
+                data = json.loads(message)
                 #message = await websocket.receive_bytes()
                 # Decode the MessagePack data
-                #parsed_message = ormsgpack.unpackb(message)
-                msg_type = parsed_message.get('type')
-                if message_type == "config":
-                    # 处理配置消息
-                    source_lang = parsed_message["data"].get("source_lang")
-                    target_lang = parsed_message["data"].get("target_lang")
-                    print(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
-                    client.update_config(parsed_message["data"])
-                    logging.debug(f"Updated config: {client.config}")
-                elif message_type == "ping":
-                    # 处理 ping 消息
-                    print("Ping received. Sending pong...")
-                    await websocket.send(json.dumps({"type": "pong"}))
-                elif msg_type == 'session':
-                    sessionid = parsed_message.get("sessionid")
+                #data = ormsgpack.unpackb(message)
+                msg_type = data.get('event')
+                if msg_type == 'session':
+                    sessionid = data.get("sessionid")
                     if sessionid is not None:
                         # Optionally, send confirmation back to the client
                         await websocket.send_json({"type": "session_ack", "sessionid": sessionid})
@@ -506,7 +398,7 @@ class Server:
                         await websocket.send_json({"type": "error", "message": "No rtc sessionid provided."})              
 
                 elif msg_type == 'start':
-                    request_data = parsed_message.get('request', {})
+                    request_data = data.get('request', {})
                     chunk = request_data.get('audio')
                     audio_data = base64.b64decode(chunk)
                     audio_data = base64.b64decode(chunk)
@@ -527,7 +419,7 @@ class Server:
 
                 elif msg_type == 'stop':
                     if sessionid is not None:
-                        print(f"Session {sessionid} ended.")
+                        logging.info(f"Session {sessionid} ended.")
                 else:
                     await websocket.send_json({"type": "error", "message": f"Unknown message type: {msg_type}"})
 
@@ -545,6 +437,16 @@ class Server:
             )
         except RuntimeError as e:
             logging.error(f"Processing error for {client.client_id}: {e}")
+
+    async def handle_text_message(self, client, message):
+        """Handles incoming JSON text messages for config updates."""
+        try:
+            config = json.loads(message)
+            if config.get("type") == "config":
+                client.update_config(config["data"])
+                logging.debug(f"Updated config: {client.config}")
+        except json.JSONDecodeError as e:
+            logging.error(f"Failed to decode config message: {e}")
 
     async def get_asset_file(self, filename: str):
         file_path = os.path.join('/asset', filename)
@@ -568,6 +470,15 @@ class Server:
             }
         )
 
+    async def post(self, url, data):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, data=data) as response:
+                    return await response.text()
+        except aiohttp.ClientError as e:
+            print(f'Error: {e}')
+
+
     async def upload_audio_files(self, vc_name: str, files: List[UploadFile] = File(...)):
         file_paths = []
         file_uuid = uuid.uuid4().hex[:8]
@@ -576,19 +487,19 @@ class Server:
         for file in files:
             if not file.filename:
                 raise HTTPException(status_code=400, detail="File is empty")
-            
+
             # 检查文件大小是否超过20MB
             file_size = await self.get_file_size(file)
             if file_size > MAX_FILE_SIZE:
                 raise HTTPException(status_code=400, detail="File is too large. Max size is 20MB")
-            
+
             filename = file.filename
             file_name_without_ext, file_extension = os.path.splitext(filename)
-            
+
             # 为每个文件生成一个独特的文件路径
             file_location = os.path.join("vc", f"{file_uuid}_{vc_name}{file_extension}")
             file_paths.append(file_location)
-            
+
             # 保存文件到磁盘
             with open(file_location, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
@@ -666,8 +577,8 @@ class Server:
     async def health(self):
         return {"status": "ojbk"}
 
-    async def start_server(self):
-        """Start the Uvicorn server as a coroutine."""
+    def create_uvicorn_server(self):
+        """Creates and returns a Uvicorn server instance."""
         uvicorn_config = uvicorn.Config(
             self.app,
             host="0.0.0.0",
@@ -675,29 +586,21 @@ class Server:
             ssl_certfile=self.certfile,
             ssl_keyfile=self.keyfile,
             loop="uvloop",
-            log_level="debug",
+            log_level="info",
             workers=os.cpu_count(),
             limit_concurrency=1000,
             limit_max_requests=10000,
             backlog=2048
         )
         server = uvicorn.Server(uvicorn_config)
-        await server.serve()
+        return server
 
-    async def run_tasks(self):
-        """Run additional asynchronous tasks."""
-        max_sessions = 1
-        whip_url = self.whip_url
-        tasks = []
-        for k in range(max_sessions):
-            url = whip_url if k == 0 else f"{whip_url}{k}"
-            tasks.append(self.whip(url, k))
+    def start(self):
+        """Start the WebSocket server."""
+        if self.certfile and self.keyfile:
+            logging.info(f"Starting secure WebSocket server on {self.host}:{self.port}")
+        else:
+            logging.info(f"Starting WebSocket server on {self.host}:{self.port}")
 
-        await asyncio.gather(*tasks)
-
-    async def start(self):
-        """Start both the server and tasks concurrently."""
-        await asyncio.gather(
-            self.start_server(),  # Run Uvicorn server
-            #self.run_tasks()      # Run additional logic
-        )
+        server = self.create_uvicorn_server()
+        server.run()
