@@ -306,19 +306,18 @@ class Server:
                 logging.debug("DataChannel opened")
             @channel.on("message")
             def on_message(message):
-                logging.debug("Received message on channel: %s", channel.label)
+                print(f"Received message on channel: {channel.label}")
                 # 检查消息类型
                 if isinstance(message, str):
                     try:
                         # 尝试解析 JSON 格式的字符串消息
                         parsed_message = json.loads(message)
                         message_type = parsed_message.get("type")
-
                         if message_type == "config":
                             # 处理配置消息
                             source_lang = parsed_message["data"].get("source_lang")
                             target_lang = parsed_message["data"].get("target_lang")
-                            logging.debug(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
+                            print(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
                             client.update_config(parsed_message["data"])
                             logging.debug(f"Updated config: {client.config}")
                         elif message_type == "ping":
