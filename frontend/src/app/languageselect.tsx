@@ -41,7 +41,7 @@ const LanguageSelection = ({ onLanguageChange }: LanguageSelectionProps) => {
           value={targetLang}
           onChange={handleTargetLangChange}
         >
-          <option value="英文">English (en)</option>
+          <option value="英语">English (en)</option>
           <option value="中文">Chinese (zh)</option>
           <option value="韩语">Korean (ko)</option>
           <option value="日语">Japanese (ja)</option>
