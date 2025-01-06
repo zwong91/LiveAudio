@@ -41,23 +41,23 @@ const LanguageSelection = ({ onLanguageChange }: LanguageSelectionProps) => {
           value={targetLang}
           onChange={handleTargetLangChange}
         >
-          <option value="en">English (en)</option>
-          <option value="zh">Chinese (zh)</option>
-          <option value="ko">Korean (ko)</option>
-          <option value="ja">Japanese (ja)</option>
-          <option value="es">Spanish (es)</option>
-          <option value="fr">French (fr)</option>
-          <option value="de">German (de)</option>
-          <option value="it">Italian (it)</option>
-          <option value="pt">Portuguese (pt)</option>
-          <option value="pl">Polish (pl)</option>
-          <option value="tr">Turkish (tr)</option>
-          <option value="ru">Russian (ru)</option>
-          <option value="nl">Dutch (nl)</option>
-          <option value="cs">Czech (cs)</option>
-          <option value="ar">Arabic (ar)</option>
-          <option value="hu">Hungarian (hu)</option>
-          <option value="hi">Hindi (hi)</option>
+          <option value="英文">English (en)</option>
+          <option value="中文">Chinese (zh)</option>
+          <option value="韩语">Korean (ko)</option>
+          <option value="日语">Japanese (ja)</option>
+          <option value="西班牙语">Spanish (es)</option>
+          <option value="法语">French (fr)</option>
+          <option value="德语">German (de)</option>
+          <option value="意大利语">Italian (it)</option>
+          <option value="葡萄牙语">Portuguese (pt)</option>
+          <option value="波兰语">Polish (pl)</option>
+          <option value="土耳其语">Turkish (tr)</option>
+          <option value="俄语">Russian (ru)</option>
+          <option value="荷兰语">Dutch (nl)</option>
+          <option value="捷克语">Czech (cs)</option>
+          <option value="阿拉伯语">Arabic (ar)</option>
+          <option value="匈牙利语">Hungarian (hu)</option>
+          <option value="印地语">Hindi (hi)</option>
         </select>
       </div>
 
