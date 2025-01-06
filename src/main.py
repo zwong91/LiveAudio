@@ -51,7 +51,7 @@ def main():
     tts_pipeline = TTSFactory.create_tts_pipeline(args.tts_type)
 
     # Create and start server
-    server = Server(vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline, host=args.host, port=args.port, certfile=args.certfile, keyfile=args.keyfile, whip_url=args.whip_url)
+    server = Server(vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline, host=args.host, port=args.port, certfile=args.certfile, keyfile=args.keyfile)
     asyncio.run(server.start())
 
 if __name__ == "__main__":

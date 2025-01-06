@@ -32,18 +32,11 @@ class SenseVoiceASR(ASRInterface):
             client.scratch_buffer, client.get_file_name()
         )
 
-        if client.config["language"] is not None:
-            text = self.asr_pipeline.generate(
-                input=file_path, cache={},
-                generate_kwargs={"language": client.config["language"]},
-                use_itn=False, batch_size=64
-            )[0]["text"].strip()
-        else:
-            text = self.asr_pipeline.generate(
-                input=file_path, cache={},
-                language="auto", # "zh", "en", "yue", "ja", "ko", "nospeech"
-                use_itn=False, batch_size=64
-            )[0]["text"].strip()
+        text = self.asr_pipeline.generate(
+            input=file_path, cache={},
+            language="auto", # "zh", "en", "yue", "ja", "ko", "nospeech"
+            use_itn=False, batch_size=64
+        )[0]["text"].strip()
 
         os.remove(file_path)
 

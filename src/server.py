@@ -234,7 +234,6 @@ class Server:
             ordered=True,
         )
         self.pcs.add(pc)
-        logging.info(f"Peer Connection Created for: {request.remote}")
 
         @pc.on("iceconnectionstatechange")
         async def on_iceconnectionstatechange():
