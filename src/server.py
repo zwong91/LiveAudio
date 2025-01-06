@@ -282,7 +282,7 @@ class Server:
                     self.llm_pipeline,
                     self.tts_pipeline,
                     pc,
-                    s2s_response, 
+                    s2s_response,
                 )
                 pc.addTrack(audio_track)
 
@@ -306,13 +306,32 @@ class Server:
                 logging.info("DataChannel opened")
             @channel.on("message")
             def on_message(message):
-                logging.info("Received message on channel: %s", message)
+                logging.info("Received message on channel: %s", channel.label)
+                # 检查消息类型
                 if isinstance(message, str):
-                    channel.send("pong" + message)
-                elif isinstance(message, bytes):
-                    # 假设 message 是音频数据（如 PCM 格式）
-                    # 进行处理（例如，解码、分析或保存音频数据）
-                    logging.info(f"Received {len(message)} bytes of audio data")
+                    try:
+                        # 尝试解析 JSON 格式的字符串消息
+                        parsed_message = json.loads(message)
+                        message_type = parsed_message.get("type")
+                        
+                        if message_type == "config":
+                            # 处理配置消息
+                            source_lang = parsed_message["data"].get("source_lang")
+                            target_lang = parsed_message["data"].get("target_lang")
+                            logging.info(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
+                            client.update_config(parsed_message["data"])
+                            logging.debug(f"Updated config: {client.config}")
+                        elif message_type == "ping":
+                            # 处理 ping 消息
+                            logging.info("Ping received. Sending pong...")
+                            channel.send(json.dumps({"type": "pong"}))
+                        else:
+                            # 未知消息类型
+                            logging.warning(f"Unknown message type: {message_type}")
+                    except json.JSONDecodeError:
+                        logging.error("Failed to decode JSON from string message")
+                else:
+                    logging.warning("Received an unsupported message type")
                     
 
         #audio_sender = pc.addTrack(MediaPlayer("vc/silence.wav", format="wav", loop=True).audio)
@@ -463,13 +482,24 @@ class Server:
         while True:
             try:
                 message = await websocket.receive_text()
-                data = json.loads(message)
+                parsed_message = json.loads(message)
                 #message = await websocket.receive_bytes()
                 # Decode the MessagePack data
-                #data = ormsgpack.unpackb(message)
-                msg_type = data.get('event')
-                if msg_type == 'session':
-                    sessionid = data.get("sessionid")
+                #parsed_message = ormsgpack.unpackb(message)
+                msg_type = parsed_message.get('type')
+                if message_type == "config":
+                    # 处理配置消息
+                    source_lang = parsed_message["data"].get("source_lang")
+                    target_lang = parsed_message["data"].get("target_lang")
+                    logging.info(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
+                    client.update_config(parsed_message["data"])
+                    logging.debug(f"Updated config: {client.config}")
+                elif message_type == "ping":
+                    # 处理 ping 消息
+                    logging.info("Ping received. Sending pong...")
+                    await websocket.send(json.dumps({"type": "pong"}))
+                elif msg_type == 'session':
+                    sessionid = parsed_message.get("sessionid")
                     if sessionid is not None:
                         # Optionally, send confirmation back to the client
                         await websocket.send_json({"type": "session_ack", "sessionid": sessionid})
@@ -477,7 +507,7 @@ class Server:
                         await websocket.send_json({"type": "error", "message": "No rtc sessionid provided."})              
 
                 elif msg_type == 'start':
-                    request_data = data.get('request', {})
+                    request_data = parsed_message.get('request', {})
                     chunk = request_data.get('audio')
                     audio_data = base64.b64decode(chunk)
                     audio_data = base64.b64decode(chunk)
@@ -516,16 +546,6 @@ class Server:
             )
         except RuntimeError as e:
             logging.error(f"Processing error for {client.client_id}: {e}")
-
-    async def handle_text_message(self, client, message):
-        """Handles incoming JSON text messages for config updates."""
-        try:
-            config = json.loads(message)
-            if config.get("type") == "config":
-                client.update_config(config["data"])
-                logging.debug(f"Updated config: {client.config}")
-        except json.JSONDecodeError as e:
-            logging.error(f"Failed to decode config message: {e}")
 
     async def get_asset_file(self, filename: str):
         file_path = os.path.join('/asset', filename)
