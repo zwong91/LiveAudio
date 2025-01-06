@@ -72,7 +72,7 @@ class EdgeTTS(TTSInterface):
         voice = self.voice
         if voices:
             # 如果存在，取第一个语音
-            print(f"选中的语音：{voices[0]}")
+            print(f"Target wav files:{voices[0]}, Detected language: {language}, tts text: {text}")
             voice = voices[0]
         rate: int = 15
         pitch: int = 20
@@ -109,7 +109,7 @@ class EdgeTTS(TTSInterface):
         voice = self.voice
         if voices:
             # 如果存在，取第一个语音
-            print(f"选中的语音：{voices[0]}")
+            print(f"Target wav files:{voices[0]}, Detected language: {language}, tts text: {text}")
             voice = voices[0]
     
         rate: int = 15
