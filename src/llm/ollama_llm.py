@@ -74,7 +74,7 @@ class OllamaLLM(LLMInterface):
         # print(f"Length of vault_content: {len(vault_content)}")
 
         # relevant_context = self.get_relevant_context(vault_input, self.vault_embeddings)
-        query = vault_input
+        query = vault_input + "\n\n" + f"use {lang_tag} answer"
         # if relevant_context:
         #     query = "\n".join(relevant_context) + "\n\n" + vault_input
 
@@ -109,6 +109,7 @@ class OllamaLLM(LLMInterface):
 
         if history is None:
             history = []
+        query += f"\n\nalways use {lang_tag} answer"
         history.append({"role": "user", "content": query})
         template = translation_prompt if simultaneous else chat_prompt
         system_prompt = template.replace("{{target_lang}}", lang_tag)
