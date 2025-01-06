@@ -253,7 +253,7 @@ class Server:
 
         @pc.on("iceconnectionstatechange")
         async def on_iceconnectionstatechange():
-            print("ICE connection state is %s", pc.iceConnectionState)
+            print(f"ICE connection state is %s", pc.iceConnectionState)
             if pc.iceConnectionState == "failed":
                 await pc.close()
                 self.pcs.discard(pc)   
@@ -312,8 +312,7 @@ class Server:
                     try:
                         # 尝试解析 JSON 格式的字符串消息
                         parsed_message = json.loads(message)
-                        message_type = parsed_message.get("type")
-                        
+                        message_type = parsed_message.get("type")     
                         if message_type == "config":
                             # 处理配置消息
                             source_lang = parsed_message["data"].get("source_lang")
