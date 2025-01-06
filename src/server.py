@@ -306,9 +306,9 @@ class Server:
                     parsed_message = json.loads(message)
                     message_type = parsed_message.get("type")
                     if message_type == "config":
-                        source_lang = parsed_message["data"].get("source_lang")
+                        is_simultaneous = parsed_message["data"].get("is_simultaneous")
                         target_lang = parsed_message["data"].get("target_lang")
-                        print(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
+                        print(f"Configuration received - Simultaneous: {is_simultaneous}, Target: {target_lang}")
                         client.update_config(parsed_message["data"])
                         logging.debug(f"Updated config: {client.config}")
                     elif message_type == "ping":
@@ -483,9 +483,9 @@ class Server:
                 msg_type = parsed_message.get('type')
                 if message_type == "config":
                     # 处理配置消息
-                    source_lang = parsed_message["data"].get("source_lang")
+                    is_simultaneous = parsed_message["data"].get("is_simultaneous")
                     target_lang = parsed_message["data"].get("target_lang")
-                    logging.debug(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
+                    logging.debug(f"Configuration received - Simultaneous: {is_simultaneous}, Target: {target_lang}")
                     client.update_config(parsed_message["data"])
                     logging.debug(f"Updated config: {client.config}")
                 elif message_type == "ping":

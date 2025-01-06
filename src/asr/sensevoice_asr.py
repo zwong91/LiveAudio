@@ -31,24 +31,16 @@ class SenseVoiceASR(ASRInterface):
         file_path = await save_audio_to_file(
             client.scratch_buffer, client.get_file_name()
         )
-        if client.config["source_lang"] is not None:
-            text = self.asr_pipeline.generate(
-                input=file_path, cache={},
-                generate_kwargs={"language": client.config["source_lang"]},
-                use_itn=False, batch_size=64
-            )[0]["text"].strip()
-        else:
-            text = self.asr_pipeline.generate(
-                input=file_path, cache={},
-                language="auto", # "zh", "en", "yue", "ja", "ko", "nospeech"
-                use_itn=False, batch_size=64
-            )[0]["text"].strip()
+        text = self.asr_pipeline.generate(
+            input=file_path, cache={},
+            language="auto", # "zh", "en", "yue", "ja", "ko", "nospeech"
+            use_itn=False, batch_size=64
+        )[0]["text"].strip()
 
         os.remove(file_path)
 
         trans_text = rich_transcription_postprocess(text)
         to_return = {
-            "source_lang": client.config["source_lang"],
             "target_lang": client.config["target_lang"],
             "language_probability": None,
             "text": trans_text,

@@ -33,7 +33,7 @@ class Client:
         self.buffer = bytearray()
         self.scratch_buffer = bytearray()
         self.config = {
-            "source_lang": None,
+            "is_simultaneous": False,
             "target_lang": None,
             "processing_strategy": "silence_at_end_of_chunk",
             "processing_args": {

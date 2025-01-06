@@ -86,7 +86,7 @@ const useWebRTC = (
   setAudioQueue: Function,
   setIsRecording: Function,
   checkAndBufferAudio: Function,
-  sourceLang: string,
+  isSimultaneous: string,
   targetLang: string
 ) => {
   const [connectionStatus, setConnectionStatus] = useState("connecting");
@@ -293,7 +293,7 @@ const useWebRTC = (
           const audioConfig = {
             type: 'config',
             data: {
-                source_lang: sourceLang,
+                is_simultaneous: isSimultaneous,
                 target_lang: targetLang,
             }
         };
@@ -354,7 +354,7 @@ const useWebRTC = (
       // };
   
     }
-  }, [peerConnection, dataChannel, sourceLang, targetLang, checkAndBufferAudio]);  
+  }, [peerConnection, dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);  
 
   return {
     connectionStatus,
@@ -378,19 +378,19 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(true);
   const [audioList, setAudioList] = useState<string[]>([]);
 
-  const [sourceLang, setSourceLang] = useState('cn');
+  const [isSimultaneous, setIsSimultaneous] = useState(false);
   const [targetLang, setTargetLang] = useState('en');
-  const handleLanguageChange = (newSourceLang: string, newTargetLang: string) => {
-    setSourceLang(newSourceLang);
+  const handleLanguageChange = (newIsSimultaneous: boolean, newTargetLang: string) => {
+    setIsSimultaneous(newIsSimultaneous);
     setTargetLang(newTargetLang);
-    console.log('Updated Language Config:', newSourceLang, newTargetLang);
+    console.log('Updated Language Config:', newIsSimultaneous, newTargetLang);
 
   // 在语言变化后触发发送配置数据
   if (dataChannel && dataChannel.readyState === 'open') {
     const audioConfig = {
       type: 'config',
       data: {
-        source_lang: newSourceLang,
+        is_simultaneous: newIsSimultaneous,
         target_lang: newTargetLang,
       },
     };
@@ -426,7 +426,7 @@ export default function Home() {
     setAudioQueue,
     setIsRecording,
     checkAndBufferAudio,
-    sourceLang,
+    isSimultaneous,
     targetLang
   );
 
