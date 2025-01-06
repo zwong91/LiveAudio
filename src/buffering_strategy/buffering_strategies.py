@@ -181,7 +181,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             if transcription["text"] != "":
                 # Step 2: Generate response
                 tts_text, updated_history = await llm_pipeline.generate_response(
-                    self.client.history, transcription["text"],  self.client.config["is_simultaneous"], True
+                    self.client.history, transcription["text"],  self.client.config["is_simultaneous"], self.client.config["target_lang"], True
                 )
                 # Step 3: Stream audio chunks
                 try:

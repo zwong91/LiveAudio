@@ -65,7 +65,7 @@ class OllamaLLM(LLMInterface):
         relevant_context = [self.vault_content[idx].strip() for idx in top_indices]
         return relevant_context
 
-    async def generate(self, history: List[Dict[str, str]], vault_input: str, simultaneous: bool, max_length: int = 128) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate(self, history: List[Dict[str, str]], vault_input: str, simultaneous: bool, lang_tag: str, max_length: int = 128) -> Tuple[str, List[Dict[str, str]]]:
         # with open("vault.txt", "a", encoding="utf-8") as vault_file:
         #     print("Wrote to info.")
         #     vault_file.write(vault_input + "\n")
@@ -104,13 +104,14 @@ class OllamaLLM(LLMInterface):
                 yield chunk["message"]["content"]
 
 
-    async def generate_response(self, history: List[Dict[str, str]], query: str, simultaneous: bool, stream:  bool, max_tokens: int = 128) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate_response(self, history: List[Dict[str, str]], query: str, simultaneous: bool, lang_tag: str, stream:  bool, max_tokens: int = 128) -> Tuple[str, List[Dict[str, str]]]:
         start_time = time.time()
 
         if history is None:
             history = []
         history.append({"role": "user", "content": query})
-        system_prompt = translation_prompt if simultaneous else chat_prompt
+        template = translation_prompt if simultaneous else chat_prompt
+        system_prompt = template.replace("{{target_lang}}", lang_tag)
         messages = [
             {"role": "system", "content": system_prompt}
         ]
