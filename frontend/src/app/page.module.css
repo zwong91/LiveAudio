@@ -99,7 +99,7 @@
   padding: 10px 15px; /* 调整内边距 */
   background: rgba(0, 0, 0, 0.5); /* 半透明黑色背景 */
   border-radius: 8px; /* 更加圆滑的边角 */
-  color: white; /* 白色字体 */
+  color: rgb(103, 32, 216); /* 字体颜色白色 */
   font-size: 14px; /* 字体大小 */
   z-index: 1000; /* 保证层级最高 */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* 添加柔和阴影 */
