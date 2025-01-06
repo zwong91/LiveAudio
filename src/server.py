@@ -294,18 +294,6 @@ class Server:
 
         @pc.on("datachannel")
         def on_datachannel(channel):
-            print(f"DataChannel created: {channel.label}")
-            # 检查 DataChannel 状态，是否处于 open 状态
-            if channel.readyState == "open":
-                print("DataChannel is already open")
-                channel.send(json.dumps({"type": "pong"}))
-            else:
-                print("DataChannel is not open yet")
-                @channel.on("open")
-                def on_open():
-                    print("DataChannel opened")
-                    channel.send(json.dumps({"type": "pong"}))
-
             @channel.on("message")
             def on_message(message):
                 print(f"Received message on channel: {channel.label}")
@@ -316,18 +304,20 @@ class Server:
                         parsed_message = json.loads(message)
                         message_type = parsed_message.get("type")
                         if message_type == "config":
-                            # 处理配置消息
                             source_lang = parsed_message["data"].get("source_lang")
                             target_lang = parsed_message["data"].get("target_lang")
                             print(f"Configuration received - Source: {source_lang}, Target: {target_lang}")
                             client.update_config(parsed_message["data"])
                             logging.debug(f"Updated config: {client.config}")
                         elif message_type == "ping":
-                            # 处理 ping 消息
                             logging.debug("Ping received. Sending pong...")
                             channel.send(json.dumps({"type": "pong"}))
+                        elif message.type == "start":
+                            nonlocal top_track
+                            logger.debug(f'RTC DC: Recording started with track {top_track}')
+                        elif message.type == "stop":
+                            logger.debug('RTC DC: Recording stopped')
                         else:
-                            # 未知消息类型
                             logging.warning(f"Unknown message type: {message_type}")
                     except json.JSONDecodeError:
                         logging.error("Failed to decode JSON from string message")
