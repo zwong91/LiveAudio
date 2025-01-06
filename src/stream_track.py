@@ -63,6 +63,7 @@ class ClientStreamTrack(MediaStreamTrack):
         except Exception as e:
             logging.error(f"Processing error for {self.client.client_id}: {e}")
 
+        print(f"Updated config: {self.client.config}")
         return frame
     
 
