@@ -379,7 +379,7 @@ export default function Home() {
   const [audioList, setAudioList] = useState<string[]>([]);
 
   const [isSimultaneous, setIsSimultaneous] = useState(false);
-  const [targetLang, setTargetLang] = useState('en');
+  const [targetLang, setTargetLang] = useState('英语');
   const handleLanguageChange = (newIsSimultaneous: boolean, newTargetLang: string) => {
     setIsSimultaneous(newIsSimultaneous);
     setTargetLang(newTargetLang);
