@@ -130,7 +130,7 @@ class Server:
         asr_pipeline,
         llm_pipeline,
         tts_pipeline,
-        host="localhost",
+        host="0.0.0.0",
         port=8765,
         sampling_rate=16000,
         samples_width=2,
@@ -289,7 +289,7 @@ class Server:
             @track.on("ended")
             async def on_ended():
                 print(f"Track {track.kind} ended")
-                track.stop()
+                #track.stop()
                 #await recorder.stop()
 
         @s2s_response.on("open")
