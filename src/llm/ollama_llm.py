@@ -14,13 +14,10 @@ import asyncio
 
 #from sentence_transformers import SentenceTransformer, util
 
-from openai import OpenAI
-
-client = OpenAI(
-    base_url='http://localhost:11434/v1/',
-    # required but ignored
-    api_key='ollama',
-)
+from openai import AsyncOpenAI
+aclient = AsyncOpenAI()
+aclient.api_key = 'ollama'
+aclient.base_url = "http://localhost:11434/v1/"
 
 from ollama import AsyncClient
 
@@ -38,7 +35,7 @@ class OllamaLLM(LLMInterface):
         # self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
         # # Load initial content from vault.txt
         # self.vault_content = []
-        # vault_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "../rt-audio")), "vault.txt")
+        # vault_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vault.txt")
         # if os.path.exists(vault_path):
         #     with open(vault_path, "r", encoding="utf-8") as vault_file:
         #         self.vault_content = vault_file.readlines()
@@ -94,7 +91,6 @@ class OllamaLLM(LLMInterface):
             stream=True,
             options={
                 'num_predict': 128,
-                'num_predict': 128,
                 'temperature': 1,
             },
         )
@@ -117,7 +113,7 @@ class OllamaLLM(LLMInterface):
             {"role": "system", "content": system_prompt}
         ]
         messages.extend(history)
-        response = client.chat.completions.create(
+        response = await aclient.chat.completions.create(
             model=self.model,
             messages=messages,
             max_tokens=128,

@@ -45,7 +45,7 @@ class OpenAILLM(LLMInterface):
         # self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
         # # Load initial content from vault.txt
         # self.vault_content = []
-        # vault_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "../rt-audio")), "vault.txt")
+        # vault_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vault.txt")
         # if os.path.exists(vault_path):
         #     with open(vault_path, "r", encoding="utf-8") as vault_file:
         #         self.vault_content = vault_file.readlines()
