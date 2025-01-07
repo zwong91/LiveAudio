@@ -19,6 +19,13 @@ aclient = AsyncOpenAI()
 aclient.api_key = 'ollama'
 aclient.base_url = "http://localhost:11434/v1/"
 
+from openai import OpenAI
+client = OpenAI(
+    base_url='http://localhost:11434/v1/',
+    # required but ignored
+    api_key='ollama',
+)
+
 from ollama import AsyncClient
 
 from .prompt import translation_prompt, chat_prompt
@@ -114,7 +121,8 @@ class OllamaLLM(LLMInterface):
             {"role": "system", "content": system_prompt}
         ]
         messages.extend(history)
-        response = await aclient.chat.completions.create(
+        #response = await aclient.chat.completions.create(
+        response = client.chat.completions.create(
             model=self.model,
             messages=messages,
             max_tokens=128,
