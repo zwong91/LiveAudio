@@ -8,12 +8,17 @@ import unittest
 from pydub import AudioSegment
 
 from src.client import Client
-from src.vad.pyannote_vad import PyannoteVAD
+from src.vad.vad_factory import VADFactory
 
 
 class TestPyannoteVAD(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Use an environment variable to get the VAD model type
+        cls.vad_type = os.getenv("VAD_TYPE", "pyannote")
+
     def setUp(self):
-        self.vad = PyannoteVAD()
+        self.vad = VADFactory.create_vad_pipeline(self.vad_type)
         self.annotations_path = os.path.join(
             os.path.dirname(__file__), "../audio_files/annotations.json"
         )
