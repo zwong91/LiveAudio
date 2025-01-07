@@ -109,6 +109,7 @@ class OllamaLLM(LLMInterface):
         history.append({"role": "user", "content": query})
         template = translation_prompt if simultaneous else chat_prompt
         system_prompt = template.replace("{{target_lang}}", target_lang or "")
+        print(f"query: {query}, sys-prompt: {system_prompt}")
         messages = [
             {"role": "system", "content": system_prompt}
         ]
