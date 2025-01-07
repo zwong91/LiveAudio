@@ -1,6 +1,0 @@
-[submodule "sensevoice"]
-	path = sensevoice
-	url = https://github.com/FunAudioLLM/SenseVoice.git
-[submodule "cosyvoice"]
-	path = cosyvoice
-	url = https://github.com/FunAudioLLM/CosyVoice.git

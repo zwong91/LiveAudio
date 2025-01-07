@@ -135,5 +135,3 @@ Resources
 * [Ollama](https://ollama.com/) - A local LLM inference engine for running Llama 3, Mistral, Gemma, and other LLMs
 * [aiortc](https://aiortc.readthedocs.io/en/latest/) - A Python Library for WebRTC and ORTC communication
 * [SenseVoice](https://github.com/FunAudioLLM/SenseVoice) and [SenseVoice space](https://www.modelscope.cn/studios/iic/SenseVoice).
-
-

@@ -1,5 +1,7 @@
 # Let's Encrypt 证书自动化更新配置
 
+**<https://github.com/acmesh-official/acme.sh>**
+
 使用 `--manual` 模式生成的证书需要手动更新，可以通过 `--manual-auth-hook` 和 DNS 提供商的 API，实现自动化更新。
 
 ---
