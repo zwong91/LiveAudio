@@ -11,6 +11,7 @@ from uuid import uuid4
 from typing import Tuple
 from .tts_interface import TTSInterface
 
+from pydub import AudioSegment
 import numpy as np
 
 import langid
@@ -33,6 +34,7 @@ class XTTS_v2(TTSInterface):
         device = "cuda"
         # 使用 os.path 确保路径正确拼接
         target_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "liuyifei.wav")
+        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
         # print("Loading model...")
         # config = XttsConfig()
         # config.load_json("XTTS-v2/config.json")
@@ -229,7 +231,13 @@ class XTTS_v2(TTSInterface):
             speed=1.0,
             enable_text_splitting=True,
         )
-        
+
+        audio = AudioSegment.from_wav(self.talking_wav)
+        # 重采样为 16kHz，单声道，16-bit
+        audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+        pcm_data_16K = audio_resampled.raw_data
+        yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+
         for i, chunk in enumerate(chunks):
             if i == 0:
                 print(f"Time to first chunck: {time.time() - t0} s")

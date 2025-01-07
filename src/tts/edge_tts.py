@@ -42,6 +42,7 @@ language_list = [
 class EdgeTTS(TTSInterface):
     def __init__(self, voice: str = 'zh-CN-XiaoxiaoNeural'):
         self.voice = voice
+        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
          
     async def get_voices(self, **kwargs):
         from edge_tts import VoicesManager
@@ -131,6 +132,12 @@ class EdgeTTS(TTSInterface):
 
         self.submaker = edge_tts.SubMaker()
         
+        audio = AudioSegment.from_wav(self.talking_wav)
+        # 重采样为 16kHz，单声道，16-bit
+        audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+        pcm_data_16K = audio_resampled.raw_data
+        yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+
         with io.BytesIO() as f:
             async for chunk in communicate.stream():
                 if chunk["type"] == "audio":
@@ -138,10 +145,15 @@ class EdgeTTS(TTSInterface):
                 elif chunk["type"] == "WordBoundary":
                     self.submaker.create_sub((chunk["offset"], chunk["duration"]), chunk["text"])
 
+            # 将 BytesIO 中的数据重置指针，并加载为 AudioSegment
             f.seek(0)
             audio: AudioSegment = AudioSegment.from_mp3(f)
+
+            # 处理音频，重采样到16kHz，单声道，16bit
             audio_resampled = (
-                audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            )  # 16bit sample_width 16/8=2  16k-mono-mp3
+                audio.set_frame_rate(16000)
+                    .set_channels(1)
+                    .set_sample_width(2)  # 16bit sample_width 16/8=2  16k-mono-mp3
+            )
             pcm_data_16K = audio_resampled.raw_data
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
