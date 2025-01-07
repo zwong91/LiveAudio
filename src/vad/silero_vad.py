@@ -34,14 +34,15 @@ class SileroVAD(VADInterface):
         vad_results = self.get_speech_timestamps(
             audio_tensor,
             self.model,
+            return_seconds=True,
             sampling_rate=self.sampling_rate,
             threshold=0.5,  # 可以根据需要调整阈值
-            min_speech_duration_ms=250,
+            min_speech_duration_ms=150,
             max_speech_duration_s=float('inf'),
-            min_silence_duration_ms=500,
+            min_silence_duration_ms=300,
             speech_pad_ms=30
         )
   
         # 返回语音时间段（以秒为单位）
-        vad_segments = [{"start": segment["start"] / 1000, "end": segment["end"] / 1000, "confidence": 1.0} for segment in vad_results]
+        vad_segments = [{"start": segment["start"], "end": segment["end"], "confidence": 1.0} for segment in vad_results]
         return vad_segments
