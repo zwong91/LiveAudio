@@ -502,12 +502,11 @@ export default function Home() {
                   : styles.listeningAnimation
               }
             >
-              {connectionStatus === "disconnected"
-                ? "AI 离线"
-                : isPlayingAudio
-                ? "AI正在说话"
-                : "AI正在听"}
-
+            {connectionStatus === "disconnected"
+              ? "AI Offline"
+              : isPlayingAudio
+              ? "AI is Speaking"
+              : "AI is Listening"}
             </span>
           </div>
         </div>
@@ -566,7 +565,7 @@ export default function Home() {
             }
           }}
         >
-          {isCallEnded ? "重新通话" : "结束通话"}
+          {isCallEnded ? "Call Again" : "End Call"}
         </button>
       </div>
     </div>
