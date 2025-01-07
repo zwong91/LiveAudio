@@ -5,6 +5,7 @@ import ssl
 import uuid
 import base64
 import uvicorn
+import signal
 import os
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, Form, Request, HTTPException
@@ -179,7 +180,7 @@ class Server:
         self.templates = Jinja2Templates(directory="templates")
 
         self.app.add_event_handler("startup", self.startup)
-        self.app.add_event_handler("shutdown", self.shutdown)
+        #self.app.add_event_handler("shutdown", self.shutdown)
 
         self.app.get("/asset/{filename}")(self.get_asset_file)
         self.app.post("/generate_accent/{vc_name}")(self.upload_audio_files)
@@ -199,14 +200,6 @@ class Server:
         logging.debug(f"Starting server at {self.host}:{self.port}")
         # 启动任务处理的后台任务
         asyncio.create_task(self.tts_manager.start_processing())
-
-    async def shutdown(self):
-        logging.debug(f"shutdown server ...")
-        # Shutdown tasks: Close WebRTC connections
-        coros = [pc.close() for pc in self.pcs]
-        await asyncio.gather(*coros)
-        self.pcs.clear()
-
 
     async def offer_endpoint(self, request: Request):
 
@@ -677,7 +670,26 @@ class Server:
             backlog=2048
         )
         server = uvicorn.Server(uvicorn_config)
+        
+        # 捕获外部中断信号（SIGINT、SIGTERM）进行优雅关闭
+        loop = asyncio.get_event_loop()
+        loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(self.shutdown(server)))
+        loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(self.shutdown(server)))
+
         await server.serve()
+
+    async def shutdown(self, server):
+        """Gracefully shutdown the server."""
+        print("Shutting down server gracefully...")
+        await server.shutdown()
+        
+        # Shutdown rtc tasks: Close WebRTC connections
+        if self.pcs:
+            coros = [pc.close() for pc in self.pcs]
+            await asyncio.gather(*coros)
+            self.pcs.clear()
+
+        print("WebRTC connections closed.")
 
     async def run_tasks(self):
         """Run additional asynchronous tasks."""
