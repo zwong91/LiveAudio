@@ -140,22 +140,21 @@ class EdgeTTS(TTSInterface):
             pcm_data_16K = audio_resampled.raw_data
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
-        with io.BytesIO() as f:
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    f.write(chunk["data"])
-                elif chunk["type"] == "WordBoundary":
-                    self.submaker.create_sub((chunk["offset"], chunk["duration"]), chunk["text"])
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                # 每次接收到音频块时，使用新的 BytesIO 缓冲区
+                with io.BytesIO(chunk["data"]) as audio_buffer:
+                    # 处理音频：将缓冲区中的音频数据加载为 AudioSegment
+                    audio: AudioSegment = AudioSegment.from_mp3(audio_buffer)
 
-            # 将 BytesIO 中的数据重置指针，并加载为 AudioSegment
-            f.seek(0)
-            audio: AudioSegment = AudioSegment.from_mp3(f)
-
-            # 处理音频，重采样到16kHz，单声道，16bit
-            audio_resampled = (
-                audio.set_frame_rate(16000)
-                    .set_channels(1)
-                    .set_sample_width(2)  # 16bit sample_width 16/8=2  16k-mono-mp3
-            )
-            pcm_data_16K = audio_resampled.raw_data
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+                    # 处理音频，重采样到16kHz，单声道，16bit
+                    audio_resampled = (
+                        audio.set_frame_rate(16000)
+                            .set_channels(1)
+                            .set_sample_width(2)  # 16bit sample_width 16/8=2  16k-mono-mp3
+                    )
+                    pcm_data_16K = audio_resampled.raw_data
+                    # 实时传输音频数据
+                    yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+            elif chunk["type"] == "WordBoundary":
+                self.submaker.create_sub((chunk["offset"], chunk["duration"]), chunk["text"])
