@@ -10,10 +10,11 @@ from pydub import AudioSegment
 from sentence_transformers import SentenceTransformer, util
 
 from src.asr.asr_factory import ASRFactory
-from src.server import Server
 from src.vad.vad_factory import VADFactory
+from src.llm.llm_factory import LLMFactory
+from src.tts.tts_factory import TTSFactory
 
-
+from src.server import Server
 class TestServer(unittest.TestCase):
     """
     Test suite for testing the Server class responsible for real-time audio
@@ -42,6 +43,8 @@ class TestServer(unittest.TestCase):
         # Use an environment variable to get the ASR model type
         cls.asr_type = os.getenv("ASR_TYPE", "faster_whisper")
         cls.vad_type = os.getenv("VAD_TYPE", "pyannote")
+        cls.llm_type = os.getenv("LLM_TYPE", "openai")
+        cls.tts_type = os.getenv("TTS_TYPE", "edge")
 
     def setUp(self):
         """
@@ -53,8 +56,10 @@ class TestServer(unittest.TestCase):
         """
         self.vad_pipeline = VADFactory.create_vad_pipeline(self.vad_type)
         self.asr_pipeline = ASRFactory.create_asr_pipeline(self.asr_type)
+        self.llm_pipeline = LLMFactory.create_llm_pipeline(self.llm_type)
+        self.tts_pipeline = TTSFactory.create_tts_pipeline(self.tts_type)
         self.server = Server(
-            self.vad_pipeline, self.asr_pipeline, host="127.0.0.1", port=8767
+            self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline, host="127.0.0.1", port=8767
         )
         self.annotations_path = os.path.join(
             os.path.dirname(__file__), "../audio_files/annotations.json"
