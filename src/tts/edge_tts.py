@@ -3,6 +3,7 @@ import time
 from uuid import uuid4
 from typing import Optional, Tuple, AsyncGenerator
 import edge_tts
+import os
 from pydub import AudioSegment
 from .tts_interface import TTSInterface
 
