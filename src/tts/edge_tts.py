@@ -44,7 +44,7 @@ class EdgeTTS(TTSInterface):
     def __init__(self, voice: str = 'zh-CN-XiaoxiaoNeural'):
         self.voice = voice
         self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
-         
+
     async def get_voices(self, **kwargs):
         from edge_tts import VoicesManager
 
@@ -113,7 +113,7 @@ class EdgeTTS(TTSInterface):
             # 如果存在，取第一个语音
             print(f"Target wav files:{voices[0]}, Detected language: {language}, tts text: {text}")
             voice = voices[0]
-    
+
         rate: int = 15
         pitch: int = 20
         volume: int = 110
@@ -132,7 +132,7 @@ class EdgeTTS(TTSInterface):
         )
 
         self.submaker = edge_tts.SubMaker()
-        
+
         if not simultaneous:
             audio = AudioSegment.from_wav(self.talking_wav)
             # 重采样为 16kHz，单声道，16-bit
@@ -140,22 +140,24 @@ class EdgeTTS(TTSInterface):
             pcm_data_16K = audio_resampled.raw_data
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                # 每次接收到音频块时，使用新的 BytesIO 缓冲区
-                with io.BytesIO(chunk["data"]) as audio_buffer:
-                    # 处理音频：将缓冲区中的音频数据加载为 AudioSegment
-                    audio_buffer.seek(0)
-                    audio: AudioSegment = AudioSegment.from_file(audio_buffer, format="wav")
-
-                    # 处理音频，重采样到16kHz，单声道，16bit
-                    audio_resampled = (
-                        audio.set_frame_rate(16000)
-                            .set_channels(1)
-                            .set_sample_width(2)  # 16bit sample_width 16/8=2  16k-mono-mp3
-                    )
-                    pcm_data_16K = audio_resampled.raw_data
-                    # 实时传输音频数据
-                    yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
-            elif chunk["type"] == "WordBoundary":
-                self.submaker.create_sub((chunk["offset"], chunk["duration"]), chunk["text"])
+        with io.BytesIO() as f:
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    f.write(chunk["data"])
+                elif chunk["type"] == "WordBoundary":
+                    self.submaker.create_sub((chunk["offset"], chunk["duration"]), chunk["text"])
+            # 将 BytesIO 中的数据重置指针，并加载为 AudioSegment
+            f.seek(0)
+            audio: AudioSegment = AudioSegment.from_mp3(f)
+            # 处理音频，重采样到16kHz，单声道，16bit
+            audio_resampled = (
+                audio.set_frame_rate(16000)
+                    .set_channels(1)
+                    .set_sample_width(2)  # 16bit sample_width 16/8=2  16k-mono-mp3
+            )
+            pcm_data_16K = audio_resampled.raw_data
+            # 将 PCM 数据分块传输
+            chunk_size = 1024  # 分块的大小，可以根据需要调整
+            for i in range(0, len(pcm_data_16K), chunk_size):
+                pcm_chunk = pcm_data_16K[i:i+chunk_size]
+                yield wave_header_chunk(pcm_chunk, 1, 2, 16000)
