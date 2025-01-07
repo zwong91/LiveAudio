@@ -75,7 +75,7 @@ class LlamaLLM(LLMInterface):
     ):
         query += f"\n\nalways use {target_lang} answer"
         template = translation_prompt if simultaneous else chat_prompt
-        system_prompt = template.replace("{{target_lang}}", target_lang)
+        system_prompt = template.replace("{{target_lang}}", target_lang or "")
         messages = [{"role": "system", "content": system_prompt}]
         messages.append({"role": "user", "content": query})
         out = self.model.create_chat_completion(

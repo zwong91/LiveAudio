@@ -86,7 +86,7 @@ class OpenAILLM(LLMInterface):
         #     query = "\n".join(relevant_context) + "\n\n" + vault_input
 
         template = translation_prompt if simultaneous else chat_prompt
-        system_prompt = template.replace("{{target_lang}}", target_lang)
+        system_prompt = template.replace("{{target_lang}}", target_lang or "")
         print(f"query: {query}, sys-prompt: {system_prompt}")
         if history is None:
             history = []
