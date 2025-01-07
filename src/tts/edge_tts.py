@@ -145,7 +145,8 @@ class EdgeTTS(TTSInterface):
                 # 每次接收到音频块时，使用新的 BytesIO 缓冲区
                 with io.BytesIO(chunk["data"]) as audio_buffer:
                     # 处理音频：将缓冲区中的音频数据加载为 AudioSegment
-                    audio: AudioSegment = AudioSegment.from_mp3(audio_buffer)
+                    audio_buffer.seek(0)
+                    audio: AudioSegment = AudioSegment.from_file(audio_buffer, format="wav")
 
                     # 处理音频，重采样到16kHz，单声道，16bit
                     audio_resampled = (
