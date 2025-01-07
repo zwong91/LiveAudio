@@ -156,8 +156,5 @@ class EdgeTTS(TTSInterface):
                     .set_sample_width(2)  # 16bit sample_width 16/8=2  16k-mono-mp3
             )
             pcm_data_16K = audio_resampled.raw_data
-            # 将 PCM 数据分块传输
-            chunk_size = 10240  # 分块的大小，可以根据需要调整
-            for i in range(0, len(pcm_data_16K), chunk_size):
-                pcm_chunk = pcm_data_16K[i:i+chunk_size]
-                yield wave_header_chunk(pcm_chunk, 1, 2, 16000)
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+                
