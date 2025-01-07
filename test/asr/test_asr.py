@@ -21,7 +21,7 @@ class TestWhisperASR(unittest.TestCase):
         self.annotations_path = os.path.join(
             os.path.dirname(__file__), "../audio_files/annotations.json"
         )
-        self.client = Client("test_client", 16000, 2)  # Example client
+        self.client = Client(False, "test_client", 16000, 2)  # Example client
         self.similarity_model = SentenceTransformer(
             "sentence-transformers/all-MiniLM-L6-v2"
         )

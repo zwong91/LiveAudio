@@ -1,5 +1,5 @@
 {
-    "eng_speech.wav": {
+    "speech.wav": {
         "segments": [
             {"start": 0.0, "end": 3.0, "transcription": "Good Morning everyone", "is_speech": true},
             {"start": 3.2, "end": 8.5, "transcription": "today I want to talk about the future of Artificial Intelligence, or AI", "is_speech": true},
@@ -8,7 +8,7 @@
             {"start": 20.2, "end": 31.5, "transcription": "where self-driving cars navigate busy city streets safely and where intelligent robots performs tasks too dangerous for humans", "is_speech": true}
         ]
     },
-    "eng_voice_commands.wav": {
+    "voice_commands.wav": {
         "segments": [
             {"start": 0.0, "end": 3.0, "transcription": "Open browser", "is_speech": true},
             {"start": 10.0, "end": 13.0, "transcription": "Close window", "is_speech": true},
