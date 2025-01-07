@@ -9,7 +9,7 @@ class TTSInterface:
             "This method should be implemented by subclasses."
         )
 
-    async def text_to_speech_stream(self, text: str, vc_uid: str, target_lang: Optional[str]) -> AsyncGenerator[bytes, None]:
+    async def text_to_speech_stream(self, text: str, vc_uid: str, simultaneous: bool) -> AsyncGenerator[bytes, None]:
         """
         将文本转换为语音，并返回音频流
         """

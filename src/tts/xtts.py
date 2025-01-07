@@ -178,7 +178,7 @@ class XTTS_v2(TTSInterface):
         return output_path
 
 
-    async def text_to_speech_stream(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> AsyncGenerator[bytes, None]:
+    async def text_to_speech_stream(self, text: str, vc_uid: str, simultaneous: bool) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
         language = langid.classify(text)[0].strip()
         if language == 'zh':
@@ -231,12 +231,12 @@ class XTTS_v2(TTSInterface):
             speed=1.0,
             enable_text_splitting=True,
         )
-
-        audio = AudioSegment.from_wav(self.talking_wav)
-        # 重采样为 16kHz，单声道，16-bit
-        audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-        pcm_data_16K = audio_resampled.raw_data
-        yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+        if not simultaneous:
+            audio = AudioSegment.from_wav(self.talking_wav)
+            # 重采样为 16kHz，单声道，16-bit
+            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+            pcm_data_16K = audio_resampled.raw_data
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
         for i, chunk in enumerate(chunks):
             if i == 0:

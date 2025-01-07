@@ -185,7 +185,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 )
                 # Step 3: Stream audio chunks
                 try:
-                    async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid, self.client.config["target_lang"]):
+                    async for chunk in tts_pipeline.text_to_speech_stream(tts_text, self.client.vc_uid, self.client.config["is_simultaneous"]):
                         if not self.interrupt_flag:
                             await self._send(channel, use_webrtc, chunk)
                         else:
