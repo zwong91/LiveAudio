@@ -497,7 +497,6 @@ class Server:
                     request_data = parsed_message.get('request', {})
                     chunk = request_data.get('audio')
                     audio_data = base64.b64decode(chunk)
-                    audio_data = base64.b64decode(chunk)
                     latency = request_data.get('latency')
                     format = request_data.get('format')
                     prosody = request_data.get('prosody', {})
