@@ -65,7 +65,7 @@ class OllamaLLM(LLMInterface):
         relevant_context = [self.vault_content[idx].strip() for idx in top_indices]
         return relevant_context
 
-    async def generate(self, history: List[Dict[str, str]], vault_input: str, simultaneous: bool, lang_tag: str, max_length: int = 128) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate(self, history: List[Dict[str, str]], vault_input: str, simultaneous: bool, target_lang: str, max_length: int = 128) -> Tuple[str, List[Dict[str, str]]]:
         # with open("vault.txt", "a", encoding="utf-8") as vault_file:
         #     print("Wrote to info.")
         #     vault_file.write(vault_input + "\n")
@@ -74,7 +74,7 @@ class OllamaLLM(LLMInterface):
         # print(f"Length of vault_content: {len(vault_content)}")
 
         # relevant_context = self.get_relevant_context(vault_input, self.vault_embeddings)
-        query = vault_input + "\n\n" + f"use {lang_tag} answer"
+        query = vault_input + "\n\n" + f"always use {target_lang} answer"
         # if relevant_context:
         #     query = "\n".join(relevant_context) + "\n\n" + vault_input
 
@@ -82,7 +82,7 @@ class OllamaLLM(LLMInterface):
             history = []
         history.append({"role": "user", "content": query})
         template = translation_prompt if simultaneous else chat_prompt
-        system_prompt = template.replace("{{target_lang}}", lang_tag)
+        system_prompt = template.replace("{{target_lang}}", target_lang)
         print(f"query: {query}, sys-prompt: {system_prompt}")
         messages = [
             {"role": "system", "content": system_prompt}
@@ -104,15 +104,15 @@ class OllamaLLM(LLMInterface):
                 yield chunk["message"]["content"]
 
 
-    async def generate_response(self, history: List[Dict[str, str]], query: str, simultaneous: bool, lang_tag: str, stream:  bool, max_tokens: int = 128) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate_response(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str, stream:  bool, max_tokens: int = 128) -> Tuple[str, List[Dict[str, str]]]:
         start_time = time.time()
 
         if history is None:
             history = []
-        query += f"\n\nalways use {lang_tag} answer"
+        query += f"\n\nalways use {target_lang} answer"
         history.append({"role": "user", "content": query})
         template = translation_prompt if simultaneous else chat_prompt
-        system_prompt = template.replace("{{target_lang}}", lang_tag)
+        system_prompt = template.replace("{{target_lang}}", target_lang)
         messages = [
             {"role": "system", "content": system_prompt}
         ]
@@ -128,7 +128,7 @@ class OllamaLLM(LLMInterface):
         response_content = response.choices[0].message.content
 
         history.append({"role": "assistant", "content": response_content})
-        history = history[-10:]
+        history = history[-20:]
 
         end_time = time.time()
         print(f"ollama llm time: {end_time - start_time:.4f} seconds")

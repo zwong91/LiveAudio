@@ -69,13 +69,13 @@ class LlamaLLM(LLMInterface):
         self,
         query,
         simultaneous,
-        lang_tag: str,
+        target_lang: str,
         stream,
         max_length=100,
     ):
-        query += f"\n\nalways use {lang_tag} answer"
+        query += f"\n\nalways use {target_lang} answer"
         template = translation_prompt if simultaneous else chat_prompt
-        system_prompt = template.replace("{{target_lang}}", lang_tag)
+        system_prompt = template.replace("{{target_lang}}", target_lang)
         messages = [{"role": "system", "content": system_prompt}]
         messages.append({"role": "user", "content": query})
         out = self.model.create_chat_completion(
@@ -90,10 +90,10 @@ class LlamaLLM(LLMInterface):
             if o["choices"][0]["finish_reason"] is not None:
                 break
 
-    async def generate_response(self, history: List[Dict[str, str]], query: str, simultaneous: bool, lang_tag: str, stream:  bool, max_tokens: int = 64) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate_response(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str, stream:  bool, max_tokens: int = 64) -> Tuple[str, List[Dict[str, str]]]:
         start_time = time.time()
 
-        out = self.generate(history, query, simultaneous, lang_tag, stream)
+        out = self.generate(history, query, simultaneous, target_lang, stream)
         response = ""
         async for text in out:
             # which stores the transcription if interruption occurred. stop generating
