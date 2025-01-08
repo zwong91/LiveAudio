@@ -25,6 +25,7 @@ voices_list = [
 class OpenAITTS(TTSInterface):
     def __init__(self, voice: str = 'alloy', model: str = "tts-1", speed: float | None = None):
         self.voice = voice
+        self.speed = speed
         self.model = model
         self.client = openai.AsyncOpenAI(api_key=OPENAI_API_KEY, base_url=BASE_URL)
         self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
