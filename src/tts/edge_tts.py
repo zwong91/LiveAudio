@@ -142,49 +142,65 @@ class EdgeTTS(TTSInterface):
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
         #2. stream synthesize audio
-        # FIXME: ms-edge 浏览器也是有时候就是没有语音数据返回, ask microsoft. 还有就是mp3 chunk边界间隙依赖上一个chunk, 最终的方式应该是直接yield chunk["data"]， 前端用mpv实时流播放器
-        CHUNK_SIZE = 30 * 1024  # 假设每个块大约1024字节（根据实际格式调整）
-        total_data = b""  # 用于存储接收到的音频数据
-        async for chunk in communicate.stream_sync():
-            if chunk["type"] == "audio":
-                total_data += chunk["data"]
-                
-                # 如果接收到的数据达到一个完整的块大小
-                if len(total_data) >= CHUNK_SIZE:
-                    print(f"First chunk Time elapsed: {time.time() - start_time:.2f} seconds")
-                    
-                    # 使用 BytesIO 来读取音频数据
-                    with io.BytesIO(total_data[:CHUNK_SIZE]) as audio_io:
-                        audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
-                        # 处理音频，重采样到16kHz，单声道，16bit
-                        audio_resampled = (
-                            audio.set_frame_rate(16000)
-                                .set_channels(1)
-                                .set_sample_width(2)  # 16bit sample_width (16/8=2)
-                        )
-                        pcm_data_16K = audio_resampled.raw_data
-                        # 使用 wave_header_chunk 发送处理后的数据
-                        yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
-                    
-                    # 移除已经处理的音频数据
-                    total_data = total_data[CHUNK_SIZE:]
+        with io.BytesIO() as f:
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    f.write(chunk["data"])
+            # 将 BytesIO 中的数据重置指针，并加载为 AudioSegment
+            f.seek(0)
+            audio: AudioSegment = AudioSegment.from_mp3(f)
+            # 处理音频，重采样到16kHz，单声道，16bit
+            audio_resampled = (
+                audio.set_frame_rate(16000)
+                    .set_channels(1)
+                    .set_sample_width(2)  # 16bit sample_width 16/8=2  16k-mono-mp3
+            )
+            pcm_data_16K = audio_resampled.raw_data
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
-        # 处理剩余的数据
-        if total_data:
-            print(f"Time elapsed: {time.time() - start_time:.2f} seconds")
-            # 使用 BytesIO 来读取剩余的音频数据
-            with io.BytesIO(total_data) as audio_io:
-                audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
-                # 处理音频，重采样到16kHz，单声道，16bit
-                audio_resampled = (
-                    audio.set_frame_rate(16000)
-                        .set_channels(1)
-                        .set_sample_width(2)  # 16bit sample_width (16/8=2)
-                )
-                pcm_data_16K = audio_resampled.raw_data
+        # FIXME: ms-edge 浏览器也是有时候就是没有语音数据返回, ask microsoft. 还有就是mp3 chunk边界间隙依赖上一个chunk, 最终的方式应该是直接yield chunk["data"]， 前端用mpv实时流播放器
+        # CHUNK_SIZE = 10 * 1024  # 假设每个块大约1024字节（根据实际格式调整）
+        # total_data = b""  # 用于存储接收到的音频数据
+        # for chunk in communicate.stream_sync():
+        #     if chunk["type"] == "audio":
+        #         total_data += chunk["data"]
                 
-                # 使用 wave_header_chunk 发送处理后的数据
-                yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+        #         # 如果接收到的数据达到一个完整的块大小
+        #         if len(total_data) >= CHUNK_SIZE:
+        #             print(f"First chunk Time elapsed: {time.time() - start_time:.2f} seconds")
+                    
+        #             # 使用 BytesIO 来读取音频数据
+        #             with io.BytesIO(total_data[:CHUNK_SIZE]) as audio_io:
+        #                 audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
+        #                 # 处理音频，重采样到16kHz，单声道，16bit
+        #                 audio_resampled = (
+        #                     audio.set_frame_rate(16000)
+        #                         .set_channels(1)
+        #                         .set_sample_width(2)  # 16bit sample_width (16/8=2)
+        #                 )
+        #                 pcm_data_16K = audio_resampled.raw_data
+        #                 # 使用 wave_header_chunk 发送处理后的数据
+        #                 yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+                    
+        #             # 移除已经处理的音频数据, 并且向前overlapped
+        #             total_data = total_data[CHUNK_SIZE:]
+
+        # # 处理剩余的数据
+        # if total_data:
+        #     print(f"Time elapsed: {time.time() - start_time:.2f} seconds")
+        #     # 使用 BytesIO 来读取剩余的音频数据
+        #     with io.BytesIO(total_data) as audio_io:
+        #         audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
+        #         # 处理音频，重采样到16kHz，单声道，16bit
+        #         audio_resampled = (
+        #             audio.set_frame_rate(16000)
+        #                 .set_channels(1)
+        #                 .set_sample_width(2)  # 16bit sample_width (16/8=2)
+        #         )
+        #         pcm_data_16K = audio_resampled.raw_data
+                
+        #         # 使用 wave_header_chunk 发送处理后的数据
+        #         yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
      
         #3. send silent audio           
         if not simultaneous:

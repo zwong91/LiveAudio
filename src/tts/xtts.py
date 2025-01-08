@@ -24,7 +24,7 @@ from TTS.api import TTS
 from TTS.tts.configs.xtts_config import XttsConfig    
 from TTS.tts.models.xtts import Xtts
 
-from TTS.utils.generic_utils import get_user_data_dir
+from trainer.io import get_user_data_dir
 from TTS.utils.manage import ModelManager
 
 from src.utils.audio_utils import postprocess_tts_wave_int16, convertSampleRateTo16khz, wave_header_chunk
