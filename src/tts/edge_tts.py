@@ -51,10 +51,6 @@ class EdgeTTS(TTSInterface):
         voice_mg: VoicesManager = await VoicesManager.create()
         return voice_mg.find(**kwargs)
 
-    async def save_submakers(self, vit_file: str):
-        with open(vit_file, "w", encoding="utf-8") as file:
-            file.write(self.submaker.generate_subs())
-
     """
     CHANNELS = 1
     RATE = 24000  # coqui (24000), azure (16000), openai (22050), system (22050), msedge (24000)
@@ -137,8 +133,6 @@ class EdgeTTS(TTSInterface):
             #proxy="http://127.0.0.1:7890"
         )
 
-        self.submaker = edge_tts.SubMaker()
-
         if not simultaneous:
             audio = AudioSegment.from_wav(self.talking_wav)
             # 重采样为 16kHz，单声道，16-bit
@@ -171,9 +165,6 @@ class EdgeTTS(TTSInterface):
                     
                     # 移除已经处理的音频数据
                     total_data = total_data[CHUNK_SIZE:]
-                    
-            elif chunk["type"] == "WordBoundary":
-                self.submaker.create_sub((chunk["offset"], chunk["duration"]), chunk["text"])
 
         # 处理剩余的数据
         if total_data:
