@@ -69,21 +69,21 @@ class GTTS(TTSInterface):
             # 使用 BytesIO 来读取音频数据
             with io.BytesIO(chunk) as audio_io:
                 audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
-                # 处理音频，重采样到16kHz，单声道，16bit
+                # 处理音频，重采样到22050Hz，单声道，16bit
                 audio_resampled = (
-                    audio.set_frame_rate(16000)
+                    audio.set_frame_rate(22050)
                         .set_channels(1)
                         .set_sample_width(2)  # 16bit sample_width (16/8=2)
                 )
                 pcm_data_16K = audio_resampled.raw_data
                 # 使用 wave_header_chunk 发送处理后的数据
-                yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+                yield wave_header_chunk(pcm_data_16K, 1, 2, 22050)
 
 
-        # #3. send silent audio
-        # if not simultaneous:
-        #     audio = AudioSegment.from_wav(self.silence_wav)
-        #     # 重采样为 16kHz，单声道，16-bit
-        #     audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-        #     pcm_data_16K = audio_resampled.raw_data
-        #     yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+        #3. send silent audio
+        if not simultaneous:
+            audio = AudioSegment.from_wav(self.silence_wav)
+            # 重采样为 16kHz，单声道，16-bit
+            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+            pcm_data_16K = audio_resampled.raw_data
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)

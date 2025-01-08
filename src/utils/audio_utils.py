@@ -190,13 +190,13 @@ def postprocess_tts_wave(chunk: torch.Tensor | list) -> bytes:
     return chunk.tobytes()
 
 
-def convertSampleRateTo16khz(audio_data: bytes | bytearray, original_sample_rate):
-    if original_sample_rate == 16000:
+def convertSampleRateTo24khz(audio_data: bytes | bytearray, original_sample_rate):
+    if original_sample_rate == 24000:
         return audio_data
 
     pcm_data = np.frombuffer(audio_data, dtype=np.int16)
-    pcm_data_16K = resample_audio(pcm_data, original_sample_rate, 16000)
-    audio_data = pcm_data_16K.tobytes()
+    pcm_data_24K = resample_audio(pcm_data, original_sample_rate, 24000)
+    audio_data = pcm_data_24K.tobytes()
 
     return audio_data
 

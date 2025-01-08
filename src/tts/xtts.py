@@ -27,7 +27,7 @@ from TTS.tts.models.xtts import Xtts
 from trainer.io import get_user_data_dir
 from TTS.utils.manage import ModelManager
 
-from src.utils.audio_utils import postprocess_tts_wave_int16, convertSampleRateTo16khz, wave_header_chunk
+from src.utils.audio_utils import postprocess_tts_wave_int16, convertSampleRateTo24khz, wave_header_chunk
 
 class XTTS_v2(TTSInterface):
     def __init__(self, voice: str = 'liuyifei'):
@@ -182,7 +182,7 @@ class XTTS_v2(TTSInterface):
         wav_audio = wav.squeeze().unsqueeze(0).cpu()
 
         # Saving to a file on disk
-        torchaudio.save(output_path, wav_audio, 22050, format="wav")
+        torchaudio.save(output_path, wav_audio, 24000, format="wav")
 
         end_time = time.time()
         print(f"XTTSv2 text_to_speech time: {end_time - start_time:.4f} seconds")
@@ -263,21 +263,21 @@ class XTTS_v2(TTSInterface):
             )  # 4 bytes per sample, 24000 Hz
             generated_seconds += chunk_duration
             print(f"Received chunk {i} of audio length {chunk.shape[-1]}, chunk duration: {chunk_duration}")
-            pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
+            pcm_data_24K = convertSampleRateTo24khz(processed_bytes, self.config.audio.output_sample_rate)
             # such as chunk size 9600, (a.k.a 24K*20ms*2)
-            print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+            print(f"XTTS-v2 audio chunk size: {len(pcm_data_24K)} 字节")
+            yield wave_header_chunk(pcm_data_24K, 1, 2, 24000)
             
         wav = torch.cat(wav_chunks, dim=0)
         #real_time_factor= (time.time() - t0) / generated_seconds
         real_time_factor= (time.time() - t0) / wav.shape[0] * 24000 ## 4 bytes per sample, 24000 Hz
         print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
         
-        # #3. send silent audio
-        # if not simultaneous:
-        #     audio = AudioSegment.from_wav(self.silence_wav)
-        #     # 重采样为 16kHz，单声道，16-bit
-        #     audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-        #     pcm_data_16K = audio_resampled.raw_data
-        #     yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)    
+        #3. send silent audio
+        if not simultaneous:
+            audio = AudioSegment.from_wav(self.silence_wav)
+            # 重采样为 16kHz，单声道，16-bit
+            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+            pcm_data_16K = audio_resampled.raw_data
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)    
 
