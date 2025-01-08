@@ -17,7 +17,7 @@ python-dotenv
 edge-tts
 gTTS==2.5.4
 pyttsx3==2.98
-coqui_tts==0.25.1
+coqui-tts==0.25.1
 pydub
 onnx
 onnxconverter_common
