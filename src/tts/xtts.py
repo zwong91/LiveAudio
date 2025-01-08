@@ -20,12 +20,12 @@ import base64
 
 sys.path.insert(1, "../vc")
 
-from src.xtts.TTS.api import TTS
-from src.xtts.TTS.tts.configs.xtts_config import XttsConfig    
-from src.xtts.TTS.tts.models.xtts import Xtts
+from TTS.api import TTS
+from TTS.tts.configs.xtts_config import XttsConfig    
+from TTS.tts.models.xtts import Xtts
 
-from src.xtts.TTS.utils.generic_utils import get_user_data_dir
-from src.xtts.TTS.utils.manage import ModelManager
+from TTS.utils.generic_utils import get_user_data_dir
+from TTS.utils.manage import ModelManager
 
 from src.utils.audio_utils import postprocess_tts_wave_int16, convertSampleRateTo16khz, wave_header_chunk
 
@@ -35,6 +35,7 @@ class XTTS_v2(TTSInterface):
         # 使用 os.path 确保路径正确拼接
         target_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "liuyifei.wav")
         self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
+        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "silence.wav")
         # print("Loading model...")
         # config = XttsConfig()
         # config.load_json("XTTS-v2/config.json")
@@ -95,12 +96,22 @@ class XTTS_v2(TTSInterface):
         return {
             "format": 1, # PYAUDIO_PAFLOAT32
             "channels": 1,
-            "sample_rate": self.config.audio.output_sample_rate,
+            "sample_rate": self.config.audio.output_sample_rate,  #coqui (24000)
             "sample_width": 4,
             "np_dtype": np.float32,
         }
 
-    async def text_to_speech(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> Tuple[str]: 
+    async def text_to_speech(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> Tuple[str]:
+        """ Coqui TTS engine's inability to handle multiple synthesis requests in parallel
+        voice clone worked: a 22050 Hz mono 16bit WAV file containing a short (~5-30 sec) sample
+        Args:
+            text (str): _description_
+            vc_uid (str): _description_
+            target_lang (Optional[str], optional): _description_. Defaults to None.
+
+        Returns:
+            Tuple[str]: _description_
+        """
         start_time = time.time()
         language = langid.classify(text)[0].strip()
         if language == 'zh':
@@ -212,6 +223,7 @@ class XTTS_v2(TTSInterface):
         print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
 
         t0 = time.time()
+        generated_seconds = 0.0
         wav_chunks = []
         chunks = self.model.inference_stream(
             text,
@@ -231,6 +243,8 @@ class XTTS_v2(TTSInterface):
             speed=1.0,
             enable_text_splitting=True,
         )
+        
+        #1. send talking audio
         if not simultaneous:
             audio = AudioSegment.from_wav(self.talking_wav)
             # 重采样为 16kHz，单声道，16-bit
@@ -238,18 +252,32 @@ class XTTS_v2(TTSInterface):
             pcm_data_16K = audio_resampled.raw_data
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
+        #2. stream synthesize audio
         for i, chunk in enumerate(chunks):
             if i == 0:
                 print(f"Time to first chunck: {time.time() - t0} s")
-            print(f"Received chunk {i} of audio length {chunk.shape[-1]}")
             wav_chunks.append(chunk)
             processed_bytes = postprocess_tts_wave_int16(chunk)
+            chunk_duration = len(processed_bytes) / (
+                4 * 24000
+            )  # 4 bytes per sample, 24000 Hz
+            generated_seconds += chunk_duration
+            print(f"Received chunk {i} of audio length {chunk.shape[-1]}, chunk duration: {chunk_duration}")
             pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
             # such as chunk size 9600, (a.k.a 24K*20ms*2)
             print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
             
         wav = torch.cat(wav_chunks, dim=0)
-        real_time_factor= (time.time() - t0) / wav.shape[0] * 24000
+        #real_time_factor= (time.time() - t0) / generated_seconds
+        real_time_factor= (time.time() - t0) / wav.shape[0] * 24000 ## 4 bytes per sample, 24000 Hz
         print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
+        
+        #3. send silent audio
+        if not simultaneous:
+            audio = AudioSegment.from_wav(self.silence_wav)
+            # 重采样为 16kHz，单声道，16-bit
+            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+            pcm_data_16K = audio_resampled.raw_data
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)    
 

@@ -24,8 +24,7 @@ apt install build-essential \
     libportaudio2 \
     libportaudiocpp0
 
-CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python
-
+CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir --verbose
 
 mkdir /asset
 chmod 777 /asset/

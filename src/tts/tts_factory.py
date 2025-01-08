@@ -1,4 +1,5 @@
 from .edge_tts import EdgeTTS
+from .openai import OpenAITTS
 from .xtts import XTTS_v2
 
 class TTSFactory:
@@ -6,6 +7,8 @@ class TTSFactory:
     def create_tts_pipeline(tts_type, **kwargs):
         if tts_type == "edge":
             return EdgeTTS(**kwargs)
+        elif tts_type == "openai":
+            return OpenAITTS(**kwargs)
         elif tts_type == "xtts-v2":
             return XTTS_v2(**kwargs)
         else:

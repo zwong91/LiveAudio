@@ -44,6 +44,7 @@ class EdgeTTS(TTSInterface):
     def __init__(self, voice: str = 'zh-CN-XiaoxiaoNeural'):
         self.voice = voice
         self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
+        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "silence.wav")
 
     async def get_voices(self, **kwargs):
         from edge_tts import VoicesManager
@@ -53,11 +54,11 @@ class EdgeTTS(TTSInterface):
 
     """
     CHANNELS = 1
-    RATE = 24000  # coqui (24000), azure (16000), openai (22050), system (22050), msedge (24000)
+    RATE = 24000  # azure (16000) system (22050), 
     """
     def get_stream_info(self) -> dict:
         return {
-            "sample_rate": 16000,
+            "sample_rate": 16000, #msedge (24000)
             "sample_width": 2,
             "channels": 1,
         }
@@ -132,7 +133,7 @@ class EdgeTTS(TTSInterface):
             volume=volume_str
             #proxy="http://127.0.0.1:7890"
         )
-
+        #1. send talking audio
         if not simultaneous:
             audio = AudioSegment.from_wav(self.talking_wav)
             # 重采样为 16kHz，单声道，16-bit
@@ -140,9 +141,11 @@ class EdgeTTS(TTSInterface):
             pcm_data_16K = audio_resampled.raw_data
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
+        #2. stream synthesize audio
+        # FIXME: ms-edge 浏览器也是有时候就是没有语音数据返回, ask microsoft. 还有就是mp3 chunk边界间隙依赖上一个chunk, 最终的方式应该是直接yield chunk["data"]， 前端用mpv实时流播放器
         CHUNK_SIZE = 30 * 1024  # 假设每个块大约1024字节（根据实际格式调整）
         total_data = b""  # 用于存储接收到的音频数据
-        async for chunk in communicate.stream():
+        async for chunk in communicate.stream_sync():
             if chunk["type"] == "audio":
                 total_data += chunk["data"]
                 
@@ -182,4 +185,12 @@ class EdgeTTS(TTSInterface):
                 
                 # 使用 wave_header_chunk 发送处理后的数据
                 yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+     
+        #3. send silent audio           
+        if not simultaneous:
+            audio = AudioSegment.from_wav(self.silence_wav)
+            # 重采样为 16kHz，单声道，16-bit
+            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+            pcm_data_16K = audio_resampled.raw_data
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
                 
