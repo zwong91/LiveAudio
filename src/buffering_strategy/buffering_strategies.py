@@ -117,7 +117,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         try:
             await (send_webrtc() if use_webrtc else send_websocket())
         except Exception as e:
-            logger.error(f"Failed to send audio chunk:{e}")
+            logging.error(f"Failed to send audio chunk:{e}")
 
     async def _send(self, channel, use_webrtc, chunk):
         """
@@ -137,7 +137,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         try:
             await (send_webrtc() if use_webrtc else send_websocket())
         except Exception as e:
-            logger.error(f"Failed to send audio chunk:{e}")
+            logging.error(f"Failed to send audio chunk:{e}")
 
     def _update_client_state(self, updated_history):
         """Update client state after TTS process ends."""
