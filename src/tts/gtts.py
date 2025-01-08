@@ -10,6 +10,8 @@ from .tts_interface import TTSInterface
 from src.utils.audio_utils import wave_header_chunk
 import langid
 
+from pydub import AudioSegment
+
 from gtts import gTTS
 import gtts.lang
 
