@@ -61,6 +61,7 @@ class OpenAITTS(TTSInterface):
             model=self.model,
             input=text,
             voice=self.voice,
+            response_format="mp3",
             **extra_args,
         ) as resp:
             async for chunk in resp.iter_bytes():
@@ -70,7 +71,7 @@ class OpenAITTS(TTSInterface):
                 # 使用 BytesIO 来读取音频数据
                 with io.BytesIO(chunk) as f:
                     f.seek(0)
-                    audio: AudioSegment = AudioSegment.from_mp3(f)
+                    audio: AudioSegment = AudioSegment.from_file(f)
                     # 处理音频，重采样到16kHz，单声道，16bit
                     audio_resampled = (
                         audio.set_frame_rate(16000)
