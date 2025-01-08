@@ -53,8 +53,8 @@ class OpenAITTS(TTSInterface):
             model=self.model,
             input=text,
             voice=self.voice,
+            response_format='wav',
             **extra_args,
         ) as resp:
             async for chunk in resp.iter_bytes():
-                # 使用 wave_header_chunk 发送处理后的数据
-                yield wave_header_chunk(chunk, 1, 2, 16000)
+                yield chunk
