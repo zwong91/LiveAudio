@@ -402,18 +402,18 @@ export default function Home() {
 
   };
 
-  const audioItemKey = (audioURL: string) => audioURL.substring(-10)
-  const vad = useMicVAD({
-    model: "v5",
-    baseAssetPath: "/",
-    onnxWASMBasePath: "/",
-    onSpeechEnd: (audio: Float32Array) => {
-      const wavBuffer = utils.encodeWAV(audio);
-      const base64 = utils.arrayBufferToBase64(wavBuffer);
-      const url = `data:audio/wav;base64,${base64}`;
-      setAudioList((old) => [url, ...old]);
-    },
-  });
+  // const audioItemKey = (audioURL: string) => audioURL.substring(-10)
+  // const vad = useMicVAD({
+  //   model: "v5",
+  //   baseAssetPath: "/",
+  //   onnxWASMBasePath: "/",
+  //   onSpeechEnd: (audio: Float32Array) => {
+  //     const wavBuffer = utils.encodeWAV(audio);
+  //     const base64 = utils.arrayBufferToBase64(wavBuffer);
+  //     const url = `data:audio/wav;base64,${base64}`;
+  //     setAudioList((old) => [url, ...old]);
+  //   },
+  // });
 
 
   const { isPlayingAudio, playAudio, checkAndBufferAudio, stopCurrentAudio } = useAudioManager(
@@ -517,42 +517,6 @@ export default function Home() {
           onLanguageChange={handleLanguageChange} // Pass the language change handler
         />
       </div>
-
-      <div>
-      {/* Add the VAD status */}
-      <div>
-        <h6>Listening</h6>
-        {!vad.listening && "Not"} listening
-        <h6>Loading</h6>
-        {!vad.loading && "Not"} loading
-        <h6>Errored</h6>
-        {!vad.errored && "Not"} errored
-        <h6>User Speaking</h6>
-        {!vad.userSpeaking && "Not"} speaking
-        <h6>Audio count</h6>
-        {audioList.length}
-        <h6>Start/Pause</h6>
-        <button onClick={vad.pause}>Pause</button>
-        <button onClick={vad.start}>Start</button>
-        <button onClick={vad.toggle}>Toggle</button>
-      </div>
-
-      {/* Add the audio playlist */}
-      <div>
-        <ol
-          id="playlist"
-          className="self-center pl-0 max-h-[400px] overflow-y-auto no-scrollbar list-none"
-        >
-          {audioList.map((audioURL) => {
-            return (
-              <li className="pl-0" key={audioItemKey(audioURL)}>
-                <audio src={audioURL} controls />
-              </li>
-            );
-          })}
-        </ol>
-      </div>
-    </div>
 
       <div className={styles.controls}>
         <button
