@@ -103,7 +103,6 @@ class EdgeTTS(TTSInterface):
 
     async def text_to_speech_stream(self, text: str, vc_uid: str, simultaneous: bool) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
-        audio_buffer = io.BytesIO()
         language, _ = langid.classify(text)
         #TODO: choice zh voice
         if language == "zh":

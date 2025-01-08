@@ -39,6 +39,7 @@ class GTTS(TTSInterface):
         pass
 
     async def text_to_speech_stream(self, text: str, vc_uid: str, simultaneous: bool) -> AsyncGenerator[bytes, None]:
+        start_time = time.time()
         language = langid.classify(text)[0].strip()
         if language == 'zh':
             language = 'zh-CN'
