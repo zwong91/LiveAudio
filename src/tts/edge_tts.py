@@ -55,6 +55,10 @@ class EdgeTTS(TTSInterface):
         with open(vit_file, "w", encoding="utf-8") as file:
             file.write(self.submaker.generate_subs())
 
+    """
+    CHANNELS = 1
+    RATE = 24000  # coqui (24000), azure (16000), openai (22050), system (22050), msedge (24000)
+    """
     def get_stream_info(self) -> dict:
         return {
             "sample_rate": 16000,
@@ -91,6 +95,7 @@ class EdgeTTS(TTSInterface):
             rate=rate_str,
             pitch=pitch_str,
             volume=volume_str
+            #proxy="http://127.0.0.1:7890"
         )
 
         await communicate.save(output_path)
@@ -129,6 +134,7 @@ class EdgeTTS(TTSInterface):
             rate=rate_str,
             pitch=pitch_str,
             volume=volume_str
+            #proxy="http://127.0.0.1:7890"
         )
 
         self.submaker = edge_tts.SubMaker()
@@ -140,21 +146,50 @@ class EdgeTTS(TTSInterface):
             pcm_data_16K = audio_resampled.raw_data
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
-        with io.BytesIO() as f:
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    f.write(chunk["data"])
-                elif chunk["type"] == "WordBoundary":
-                    self.submaker.create_sub((chunk["offset"], chunk["duration"]), chunk["text"])
-            # 将 BytesIO 中的数据重置指针，并加载为 AudioSegment
-            f.seek(0)
-            audio: AudioSegment = AudioSegment.from_mp3(f)
-            # 处理音频，重采样到16kHz，单声道，16bit
-            audio_resampled = (
-                audio.set_frame_rate(16000)
-                    .set_channels(1)
-                    .set_sample_width(2)  # 16bit sample_width 16/8=2  16k-mono-mp3
-            )
-            pcm_data_16K = audio_resampled.raw_data
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+        CHUNK_SIZE = 20 * 1024  # 假设每个块大约1024字节（根据实际格式调整）
+        total_data = b""  # 用于存储接收到的音频数据
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                total_data += chunk["data"]
+                
+                # 如果接收到的数据达到一个完整的块大小
+                if len(total_data) >= CHUNK_SIZE:
+                    print(f"First chunk Time elapsed: {time.time() - start_time:.2f} seconds")  # 打印经过的时间
+                    
+                    # 使用 BytesIO 来读取音频数据
+                    with io.BytesIO(total_data[:CHUNK_SIZE]) as audio_io:
+                        audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")  # 加载音频
+                        # 处理音频，重采样到16kHz，单声道，16bit
+                        audio_resampled = (
+                            audio.set_frame_rate(16000)
+                                .set_channels(1)
+                                .set_sample_width(2)  # 16bit sample_width (16/8=2)
+                        )
+                        pcm_data_16K = audio_resampled.raw_data
+                        
+                        # 使用 wave_header_chunk 发送处理后的数据
+                        yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+                    
+                    # 移除已经处理的音频数据
+                    total_data = total_data[CHUNK_SIZE:]
+                    
+            elif chunk["type"] == "WordBoundary":
+                self.submaker.create_sub((chunk["offset"], chunk["duration"]), chunk["text"])
+
+        # 处理剩余的数据
+        if total_data:
+            print(f"Time elapsed: {time.time() - start_time:.2f} seconds")  # 打印时间 
+            # 使用 BytesIO 来读取剩余的音频数据
+            with io.BytesIO(total_data) as audio_io:
+                audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")  # 加载音频
+                # 处理音频，重采样到16kHz，单声道，16bit
+                audio_resampled = (
+                    audio.set_frame_rate(16000)
+                        .set_channels(1)
+                        .set_sample_width(2)  # 16bit sample_width (16/8=2)
+                )
+                pcm_data_16K = audio_resampled.raw_data
+                
+                # 使用 wave_header_chunk 发送处理后的数据
+                yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
                 
