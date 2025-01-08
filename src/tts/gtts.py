@@ -58,6 +58,7 @@ class GTTS(TTSInterface):
 
         file_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
 
+        print(f"Detected language: {language}")
         #2. Generate audio with gTTS
         with io.BytesIO() as f:
             tts = gTTS(text=text, lang=language, tld=self.tld, slow=False)   
