@@ -27,8 +27,9 @@ class OpenAITTS(TTSInterface):
         self.voice = voice
         self.speed = speed
         self.model = model
-        self.client = openai.AsyncOpenAI(api_key=OPENAI_API_KEY, base_url=BASE_URL)
+        self.aclient = openai.AsyncOpenAI(api_key=OPENAI_API_KEY, base_url=BASE_URL)
         self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
+        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "silence.wav")
 
 
     def get_stream_info(self) -> dict:
@@ -44,6 +45,7 @@ class OpenAITTS(TTSInterface):
 
     async def text_to_speech_stream(self, text: str, vc_uid: str, simultaneous: bool) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
+        #1. send talking audio
         if not simultaneous:
             audio = AudioSegment.from_wav(self.talking_wav)
             # 重采样为 16kHz，单声道，16-bit
@@ -52,7 +54,10 @@ class OpenAITTS(TTSInterface):
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
         extra_args = {"speed": self.speed} if self.speed is not None else {}
-        async with self.client.with_streaming_response.audio.speech.create(
+        
+        #2. stream synthesize audio
+        first_chunk = True
+        async with self.aclient.with_streaming_response.audio.speech.create(
             model=self.model,
             input=text,
             voice=self.voice,
@@ -60,8 +65,9 @@ class OpenAITTS(TTSInterface):
             **extra_args,
         ) as resp:
             async for chunk in resp.iter_bytes():
-                if i == 0:
-                    print(f"First chunk Time elapsed: {time.time() - start_time:.2f} seconds")            
+                if first_chunk:
+                    first_chunk = False
+                    print(f"First chunk Time elapsed: {time.time() - start_time:.2f} seconds")         
                 # 使用 BytesIO 来读取音频数据
                 with io.BytesIO(chunk) as audio_io:
                     audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
@@ -74,3 +80,11 @@ class OpenAITTS(TTSInterface):
                     pcm_data_16K = audio_resampled.raw_data
                     # 使用 wave_header_chunk 发送处理后的数据
                     yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+                    
+        #3. send silent audio
+        if not simultaneous:
+            audio = AudioSegment.from_wav(self.silence_wav)
+            # 重采样为 16kHz，单声道，16-bit
+            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+            pcm_data_16K = audio_resampled.raw_data
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000) 
