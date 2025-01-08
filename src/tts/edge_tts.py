@@ -146,7 +146,7 @@ class EdgeTTS(TTSInterface):
             pcm_data_16K = audio_resampled.raw_data
             yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
-        CHUNK_SIZE = 10 * 1024  # 假设每个块大约1024字节（根据实际格式调整）
+        CHUNK_SIZE = 30 * 1024  # 假设每个块大约1024字节（根据实际格式调整）
         total_data = b""  # 用于存储接收到的音频数据
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
