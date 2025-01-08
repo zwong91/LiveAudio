@@ -64,28 +64,19 @@ class GTTS(TTSInterface):
         #2. Generate audio with gTTS
         with io.BytesIO() as f:
             tts = gTTS(text=text, lang=language, tld=self.tld, slow=False)   
-            # Create an in-memory buffer for audio data
-            audio_data = BytesIO()
             # Write the generated audio to the buffer
-            tts.write_to_fp(audio_data)
-            # Reset buffer to the start
-            audio_data.seek(0)
-            # Return the audio data
-            yield audio_data
-
-            # tts.write_to_fp(f)
-            # f.seek(0)
-
-            # audio = AudioSegment.from_file(f, format="mp3")
-
-            # if self.speed != 1.0:
-            #     audio = audio.speedup(
-            #         playback_speed=self.speed,
-            #         chunk_size=self.chunk_length,
-            #         crossfade=self.crossfade_length,
-            #     )
-
-            # audio.export(file_path, format="wav")
+            tts.write_to_fp(f)
+            # 将 BytesIO 中的数据重置指针，并加载为 AudioSegment
+            f.seek(0)
+            audio: AudioSegment = AudioSegment.from_file(f)
+            # 处理音频，重采样到16kHz，单声道，16bit
+            audio_resampled = (
+                audio.set_frame_rate(16000)
+                    .set_channels(1)
+                    .set_sample_width(2)  # 16bit sample_width 16/8=2  16k-mono-mp3
+            )
+            pcm_data_16K = audio_resampled.raw_data
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
         #3. send silent audio
         if not simultaneous:
