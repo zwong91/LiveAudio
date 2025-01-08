@@ -12,6 +12,12 @@ import langid
 
 from pydub import AudioSegment
 
+import logging
+
+# 配置日志
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 from gtts import gTTS
 import gtts.lang
 
