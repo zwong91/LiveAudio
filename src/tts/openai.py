@@ -56,6 +56,7 @@ class OpenAITTS(TTSInterface):
         extra_args = {"speed": self.speed} if self.speed is not None else {}
         
         #2. stream synthesize audio
+        #FIXME: implement not correct
         first_chunk = True
         async with self.aclient.with_streaming_response.audio.speech.create(
             model=self.model,
