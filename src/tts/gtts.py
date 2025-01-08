@@ -12,11 +12,6 @@ import langid
 
 from pydub import AudioSegment
 
-import logging
-
-# 配置日志
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 from gtts import gTTS
 import gtts.lang
@@ -60,13 +55,12 @@ class GTTS(TTSInterface):
         languages = gtts.lang.tts_langs()
         tlds = ["com", "com.au", "co.uk", "us", "ca", "co.in", "ie", "co.za"]
 
-        for lang in languages.keys():
-            for tld in tlds:
-                print(f"GTTSVoice supported language: {lang}, tld: {tld}")
+        # for lang in languages.keys():
+        #     for tld in tlds:
+        #         print(f"GTTSVoice supported language: {lang}, tld: {tld}")
 
         file_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
 
-        print(f"Detected language: {language}")
         #2. Generate audio with gTTS
         with io.BytesIO() as f:
             tts = gTTS(text=text, lang=language, tld=self.tld, slow=False)   
