@@ -56,7 +56,7 @@ class GTTS(TTSInterface):
 
         for lang in languages.keys():
             for tld in tlds:
-                voices.append(GTTSVoice(language=lang, tld=tld))
+                print(f"GTTSVoice supported language: {lang}, tld: {tld}")
 
         file_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
 
