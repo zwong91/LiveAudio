@@ -10,50 +10,9 @@ import { WavRecorder, WavStreamPlayer } from 'wavtools';
 const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 16000 });
 
 // 音频管理器
-const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecording: Function) => {
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+const useAudioManager = (setIsPlayingAudio: Function, setIsRecording: Function) => {
   const [audioDuration, setAudioDuration] = useState<number>(0);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null); // 追踪当前播放的音频
-
-  const stopCurrentAudio = () => {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-      setIsPlayingAudio(false);
-    }
-  };
-
-  const playAudio = async (audioBlob: Blob) => {
-    const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
-    setCurrentAudio(audio); // 设置当前播放的音频对象
-
-    audio.onloadedmetadata = () => setAudioDuration(audio.duration);
-
-    audio.onended = () => {
-      URL.revokeObjectURL(audioUrl);
-      setIsPlayingAudio(false);
-
-      if (audioQueue.length > 0) {
-        const nextAudioBlob = audioQueue.shift();
-        if (nextAudioBlob) {
-          playAudio(nextAudioBlob);
-        }
-      } else {
-        // 播放完所有音频后清空队列
-        setAudioQueue([]);
-        setIsRecording(true);
-      }
-    };
-
-    try {
-      setIsPlayingAudio(true);
-      await audio.play();
-    } catch (error) {
-      console.error("播放音频失败:", error);
-      setIsPlayingAudio(false);
-    }
-  };
 
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
     const audio = new Int16Array(audioData);
@@ -66,7 +25,7 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
       // data: bytes Int16Array
     //}
     wavStreamPlayer.add16BitPCM(audio, 'my-track');
-
+    setIsPlayingAudio(true)
     // get data for visualization
     const frequencyData = wavStreamPlayer.getFrequencies();
 
@@ -89,11 +48,7 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
   };
 
   return {
-    isPlayingAudio,
-    audioDuration,
-    playAudio,
     checkAndBufferAudio,
-    stopCurrentAudio,
   };
 };
 
@@ -103,6 +58,7 @@ const useWebRTC = (
   setAudioQueue: Function,
   setIsRecording: Function,
   checkAndBufferAudio: Function,
+  setIsPlayingAudio: Function,
   isSimultaneous: boolean,
   targetLang: string
 ) => {
@@ -258,6 +214,7 @@ const useWebRTC = (
       };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
+        setDataChannel(dataChannel)
         dataChannel.onopen = async () => {
           console.log("DataChannel opened and ready to use:", dataChannel.label);
           // Connect to microphone
@@ -275,6 +232,8 @@ const useWebRTC = (
         } else {
           console.error("DataChannel is not open, unable to send data.");
         }
+
+        wavStreamPlayer.onStop = () => setIsPlayingAudio(false);
         
         const pingInterval = setInterval(() => {
             if (dataChannel.readyState === 'open') {
@@ -336,6 +295,7 @@ const useWebRTC = (
 export default function Home() {
   const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(true);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioList, setAudioList] = useState<string[]>([]);
 
   const [isSimultaneous, setIsSimultaneous] = useState(false);
@@ -375,9 +335,8 @@ export default function Home() {
   //   },
   // });
 
-  const { isPlayingAudio, playAudio, checkAndBufferAudio, stopCurrentAudio } = useAudioManager(
-    audioQueue,
-    setAudioQueue,
+  const {checkAndBufferAudio } = useAudioManager(
+    setIsPlayingAudio,
     setIsRecording
   );
   const { connectionStatus, isCallEnded, endCall, peerConnection, dataChannel } = useWebRTC(
@@ -385,16 +344,10 @@ export default function Home() {
     setAudioQueue,
     setIsRecording,
     checkAndBufferAudio,
+    setIsPlayingAudio,
     isSimultaneous,
     targetLang
   );
-
-  useEffect(() => {
-    if (!isPlayingAudio && audioQueue.length > 0) {
-      const nextAudioBlob = audioQueue.shift();
-      if (nextAudioBlob) playAudio(nextAudioBlob);
-    }
-  }, [isPlayingAudio, audioQueue, playAudio]);
 
   // Integrate Eruda
   useEffect(() => {
