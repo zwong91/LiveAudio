@@ -69,6 +69,14 @@ class GTTS(TTSInterface):
             # 将 BytesIO 中的数据重置指针，并加载为 AudioSegment
             f.seek(0)
             audio: AudioSegment = AudioSegment.from_mp3(f)
+            if self.voice.speed != 1.0:
+                audio = audio.speedup(
+                    playback_speed=self.voice.speed,
+                    chunk_size=self.voice.chunk_length,
+                    crossfade=self.voice.crossfade_length,
+                )
+            #audio.export(file_path, format="wav")
+
             # 处理音频，重采样到16kHz，单声道，16bit
             audio_resampled = (
                 audio.set_frame_rate(16000)
