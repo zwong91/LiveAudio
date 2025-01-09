@@ -14,7 +14,7 @@ Welcome to the LiveAudio repository! This project hosts A exciting applications 
 
 apt update
 # (Ubuntu / Debian User) Install sox + ffmpeg
-apt install libsox-dev ffmpeg libopenblas-dev vim git-lfs -y
+apt install libsox-dev espeak-ng ffmpeg libopenblas-dev vim git-lfs -y
 
 # (Ubuntu / Debian User) Install pyaudio 
 apt install build-essential \
