@@ -238,7 +238,7 @@ class Server:
         pc = RTCPeerConnection(configuration=config)
         # Create a new DataChannel after the peer connection is created
         s2s_response = pc.createDataChannel(
-            label="response",
+            label="s-events",
             ordered=True,
         )
         self.pcs.add(pc)
@@ -284,39 +284,43 @@ class Server:
                 logging.debug(f"Track {track.kind} ended")
                 track.stop()
                 #await recorder.stop()
-    
-        @s2s_response.on("open")
-        async def on_open():
-            print(f"DataChannel s2s_response opened")
 
-        @s2s_response.on("message")
-        def on_message(message):
-            print(f"Received message on channel: {s2s_response.label}")
-            # 检查消息类型
-            if isinstance(message, str):
-                try:
-                    # 尝试解析 JSON 格式的字符串消息
-                    parsed_message = json.loads(message)
-                    message_type = parsed_message.get("type")
-                    if message_type == "config":
-                        is_simultaneous = parsed_message["data"].get("is_simultaneous")
-                        target_lang = parsed_message["data"].get("target_lang")
-                        print(f"Configuration received - Simultaneous: {is_simultaneous}, Target: {target_lang}")
-                        client.update_config(parsed_message["data"])
-                        logging.debug(f"Updated config: {client.config}")
-                    elif message_type == "ping":
-                        logging.debug("Ping received. Sending pong...")
-                        #s2s_response.send(json.dumps({"type": "pong"}))
-                    elif message.type == "start":
-                        logger.debug(f'RTC DC: Recording started with track')
-                    elif message.type == "stop":
-                        logger.debug('RTC DC: Recording stopped')
-                    else:
-                        logging.warning(f"Unknown message type: {message_type}")
-                except json.JSONDecodeError:
-                    logging.error("Failed to decode JSON from string message")
-            else:
-                logging.warning("Received an unsupported message type")
+        @pc.on("datachannel")
+        def on_datachannel(channel):
+            logging.debug(f"DataChannel: {channel.label}")
+
+            @channel.on("open")
+            async def on_open():
+                print(f"DataChannel {channel.label} opened")
+
+            @channel.on("message")
+            def on_message(message):
+                print(f"Received message on channel: {channel.label}")
+                # 检查消息类型
+                if isinstance(message, str):
+                    try:
+                        # 尝试解析 JSON 格式的字符串消息
+                        parsed_message = json.loads(message)
+                        message_type = parsed_message.get("type")
+                        if message_type == "config":
+                            is_simultaneous = parsed_message["data"].get("is_simultaneous")
+                            target_lang = parsed_message["data"].get("target_lang")
+                            print(f"Configuration received - Simultaneous: {is_simultaneous}, Target: {target_lang}")
+                            client.update_config(parsed_message["data"])
+                            logging.debug(f"Updated config: {client.config}")
+                        elif message_type == "ping":
+                            logging.debug("Ping received. Sending pong...")
+                            #channel.send(json.dumps({"type": "pong"}))
+                        elif message.type == "start":
+                            logger.debug(f'RTC DC: Recording started with track')
+                        elif message.type == "stop":
+                            logger.debug('RTC DC: Recording stopped')
+                        else:
+                            logging.warning(f"Unknown message type: {message_type}")
+                    except json.JSONDecodeError:
+                        logging.error("Failed to decode JSON from string message")
+                else:
+                    logging.warning("Received an unsupported message type")
 
         # signaling = create_signaling()
         # recorder = MediaBlackhole()
@@ -413,7 +417,7 @@ class Server:
 
         # Create a new DataChannel after the peer connection is created
         s2s_response = pc.createDataChannel(
-            label="response",
+            label="s-events",
             ordered=True,
         )
         @s2s_response.on("open")
