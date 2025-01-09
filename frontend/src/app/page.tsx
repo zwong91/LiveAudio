@@ -10,53 +10,8 @@ import { WavRecorder, WavStreamPlayer } from 'wavtools';
 const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 16000 });
 
 // 音频管理器
-const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecording: Function) => {
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [audioDuration, setAudioDuration] = useState<number>(0);
-  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null); // 追踪当前播放的音频
-
-  const stopCurrentAudio = () => {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-      setIsPlayingAudio(false);
-    }
-  };
-
-  const playAudio = async (audioBlob: Blob) => {
-    const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
-    setCurrentAudio(audio); // 设置当前播放的音频对象
-
-    audio.onloadedmetadata = () => setAudioDuration(audio.duration);
-
-    audio.onended = () => {
-      URL.revokeObjectURL(audioUrl);
-      setIsPlayingAudio(false);
-
-      if (audioQueue.length > 0) {
-        const nextAudioBlob = audioQueue.shift();
-        if (nextAudioBlob) {
-          playAudio(nextAudioBlob);
-        }
-      } else {
-        // 播放完所有音频后清空队列
-        setAudioQueue([]);
-        setIsRecording(true);
-      }
-    };
-
-    try {
-      setIsPlayingAudio(true);
-      await audio.play();
-    } catch (error) {
-      console.error("播放音频失败:", error);
-      setIsPlayingAudio(false);
-    }
-  };
-
+const useAudioManager = (setIsRecording: Function) => {
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
-    setIsPlayingAudio(true);
     const audio = new Int16Array(audioData);
 
     // Queue 3s of audio, will start playing immediately
@@ -66,9 +21,7 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
       // mimeType: str
       // data: bytes Int16Array
     //}
-    wavStreamPlayer.add16BitPCM(audio, 'my-track');
-    setIsPlayingAudio(false);
-    // get data for visualization
+    wavStreamPlayer.add16BitPCM(audio, 'my-track');    // get data for visualization
     const frequencyData = wavStreamPlayer.getFrequencies();
 
     // const text = new TextDecoder("utf-8").decode(audioData);
@@ -90,11 +43,7 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
   };
 
   return {
-    isPlayingAudio,
-    audioDuration,
-    playAudio,
     checkAndBufferAudio,
-    stopCurrentAudio,
   };
 };
 
@@ -113,6 +62,8 @@ const useWebRTC = (
   const [dataChannel, setDataChannel] = useState<RTCDataChannel | null>(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [reconnectTimer, setReconnectTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
   useEffect(() => {
     // Ensure WebRTC only runs in the browser
     if (typeof window !== "undefined" && window.RTCPeerConnection) {
@@ -238,6 +189,7 @@ const useWebRTC = (
   }, [reconnectAttempts]);
 
   useEffect(() => {
+
     if (peerConnection) { 
       peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
         if (event.candidate) {
@@ -288,6 +240,7 @@ const useWebRTC = (
         };
         dataChannel.onmessage = async (event: MessageEvent) => {
           console.log("Received message:", event.data);
+          //setIsPlayingAudio(true)
           try {
             let audioData: ArrayBuffer;
 
@@ -303,6 +256,7 @@ const useWebRTC = (
           } catch (error) {
             console.error("Error processing WebRTC message:", error);
           }
+          //setIsPlayingAudio(false)
         };
 
         dataChannel.onclose = async () => {
@@ -329,6 +283,7 @@ const useWebRTC = (
     },
     peerConnection,
     dataChannel,
+    isPlayingAudio,
   };
 };
 
@@ -376,12 +331,10 @@ export default function Home() {
   //   },
   // });
 
-  const { isPlayingAudio, playAudio, checkAndBufferAudio, stopCurrentAudio } = useAudioManager(
-    audioQueue,
-    setAudioQueue,
+  const {checkAndBufferAudio } = useAudioManager(
     setIsRecording
   );
-  const { connectionStatus, isCallEnded, endCall, peerConnection, dataChannel } = useWebRTC(
+  const { connectionStatus, isCallEnded, endCall, peerConnection, dataChannel, isPlayingAudio } = useWebRTC(
     audioQueue,
     setAudioQueue,
     setIsRecording,
@@ -389,13 +342,6 @@ export default function Home() {
     isSimultaneous,
     targetLang
   );
-
-  // useEffect(() => {
-  //   if (!isPlayingAudio && audioQueue.length > 0) {
-  //     const nextAudioBlob = audioQueue.shift();
-  //     if (nextAudioBlob) playAudio(nextAudioBlob);
-  //   }
-  // }, [isPlayingAudio, audioQueue, playAudio]);
 
   // Integrate Eruda
   useEffect(() => {
