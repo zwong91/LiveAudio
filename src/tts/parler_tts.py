@@ -20,9 +20,10 @@ class ParlerTTS(TTSInterface):
         from transformers import AutoTokenizer
         from transformers.modeling_outputs import BaseModelOutput
 
+        # Jon、Lea、Gary、Jenna、Mike、Laura ... speaker
         if tts_description is None:
             tts_description = (
-                "A female speaker with a slightly low-pitched voice delivers her words quite "
+                "Laura A female speaker with a slightly low-pitched voice delivers her words quite "
                 "expressively, in a very confined sounding environment with clear audio quality."
             )
             
