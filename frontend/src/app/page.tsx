@@ -7,7 +7,7 @@ import { useMicVAD, utils } from "@ricky0123/vad-react"
 import LanguageSelection from './languageselect';
 import { WavRecorder, WavStreamPlayer } from 'wavtools';
 
-const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 24000 });
+const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 16000 });
 
 // 音频管理器
 const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecording: Function) => {
@@ -56,9 +56,8 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
   };
 
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
+    const audio = new Int16Array(audioData);
 
-    // Create 1s of empty PCM16 audio
-    const audio = new Int16Array(24000);
     // Queue 3s of audio, will start playing immediately
     //wavStreamPlayer.add16BitPCM(chunk.data, chunk.track);
     // json: {
@@ -67,28 +66,26 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
       // data: bytes Int16Array
     //}
     wavStreamPlayer.add16BitPCM(audio, 'my-track');
-    wavStreamPlayer.add16BitPCM(audio, 'my-track');
-    wavStreamPlayer.add16BitPCM(audio, 'my-track');
 
     // get data for visualization
     const frequencyData = wavStreamPlayer.getFrequencies();
 
-    const text = new TextDecoder("utf-8").decode(audioData);
+    // const text = new TextDecoder("utf-8").decode(audioData);
 
-    if (text.includes("END_OF_AUDIO")) {
-      console.log("Detected END_OF_AUDIO signal in audioData");
-      stopCurrentAudio(); // 停止当前音频播放
-      setIsRecording(true);
-      setIsPlayingAudio(false);
-      return;
-    }
+    // if (text.includes("END_OF_AUDIO")) {
+    //   console.log("Detected END_OF_AUDIO signal in audioData");
+    //   stopCurrentAudio(); // 停止当前音频播放
+    //   setIsRecording(true);
+    //   setIsPlayingAudio(false);
+    //   return;
+    // }
 
-    // 如果没有检测到 "END_OF_AUDIO" 信号，继续缓存音频并立即播放
-    const audioBlob = new Blob([audioData], { type: "audio/wav" });
-    setAudioQueue((prevQueue: Blob[]) => {
-      const newQueue = [...prevQueue, audioBlob];
-      return newQueue;
-    });
+    // // 如果没有检测到 "END_OF_AUDIO" 信号，继续缓存音频并立即播放
+    // const audioBlob = new Blob([audioData], { type: "audio/wav" });
+    // setAudioQueue((prevQueue: Blob[]) => {
+    //   const newQueue = [...prevQueue, audioBlob];
+    //   return newQueue;
+    // });
   };
 
   return {
@@ -312,9 +309,7 @@ const useWebRTC = (
           // Interrupt the audio (halt playback) at any time
           // To restart, need to call .add16BitPCM() again
           const trackOffset = wavStreamPlayer.interrupt();
-          trackOffset.trackId; // "my-track"
-          trackOffset.offset; // sample number
-          trackOffset.currentTime; // time in track
+          console.log(`Track ID: ${trackOffset.trackId}, sample number: ${trackOffset.offset}, time in track: ${trackOffset.currentTime}`);
         };
       };
   
