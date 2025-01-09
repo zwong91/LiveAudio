@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import styles from "./page.module.css";
-//import { useMicVAD, utils } from "@ricky0123/vad-react"
+import { useMicVAD, utils } from "@ricky0123/vad-react"
 
 import LanguageSelection from './languageselect';
 
@@ -142,39 +142,16 @@ const useWebRTC = (
           realm: 'gtp.aleopool.cc',
         },
       ];
-      
+
 
       // 配置 ICE 服务器
       const pcConfig = {
         iceServers: iceServers,
       };
-      
-      const pc = new RTCPeerConnection(pcConfig);
 
-      // Set up to play remote audio from the model
-      const el = document.createElement('audio');
-      el.autoplay = el.controls = true;
-      pc.ontrack = (e) => (el.srcObject = e.streams[0]);
+      const pc = new RTCPeerConnection(pcConfig);
       //const pc = new RTCPeerConnection();
       setPeerConnection(pc);
-      // connect audio / video handle inbound tracks
-      // peerConnection.ontrack = (event: RTCTrackEvent) => {
-      //   console.log("Received remote stream inbound track:", event.track.kind);
-      //   // Create an <audio> element for audio tracks
-      //   if (event.track.kind === "audio") {
-      //     const el = document.createElement('audio');
-      //     el.srcObject = event.streams[0];
-      //     el.autoplay = el.controls = true;
-      //     el.style.maxWidth = "100%";
-      //     document.body.appendChild(el); // Append to the body or any other container you prefer
-      //     console.log("Audio track added to page");
-      //   }
-      // };
-
-      // 创建 DataChannel 对象, 触发ICE协商
-      const dc = pc.createDataChannel('c-events');
-      setDataChannel(dc);
-
       const setupConnection = async () => {
         try {
           pc.oniceconnectionstatechange = (event) => {
@@ -201,6 +178,20 @@ const useWebRTC = (
             pc.addTrack(track)
           });
 
+          // // 等待 ICE gathering 完成
+          // await new Promise<void>((resolve) => {
+          //   if (pc.iceGatheringState === 'complete') {
+          //     resolve();
+          //   } else {
+          //     const checkState = () => {
+          //       if (pc.iceGatheringState === 'complete') {
+          //         pc.removeEventListener('icegatheringstatechange', checkState);
+          //         resolve();
+          //       }
+          //     };
+          //     pc.addEventListener('icegatheringstatechange', checkState);
+          //   }
+          // });
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
 
@@ -225,6 +216,9 @@ const useWebRTC = (
 
       setupConnection();
 
+      // 创建 DataChannel 对象, 触发ICE协商
+      const dc = pc.createDataChannel('response');
+      setDataChannel(dc);
       return () => {
         if (reconnectTimer) {
             clearTimeout(reconnectTimer);
@@ -237,10 +231,10 @@ const useWebRTC = (
     } else {
       setConnectionStatus("WebRTC not supported");
     }
-  }, [peerConnection, reconnectAttempts, reconnectTimer]);
+  }, [reconnectAttempts]);
 
   useEffect(() => {
-    if (peerConnection) {
+    if (peerConnection) { 
       peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
         if (event.candidate) {
           console.log('获取到ICE候选:', event.candidate.type, event.candidate.address);
@@ -259,65 +253,6 @@ const useWebRTC = (
           state = "disconnected"
         setConnectionStatus(state);
       };
-    }
-  }, [peerConnection]);
-
-  // // Attach event listeners to the data channel when a new one is created
-  // useEffect(() => {
-  //   if (dataChannel) {
-  //     // Append new server events to the list
-  //     dataChannel.addEventListener("message", async (e) => {
-  //       console.log("Received message:", e.data);
-  //       try {
-  //         let audioData: ArrayBuffer;
-
-  //         if (e.data instanceof ArrayBuffer) {
-  //           audioData = e.data;
-  //         } else if (e.data instanceof Blob) {
-  //           audioData = await e.data.arrayBuffer();
-  //         } else {
-  //           throw new Error("Unsupported data type received");
-  //         }
-
-  //         checkAndBufferAudio(audioData);
-  //       } catch (error) {
-  //         console.error("Error processing WebRTC message:", error);
-  //       }
-  //     });
-
-  //     // Set session active when the data channel is opened
-  //     dataChannel.addEventListener("open", () => {
-  //       console.log("DataChannel opened and ready to use:", dataChannel.label);
-  //       const audioConfig = {
-  //         type: 'config',
-  //         data: {
-  //             is_simultaneous: isSimultaneous,
-  //             target_lang: targetLang,
-  //         }
-  //       };
-  //       dataChannel.send(JSON.stringify(audioConfig));
-
-  //       const pingInterval = setInterval(() => {
-  //         if (dataChannel.readyState === 'open') {
-  //           dataChannel.send(JSON.stringify({ type: "ping" }));
-  //         } else {
-  //           console.error("DataChannel is not open, unable to send data.");
-  //         }
-  //       }, 5000);
-
-  //     });
-
-  //     // Handle the close event
-  //     dataChannel.addEventListener("close", () => {
-  //       console.log("DataChannel has been closed:", dataChannel.label);
-  //       // Perform cleanup or additional logic here
-  //     });
-
-  //   }
-  // }, [dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);
-
-  useEffect(() => {
-    if (peerConnection) {
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
         setDataChannel(dataChannel);
@@ -336,7 +271,9 @@ const useWebRTC = (
         } else {
           console.error("DataChannel is not open, unable to send data.");
         }  
-        const pingInterval = setInterval(() => {
+        
+        dataChannel.send(JSON.stringify(audioConfig));     
+          const pingInterval = setInterval(() => {
             if (dataChannel.readyState === 'open') {
               console.log("Sending ping...");
               dataChannel.send(JSON.stringify({ type: "ping" }));
@@ -345,7 +282,6 @@ const useWebRTC = (
             }
           }, 5000);
         };
-
         dataChannel.onmessage = async (event: MessageEvent) => {
           console.log("Received message:", event.data);
           try {
@@ -369,9 +305,9 @@ const useWebRTC = (
           console.log("DataChannel closed:", dataChannel.label);
         };
       };
-
+  
     }
-  }, [peerConnection, dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);
+  }, [peerConnection, dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);  
 
   return {
     connectionStatus,
@@ -502,7 +438,6 @@ export default function Home() {
           {connectionStatus}
         </div>
       </div>
-    
       <div className={styles.mainContent}>
         <div className={styles.avatarSection}>
           <div className={`${styles.avatarContainer} ${isPlayingAudio ? styles.speaking : ""}`}>
@@ -528,7 +463,6 @@ export default function Home() {
         </div>
       </div>
 
-
       <div className={styles.langContent}>
         <LanguageSelection
           onLanguageChange={handleLanguageChange} // Pass the language change handler
@@ -552,39 +486,3 @@ export default function Home() {
     </div>
   );
 }
-
-/*
-    <div>
-    <div>
-      <h6>Listening</h6>
-      {!vad.listening && "Not"} listening
-      <h6>Loading</h6>
-      {!vad.loading && "Not"} loading
-      <h6>Errored</h6>
-      {!vad.errored && "Not"} errored
-      <h6>User Speaking</h6>
-      {!vad.userSpeaking && "Not"} speaking
-      <h6>Audio count</h6>
-      {audioList.length}
-      <h6>Start/Pause</h6>
-      <button onClick={vad.pause}>Pause</button>
-      <button onClick={vad.start}>Start</button>
-      <button onClick={vad.toggle}>Toggle</button>
-    </div>
-
-    <div>
-      <ol
-        id="playlist"
-        className="self-center pl-0 max-h-[400px] overflow-y-auto no-scrollbar list-none"
-      >
-        {audioList.map((audioURL) => {
-          return (
-            <li className="pl-0" key={audioItemKey(audioURL)}>
-              <audio src={audioURL} controls />
-            </li>
-          );
-        })}
-      </ol>
-    </div>
-  </div>
-*/
