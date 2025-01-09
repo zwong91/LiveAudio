@@ -54,9 +54,9 @@ class ClientStreamTrack(MediaStreamTrack):
         byte_stream = frame_array[0].astype(np.int16).tobytes()
         self.client.append_audio_data(byte_stream, "default")
         try:
-            if channel is not None and self.channel.readyState == "open":
+            if self.channel is not None and self.channel.readyState == "open":
                 self.client.process_audio(
-                    channel, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
+                    self.channel, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
                 )
         except Exception as e:
             logging.error(f"Processing error for {self.client.client_id}: {e}")
