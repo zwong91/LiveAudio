@@ -262,116 +262,116 @@ const useWebRTC = (
     }
   }, [peerConnection]);
 
-  // Attach event listeners to the data channel when a new one is created
-  useEffect(() => {
-    if (dataChannel) {
-      // Append new server events to the list
-      dataChannel.addEventListener("message", async (e) => {
-        console.log("Received message:", e.data);
-        try {
-          let audioData: ArrayBuffer;
-
-          if (e.data instanceof ArrayBuffer) {
-            audioData = e.data;
-          } else if (e.data instanceof Blob) {
-            audioData = await e.data.arrayBuffer();
-          } else {
-            throw new Error("Unsupported data type received");
-          }
-
-          checkAndBufferAudio(audioData);
-        } catch (error) {
-          console.error("Error processing WebRTC message:", error);
-        }
-      });
-
-      // Set session active when the data channel is opened
-      dataChannel.addEventListener("open", () => {
-        console.log("DataChannel opened and ready to use:", dataChannel.label);
-        const audioConfig = {
-          type: 'config',
-          data: {
-              is_simultaneous: isSimultaneous,
-              target_lang: targetLang,
-          }
-        };
-        dataChannel.send(JSON.stringify(audioConfig));
-
-        const pingInterval = setInterval(() => {
-          if (dataChannel.readyState === 'open') {
-            dataChannel.send(JSON.stringify({ type: "ping" }));
-          } else {
-            console.error("DataChannel is not open, unable to send data.");
-          }
-        }, 5000);
-
-      });
-
-      // Handle the close event
-      dataChannel.addEventListener("close", () => {
-        console.log("DataChannel has been closed:", dataChannel.label);
-        // Perform cleanup or additional logic here
-      });
-
-    }
-  }, [dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);
-
+  // // Attach event listeners to the data channel when a new one is created
   // useEffect(() => {
-  //   if (peerConnection) {
-  //     peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
-  //       const dataChannel = event.channel;
-  //       setDataChannel(dataChannel);
-  //       dataChannel.onopen = () => {
-  //         console.log("DataChannel opened and ready to use:", dataChannel.label);
-  //         const audioConfig = {
-  //           type: 'config',
-  //           data: {
-  //               is_simultaneous: isSimultaneous,
-  //               target_lang: targetLang,
-  //           }
-  //       };
-  //       // 发送配置数据
-  //       if (dataChannel.readyState === 'open') {
-  //         dataChannel.send(JSON.stringify(audioConfig));
-  //       } else {
-  //         console.error("DataChannel is not open, unable to send data.");
-  //       }  
-  //       const pingInterval = setInterval(() => {
-  //           if (dataChannel.readyState === 'open') {
-  //             console.log("Sending ping...");
-  //             dataChannel.send(JSON.stringify({ type: "ping" }));
-  //           } else {
-  //             console.error("DataChannel is not open, unable to send data.");
-  //           }
-  //         }, 5000);
-  //       };
+  //   if (dataChannel) {
+  //     // Append new server events to the list
+  //     dataChannel.addEventListener("message", async (e) => {
+  //       console.log("Received message:", e.data);
+  //       try {
+  //         let audioData: ArrayBuffer;
 
-  //       dataChannel.onmessage = async (event: MessageEvent) => {
-  //         console.log("Received message:", event.data);
-  //         try {
-  //           let audioData: ArrayBuffer;
+  //         if (e.data instanceof ArrayBuffer) {
+  //           audioData = e.data;
+  //         } else if (e.data instanceof Blob) {
+  //           audioData = await e.data.arrayBuffer();
+  //         } else {
+  //           throw new Error("Unsupported data type received");
+  //         }
 
-  //           if (event.data instanceof ArrayBuffer) {
-  //             audioData = event.data;
-  //           } else if (event.data instanceof Blob) {
-  //             audioData = await event.data.arrayBuffer();
-  //           } else {
-  //             throw new Error("Unsupported data type received");
-  //           }
+  //         checkAndBufferAudio(audioData);
+  //       } catch (error) {
+  //         console.error("Error processing WebRTC message:", error);
+  //       }
+  //     });
 
-  //           checkAndBufferAudio(audioData);
-  //         } catch (error) {
-  //           console.error("Error processing WebRTC message:", error);
+  //     // Set session active when the data channel is opened
+  //     dataChannel.addEventListener("open", () => {
+  //       console.log("DataChannel opened and ready to use:", dataChannel.label);
+  //       const audioConfig = {
+  //         type: 'config',
+  //         data: {
+  //             is_simultaneous: isSimultaneous,
+  //             target_lang: targetLang,
   //         }
   //       };
+  //       dataChannel.send(JSON.stringify(audioConfig));
 
-  //       dataChannel.onclose = () => {
-  //         console.log("DataChannel closed:", dataChannel.label);
-  //       };
-  //     };
+  //       const pingInterval = setInterval(() => {
+  //         if (dataChannel.readyState === 'open') {
+  //           dataChannel.send(JSON.stringify({ type: "ping" }));
+  //         } else {
+  //           console.error("DataChannel is not open, unable to send data.");
+  //         }
+  //       }, 5000);
+
+  //     });
+
+  //     // Handle the close event
+  //     dataChannel.addEventListener("close", () => {
+  //       console.log("DataChannel has been closed:", dataChannel.label);
+  //       // Perform cleanup or additional logic here
+  //     });
 
   //   }
-  // }, [peerConnection, dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);  
+  // }, [dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);
+
+  useEffect(() => {
+    if (peerConnection) {
+      peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
+        const dataChannel = event.channel;
+        setDataChannel(dataChannel);
+        dataChannel.onopen = () => {
+          console.log("DataChannel opened and ready to use:", dataChannel.label);
+          const audioConfig = {
+            type: 'config',
+            data: {
+                is_simultaneous: isSimultaneous,
+                target_lang: targetLang,
+            }
+        };
+        // 发送配置数据
+        if (dataChannel.readyState === 'open') {
+          dataChannel.send(JSON.stringify(audioConfig));
+        } else {
+          console.error("DataChannel is not open, unable to send data.");
+        }  
+        const pingInterval = setInterval(() => {
+            if (dataChannel.readyState === 'open') {
+              console.log("Sending ping...");
+              dataChannel.send(JSON.stringify({ type: "ping" }));
+            } else {
+              console.error("DataChannel is not open, unable to send data.");
+            }
+          }, 5000);
+        };
+
+        dataChannel.onmessage = async (event: MessageEvent) => {
+          console.log("Received message:", event.data);
+          try {
+            let audioData: ArrayBuffer;
+
+            if (event.data instanceof ArrayBuffer) {
+              audioData = event.data;
+            } else if (event.data instanceof Blob) {
+              audioData = await event.data.arrayBuffer();
+            } else {
+              throw new Error("Unsupported data type received");
+            }
+
+            checkAndBufferAudio(audioData);
+          } catch (error) {
+            console.error("Error processing WebRTC message:", error);
+          }
+        };
+
+        dataChannel.onclose = () => {
+          console.log("DataChannel closed:", dataChannel.label);
+        };
+      };
+
+    }
+  }, [peerConnection, dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);
 
   return {
     connectionStatus,
