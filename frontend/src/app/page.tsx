@@ -143,7 +143,6 @@ const useWebRTC = (
         },
       ];
 
-
       // 配置 ICE 服务器
       const pcConfig = {
         iceServers: iceServers,
@@ -152,6 +151,10 @@ const useWebRTC = (
       const pc = new RTCPeerConnection(pcConfig);
       //const pc = new RTCPeerConnection();
       setPeerConnection(pc);
+      // 创建 DataChannel 对象, 触发ICE协商
+      const dc = pc.createDataChannel('c');
+      setDataChannel(dc);
+
       const setupConnection = async () => {
         try {
           pc.oniceconnectionstatechange = (event) => {
@@ -177,21 +180,6 @@ const useWebRTC = (
             //pc.addTransceiver(track, { direction: "sendrecv" });
             pc.addTrack(track)
           });
-
-          // // 等待 ICE gathering 完成
-          // await new Promise<void>((resolve) => {
-          //   if (pc.iceGatheringState === 'complete') {
-          //     resolve();
-          //   } else {
-          //     const checkState = () => {
-          //       if (pc.iceGatheringState === 'complete') {
-          //         pc.removeEventListener('icegatheringstatechange', checkState);
-          //         resolve();
-          //       }
-          //     };
-          //     pc.addEventListener('icegatheringstatechange', checkState);
-          //   }
-          // });
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
 
@@ -216,9 +204,6 @@ const useWebRTC = (
 
       setupConnection();
 
-      // 创建 DataChannel 对象, 触发ICE协商
-      const dc = pc.createDataChannel('response');
-      setDataChannel(dc);
       return () => {
         if (reconnectTimer) {
             clearTimeout(reconnectTimer);
@@ -231,7 +216,7 @@ const useWebRTC = (
     } else {
       setConnectionStatus("WebRTC not supported");
     }
-  }, [reconnectAttempts]);
+  }, [peerConnection, reconnectAttempts, reconnectTimer]);
 
   useEffect(() => {
     if (peerConnection) { 
@@ -255,7 +240,6 @@ const useWebRTC = (
       };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
-        setDataChannel(dataChannel);
         dataChannel.onopen = () => {
           console.log("DataChannel opened and ready to use:", dataChannel.label);
           const audioConfig = {
