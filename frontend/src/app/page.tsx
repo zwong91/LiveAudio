@@ -5,7 +5,7 @@ import styles from "./page.module.css";
 import { useMicVAD, utils } from "@ricky0123/vad-react"
 
 import LanguageSelection from './languageselect';
-import { WavRecorder, WavStreamPlayer } from 'wavtools';
+import { WavRecorder, WavStreamPlayer } from 'wavtools-patch';
 
 const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 16000 });
 
