@@ -35,9 +35,9 @@ class ClientStreamTrack(MediaStreamTrack):
         self.asr_pipeline = asr_pipeline
         self.llm_pipeline = llm_pipeline
         self.tts_pipeline = tts_pipeline
-        #self.peer_connection = peer_connection
+        self.peer_connection = peer_connection
         # server side channel
-        #self.channel = datachannel
+        self.channel = datachannel
 
         self.sampling_rate = 16_000
         self.resampler = av.AudioResampler(
@@ -53,9 +53,8 @@ class ClientStreamTrack(MediaStreamTrack):
         frame_array = frame.to_ndarray()
         byte_stream = frame_array[0].astype(np.int16).tobytes()
         self.client.append_audio_data(byte_stream, "default")
-        channel = self.client.channel
         try:
-            if channel is not None and channel.readyState == "open":
+            if channel is not None and self.channel.readyState == "open":
                 self.client.process_audio(
                     channel, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
                 )
