@@ -56,7 +56,6 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
   };
 
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
-
     const audio = new Int16Array(audioData);
 
     // Queue 3s of audio, will start playing immediately
