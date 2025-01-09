@@ -27,7 +27,7 @@ from TTS.tts.models.xtts import Xtts
 from trainer.io import get_user_data_dir
 from TTS.utils.manage import ModelManager
 
-from src.utils.audio_utils import postprocess_tts_wave_int16, convertSampleRateTo24khz, wave_header_chunk
+from src.utils.audio_utils import postprocess_tts_wave_int16, convertSampleRateTo16khz, wave_header_chunk
 
 class XTTS_v2(TTSInterface):
     def __init__(self, voice: str = 'liuyifei'):
@@ -263,10 +263,10 @@ class XTTS_v2(TTSInterface):
             )  # 4 bytes per sample, 24000 Hz
             generated_seconds += chunk_duration
             print(f"Received chunk {i} of audio length {chunk.shape[-1]}, chunk duration: {chunk_duration}")
-            pcm_data_24K = convertSampleRateTo24khz(processed_bytes, self.config.audio.output_sample_rate)
+            pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
             # such as chunk size 9600, (a.k.a 24K*20ms*2)
-            print(f"XTTS-v2 audio chunk size: {len(pcm_data_24K)} 字节")
-            yield wave_header_chunk(pcm_data_24K, 1, 2, 24000)
+            print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
+            yield wave_header_chunk(pcm_data_24K, 1, 2, 16000)
             
         wav = torch.cat(wav_chunks, dim=0)
         #real_time_factor= (time.time() - t0) / generated_seconds
