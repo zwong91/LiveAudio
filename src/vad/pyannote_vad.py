@@ -38,10 +38,10 @@ class PyannoteVAD(VADInterface):
         pyannote_args = kwargs.get(
             "pyannote_args",
             {
-                "onset": 0.6,
-                "offset": 0.6,
-                "min_duration_on": 0.4,
-                "min_duration_off": 0.4,
+                "onset": 0.7,
+                "offset": 0.7,
+                "min_duration_on": 0.5,
+                "min_duration_off": 0.5,
             },
         )
         self.model = Model.from_pretrained(

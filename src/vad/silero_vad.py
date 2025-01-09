@@ -36,8 +36,8 @@ class SileroVAD(VADInterface):
             self.model,
             return_seconds=True,
             sampling_rate=self.sampling_rate,
-            threshold=0.5,  # 可以根据需要调整阈值
-            min_speech_duration_ms=300,
+            threshold=0.5,
+            min_speech_duration_ms=500,
             max_speech_duration_s=float('inf'),
             min_silence_duration_ms=500,
             speech_pad_ms=30
