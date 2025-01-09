@@ -71,9 +71,9 @@ class GTTS(TTSInterface):
             audio: AudioSegment = AudioSegment.from_mp3(f)
             if self.voice.speed != 1.0:
                 audio = audio.speedup(
-                    playback_speed=self.voice.speed,
-                    chunk_size=self.voice.chunk_length,
-                    crossfade=self.voice.crossfade_length,
+                    playback_speed=self.speed,
+                    chunk_size=self.chunk_length,
+                    crossfade=self.crossfade_length,
                 )
             #audio.export(file_path, format="wav")
 
