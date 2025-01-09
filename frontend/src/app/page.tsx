@@ -255,12 +255,10 @@ const useWebRTC = (
           dataChannel.send(JSON.stringify(audioConfig));
         } else {
           console.error("DataChannel is not open, unable to send data.");
-        }  
+        }
         
-        dataChannel.send(JSON.stringify(audioConfig));     
-          const pingInterval = setInterval(() => {
+        const pingInterval = setInterval(() => {
             if (dataChannel.readyState === 'open') {
-              console.log("Sending ping...");
               dataChannel.send(JSON.stringify({ type: "ping" }));
             } else {
               console.error("DataChannel is not open, unable to send data.");
