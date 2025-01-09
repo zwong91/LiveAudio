@@ -253,15 +253,7 @@ class XTTS_v2(TTSInterface):
             enable_text_splitting=True,
         )
         
-        #1. send talking audio
-        if not simultaneous:
-            audio = AudioSegment.from_wav(self.talking_wav)
-            # 重采样为 16kHz，单声道，16-bit
-            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            pcm_data_16K = audio_resampled.raw_data
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
-
-        #2. stream synthesize audio
+        #stream synthesize audio
         for i, chunk in enumerate(chunks):
             if i == 0:
                 print(f"Time to first chunck: {time.time() - t0} s")
@@ -280,13 +272,5 @@ class XTTS_v2(TTSInterface):
         wav = torch.cat(wav_chunks, dim=0)
         #real_time_factor= (time.time() - t0) / generated_seconds
         real_time_factor= (time.time() - t0) / wav.shape[0] * 24000 ## 4 bytes per sample, 24000 Hz
-        print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
-        
-        #3. send silent audio
-        if not simultaneous:
-            audio = AudioSegment.from_wav(self.silence_wav)
-            # 重采样为 16kHz，单声道，16-bit
-            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            pcm_data_16K = audio_resampled.raw_data
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)    
+        print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")  
 
