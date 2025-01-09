@@ -143,6 +143,7 @@ const useWebRTC = (
         },
       ];
 
+
       // 配置 ICE 服务器
       const pcConfig = {
         iceServers: iceServers,
@@ -151,10 +152,6 @@ const useWebRTC = (
       const pc = new RTCPeerConnection(pcConfig);
       //const pc = new RTCPeerConnection();
       setPeerConnection(pc);
-      // 创建 DataChannel 对象, 触发ICE协商
-      const dc = pc.createDataChannel('c');
-      setDataChannel(dc);
-
       const setupConnection = async () => {
         try {
           pc.oniceconnectionstatechange = (event) => {
@@ -180,6 +177,7 @@ const useWebRTC = (
             //pc.addTransceiver(track, { direction: "sendrecv" });
             pc.addTrack(track)
           });
+
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
 
@@ -204,6 +202,9 @@ const useWebRTC = (
 
       setupConnection();
 
+      // 创建 DataChannel 对象, 触发ICE协商
+      const dc = pc.createDataChannel('c');
+      setDataChannel(dc);
       return () => {
         if (reconnectTimer) {
             clearTimeout(reconnectTimer);
@@ -216,7 +217,7 @@ const useWebRTC = (
     } else {
       setConnectionStatus("WebRTC not supported");
     }
-  }, [peerConnection, reconnectAttempts, reconnectTimer]);
+  }, [reconnectAttempts]);
 
   useEffect(() => {
     if (peerConnection) { 
