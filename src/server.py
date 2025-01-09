@@ -288,7 +288,7 @@ class Server:
         @pc.on("datachannel")
         def on_datachannel(channel):
             logging.debug(f"DataChannel: {channel.label}")
-
+            
             @channel.on("open")
             async def on_open():
                 print(f"DataChannel {channel.label} opened")
