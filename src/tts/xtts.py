@@ -20,12 +20,21 @@ import base64
 
 sys.path.insert(1, "../vc")
 
-from TTS.api import TTS
-from TTS.tts.configs.xtts_config import XttsConfig    
-from TTS.tts.models.xtts import Xtts
+# coqui-tts 0.22.0
+from src.xtts.TTS.api import TTS
+from src.xtts.TTS.tts.configs.xtts_config import XttsConfig    
+from src.xtts.TTS.tts.models.xtts import Xtts
 
-from trainer.io import get_user_data_dir
-from TTS.utils.manage import ModelManager
+from src.xtts.TTS.utils.generic_utils import get_user_data_dir
+from src.xtts.TTS.utils.manage import ModelManager
+
+# coqui-tts 0.25.1
+# from TTS.api import TTS
+# from TTS.tts.configs.xtts_config import XttsConfig    
+# from TTS.tts.models.xtts import Xtts
+
+# from trainer.io import get_user_data_dir
+# from TTS.utils.manage import ModelManager
 
 from src.utils.audio_utils import postprocess_tts_wave_int16, convertSampleRateTo16khz, wave_header_chunk
 
@@ -266,7 +275,7 @@ class XTTS_v2(TTSInterface):
             pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
             # such as chunk size 9600, (a.k.a 24K*20ms*2)
             print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
-            yield wave_header_chunk(pcm_data_24K, 1, 2, 16000)
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
             
         wav = torch.cat(wav_chunks, dim=0)
         #real_time_factor= (time.time() - t0) / generated_seconds
