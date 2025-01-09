@@ -69,7 +69,7 @@ class OllamaLLM(LLMInterface):
         relevant_context = [self.vault_content[idx].strip() for idx in top_indices]
         return relevant_context
 
-    async def generate(self, history: List[Dict[str, str]], vault_input: str, simultaneous: bool, target_lang: str, max_length: int = 128) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate(self, history: List[Dict[str, str]], vault_input: str, simultaneous: bool, target_lang: str, max_length: int = 256) -> Tuple[str, List[Dict[str, str]]]:
         # with open("vault.txt", "a", encoding="utf-8") as vault_file:
         #     print("Wrote to info.")
         #     vault_file.write(vault_input + "\n")
@@ -97,7 +97,7 @@ class OllamaLLM(LLMInterface):
             messages=messages,
             stream=True,
             options={
-                'num_predict': 128,
+                'num_predict': 256,
                 'temperature': 1,
             },
         )
@@ -107,7 +107,7 @@ class OllamaLLM(LLMInterface):
                 yield chunk["message"]["content"]
 
 
-    async def generate_response(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str, stream:  bool, max_tokens: int = 128) -> Tuple[str, List[Dict[str, str]]]:
+    async def generate_response(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str, stream:  bool, max_tokens: int = 256) -> Tuple[str, List[Dict[str, str]]]:
         start_time = time.time()
 
         if history is None:
@@ -126,7 +126,7 @@ class OllamaLLM(LLMInterface):
         response = client.chat.completions.create(
             model=self.model,
             messages=messages,
-            max_tokens=128,
+            max_tokens=256,
             temperature=1,
         )
 
