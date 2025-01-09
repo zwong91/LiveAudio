@@ -5,6 +5,9 @@ import styles from "./page.module.css";
 import { useMicVAD, utils } from "@ricky0123/vad-react"
 
 import LanguageSelection from './languageselect';
+import { WavRecorder, WavStreamPlayer } from 'wavtools';
+
+const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 24000 });
 
 // 音频管理器
 const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecording: Function) => {
@@ -53,6 +56,23 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
   };
 
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
+
+    // Create 1s of empty PCM16 audio
+    const audio = new Int16Array(24000);
+    // Queue 3s of audio, will start playing immediately
+    //wavStreamPlayer.add16BitPCM(chunk.data, chunk.track);
+    // json: {
+      // track: str
+      // mimeType: str
+      // data: bytes Int16Array
+    //}
+    wavStreamPlayer.add16BitPCM(audio, 'my-track');
+    wavStreamPlayer.add16BitPCM(audio, 'my-track');
+    wavStreamPlayer.add16BitPCM(audio, 'my-track');
+
+    // get data for visualization
+    const frequencyData = wavStreamPlayer.getFrequencies();
+
     const text = new TextDecoder("utf-8").decode(audioData);
 
     if (text.includes("END_OF_AUDIO")) {
@@ -241,8 +261,10 @@ const useWebRTC = (
       };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
-        dataChannel.onopen = () => {
+        dataChannel.onopen = async () => {
           console.log("DataChannel opened and ready to use:", dataChannel.label);
+          // Connect to microphone
+          await wavStreamPlayer.connect();
           const audioConfig = {
             type: 'config',
             data: {
@@ -285,8 +307,14 @@ const useWebRTC = (
           }
         };
 
-        dataChannel.onclose = () => {
+        dataChannel.onclose = async () => {
           console.log("DataChannel closed:", dataChannel.label);
+          // Interrupt the audio (halt playback) at any time
+          // To restart, need to call .add16BitPCM() again
+          const trackOffset = wavStreamPlayer.interrupt();
+          trackOffset.trackId; // "my-track"
+          trackOffset.offset; // sample number
+          trackOffset.currentTime; // time in track
         };
       };
   
