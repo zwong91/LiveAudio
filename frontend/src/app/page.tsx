@@ -56,6 +56,7 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
   };
 
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
+    setIsPlayingAudio(true);
     const audio = new Int16Array(audioData);
 
     // Queue 3s of audio, will start playing immediately
@@ -66,7 +67,7 @@ const useAudioManager = (audioQueue: Blob[], setAudioQueue: Function, setIsRecor
       // data: bytes Int16Array
     //}
     wavStreamPlayer.add16BitPCM(audio, 'my-track');
-
+    setIsPlayingAudio(false);
     // get data for visualization
     const frequencyData = wavStreamPlayer.getFrequencies();
 
@@ -389,12 +390,12 @@ export default function Home() {
     targetLang
   );
 
-  useEffect(() => {
-    if (!isPlayingAudio && audioQueue.length > 0) {
-      const nextAudioBlob = audioQueue.shift();
-      if (nextAudioBlob) playAudio(nextAudioBlob);
-    }
-  }, [isPlayingAudio, audioQueue, playAudio]);
+  // useEffect(() => {
+  //   if (!isPlayingAudio && audioQueue.length > 0) {
+  //     const nextAudioBlob = audioQueue.shift();
+  //     if (nextAudioBlob) playAudio(nextAudioBlob);
+  //   }
+  // }, [isPlayingAudio, audioQueue, playAudio]);
 
   // Integrate Eruda
   useEffect(() => {
