@@ -30,7 +30,7 @@ from src.xtts.TTS.utils.manage import ModelManager
 
 # coqui-tts 0.25.1
 # from TTS.api import TTS
-# from TTS.tts.configs.xtts_config import XttsConfig    
+# from TTS.tts.configs.xtts_config import XttsConfig
 # from TTS.tts.models.xtts import Xtts
 
 # from trainer.io import get_user_data_dir

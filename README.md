@@ -55,7 +55,8 @@ pip install -e .[all,dev,notebooks]  -i https://pypi.tuna.tsinghua.edu.cn/simple
 HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2  --local-dir  XTTS-v2
 
 
-#5. pip install git+https://github.com/huggingface/parler-tts.git
+#5. parler-tts
+pip install git+https://github.com/huggingface/parler-tts.git
 # pip install flash-attn
 
 (rt) root@ash:~/audio# nvidia-smi
