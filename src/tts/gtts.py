@@ -69,7 +69,7 @@ class GTTS(TTSInterface):
             # 将 BytesIO 中的数据重置指针，并加载为 AudioSegment
             f.seek(0)
             audio: AudioSegment = AudioSegment.from_mp3(f)
-            if self.voice.speed != 1.0:
+            if self.speed != 1.0:
                 audio = audio.speedup(
                     playback_speed=self.speed,
                     chunk_size=self.chunk_length,
