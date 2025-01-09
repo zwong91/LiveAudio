@@ -15,7 +15,7 @@ from pydub import AudioSegment
 from scipy.io.wavfile import write
 
 class ParlerTTS(TTSInterface):
-    def __init__(self, model_id="parler-tts/parler_tts_mini_v0.1", tts_description=None, temperature=1.0,):
+    def __init__(self, model_id="parler-tts/parler-tts-mini-v1", tts_description=None, temperature=1.0,):
         from parler_tts import ParlerTTSForConditionalGeneration
         from transformers import AutoTokenizer
         from transformers.modeling_outputs import BaseModelOutput
