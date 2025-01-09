@@ -287,7 +287,7 @@ class Server:
 
         @s2s_response.on("open")            
         async def on_open():
-            print(f"DataChannel {channel.label} opened")
+            print(f"DataChannel {s2s_response.label} opened")
 
         @s2s_response.on("message")
         def on_message(message):
