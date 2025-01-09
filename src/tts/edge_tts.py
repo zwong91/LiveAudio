@@ -132,15 +132,7 @@ class EdgeTTS(TTSInterface):
             volume=volume_str
             #proxy="http://127.0.0.1:7890"
         )
-        #1. send talking audio
-        if not simultaneous:
-            audio = AudioSegment.from_wav(self.talking_wav)
-            # 重采样为 16kHz，单声道，16-bit
-            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            pcm_data_16K = audio_resampled.raw_data
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
-
-        #2. stream synthesize audio
+        #stream synthesize audio
         with io.BytesIO() as f:
             async for chunk in communicate.stream():
                 if chunk["type"] == "audio":
@@ -200,12 +192,4 @@ class EdgeTTS(TTSInterface):
                 
         #         # 使用 wave_header_chunk 发送处理后的数据
         #         yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
-     
-        #3. send silent audio          
-        if not simultaneous:
-            audio = AudioSegment.from_wav(self.silence_wav)
-            # 重采样为 16kHz，单声道，16-bit
-            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            pcm_data_16K = audio_resampled.raw_data
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
                 
