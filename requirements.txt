@@ -18,6 +18,7 @@ edge-tts
 gTTS==2.5.4
 pyttsx3==2.98
 coqui-tts==0.25.1
+elevenlabs==1.50.3
 pydub
 onnx
 onnxconverter_common
