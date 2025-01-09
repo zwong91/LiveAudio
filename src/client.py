@@ -27,6 +27,8 @@ class Client:
 
     def __init__(self, use_webrtc, client_id, sampling_rate, samples_width):
         self.use_webrtc = use_webrtc
+        # client side channel
+        self.channel = None
         self.client_id = client_id
         self.history = []
         self.speaker = None
@@ -63,6 +65,9 @@ class Client:
                 **self.config["processing_args"],
             )
         )
+    
+    def updat_datachannel(self, channel):
+        self.channel = channel 
 
     def append_audio_data(self, audio_data, vc_uid):
         self.buffer.extend(audio_data)

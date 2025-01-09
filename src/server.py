@@ -242,7 +242,7 @@ class Server:
             ordered=True,
         )
         self.pcs.add(pc)
-        logging.debug(f"Peer Connection Created for: {request}")
+        logging.debug(f"Peer Connection Created for: {request.client.host}")
 
         @pc.on("iceconnectionstatechange")
         async def on_iceconnectionstatechange():
@@ -288,6 +288,7 @@ class Server:
         @pc.on("datachannel")
         def on_datachannel(channel):
             logging.debug(f"DataChannel: {channel.label}")
+            client.updat_datachannel(channel)
             
             @channel.on("open")
             async def on_open():
@@ -310,7 +311,7 @@ class Server:
                             logging.debug(f"Updated config: {client.config}")
                         elif message_type == "ping":
                             logging.debug("Ping received. Sending pong...")
-                            #channel.send(json.dumps({"type": "pong"}))
+                            #channel.send(b"pongpong")
                         elif message.type == "start":
                             logger.debug(f'RTC DC: Recording started with track')
                         elif message.type == "stop":

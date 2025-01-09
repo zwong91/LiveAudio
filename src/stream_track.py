@@ -23,8 +23,8 @@ class ClientStreamTrack(MediaStreamTrack):
             asr_pipeline,
             llm_pipeline,
             tts_pipeline,
-            peer_connection,
-            datachannel, 
+            peer_connection=None,
+            datachannel=None, 
             signaling=None
     ):
         super().__init__()  # don't forget this!
@@ -35,12 +35,10 @@ class ClientStreamTrack(MediaStreamTrack):
         self.asr_pipeline = asr_pipeline
         self.llm_pipeline = llm_pipeline
         self.tts_pipeline = tts_pipeline
-        self.peer_connection = peer_connection
-        self.dc = datachannel
+        #self.peer_connection = peer_connection
+        # server side channel
+        #self.channel = datachannel
 
-        self.response_ready = False
-        self.previous_response_silence = False
-        
         self.sampling_rate = 16_000
         self.resampler = av.AudioResampler(
             format="s16",
@@ -55,31 +53,21 @@ class ClientStreamTrack(MediaStreamTrack):
         frame_array = frame.to_ndarray()
         byte_stream = frame_array[0].astype(np.int16).tobytes()
         self.client.append_audio_data(byte_stream, "default")
+        channel = self.client.channel
         try:
-            if self.dc.readyState == "open":
+            if channel is not None and channel.readyState == "open":
                 self.client.process_audio(
-                    self.dc, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
+                    channel, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
                 )
         except Exception as e:
             logging.error(f"Processing error for {self.client.client_id}: {e}")
 
-        #print(f"Updated config: {self.client.config}")
         return frame
-    
 
+    def playback(self):
         """ Playback Stream Track  
             add response player
         """
-    def select_track(self):
-        if self.response_ready:
-            self.track = MediaPlayer("xtts2_out.wav", format="wav", loop=False).audio
-        else:
-            self.track = MediaPlayer("silence.wav", format="wav", loop=False).audio
-        if self.dc.readyState == "open":
-            if self.response_ready:
-                self.dc.send("response")
-                self.previous_response_silence = False
-            else:
-                if not self.previous_response_silence:
-                    self.dc.send("silence")
-                    self.previous_response_silence = True
+        self.track = MediaPlayer("ding.wav", format="wav", loop=False).audio
+        if self.channel is not None and self.channel.readyState == "open":
+            self.channel.send(b"s-dingding")

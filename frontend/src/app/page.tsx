@@ -316,63 +316,62 @@ const useWebRTC = (
     }
   }, [dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);
 
+  // useEffect(() => {
+  //   if (peerConnection) {
+  //     peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
+  //       const dataChannel = event.channel;
+  //       setDataChannel(dataChannel);
+  //       dataChannel.onopen = () => {
+  //         console.log("DataChannel opened and ready to use:", dataChannel.label);
+  //         const audioConfig = {
+  //           type: 'config',
+  //           data: {
+  //               is_simultaneous: isSimultaneous,
+  //               target_lang: targetLang,
+  //           }
+  //       };
+  //       // 发送配置数据
+  //       if (dataChannel.readyState === 'open') {
+  //         dataChannel.send(JSON.stringify(audioConfig));
+  //       } else {
+  //         console.error("DataChannel is not open, unable to send data.");
+  //       }  
+  //       const pingInterval = setInterval(() => {
+  //           if (dataChannel.readyState === 'open') {
+  //             console.log("Sending ping...");
+  //             dataChannel.send(JSON.stringify({ type: "ping" }));
+  //           } else {
+  //             console.error("DataChannel is not open, unable to send data.");
+  //           }
+  //         }, 5000);
+  //       };
 
-  useEffect(() => {
-    if (peerConnection) {
-      peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
-        const dataChannel = event.channel;
-        setDataChannel(dataChannel);
-        dataChannel.onopen = () => {
-          console.log("DataChannel opened and ready to use:", dataChannel.label);
-          const audioConfig = {
-            type: 'config',
-            data: {
-                is_simultaneous: isSimultaneous,
-                target_lang: targetLang,
-            }
-        };
-        // 发送配置数据
-        if (dataChannel.readyState === 'open') {
-          dataChannel.send(JSON.stringify(audioConfig));
-        } else {
-          console.error("DataChannel is not open, unable to send data.");
-        }  
-        const pingInterval = setInterval(() => {
-            if (dataChannel.readyState === 'open') {
-              console.log("Sending ping...");
-              dataChannel.send(JSON.stringify({ type: "ping" }));
-            } else {
-              console.error("DataChannel is not open, unable to send data.");
-            }
-          }, 5000);
-        };
+  //       dataChannel.onmessage = async (event: MessageEvent) => {
+  //         console.log("Received message:", event.data);
+  //         try {
+  //           let audioData: ArrayBuffer;
 
-        dataChannel.onmessage = async (event: MessageEvent) => {
-          console.log("Received message:", event.data);
-          try {
-            let audioData: ArrayBuffer;
+  //           if (event.data instanceof ArrayBuffer) {
+  //             audioData = event.data;
+  //           } else if (event.data instanceof Blob) {
+  //             audioData = await event.data.arrayBuffer();
+  //           } else {
+  //             throw new Error("Unsupported data type received");
+  //           }
 
-            if (event.data instanceof ArrayBuffer) {
-              audioData = event.data;
-            } else if (event.data instanceof Blob) {
-              audioData = await event.data.arrayBuffer();
-            } else {
-              throw new Error("Unsupported data type received");
-            }
+  //           checkAndBufferAudio(audioData);
+  //         } catch (error) {
+  //           console.error("Error processing WebRTC message:", error);
+  //         }
+  //       };
 
-            checkAndBufferAudio(audioData);
-          } catch (error) {
-            console.error("Error processing WebRTC message:", error);
-          }
-        };
+  //       dataChannel.onclose = () => {
+  //         console.log("DataChannel closed:", dataChannel.label);
+  //       };
+  //     };
 
-        dataChannel.onclose = () => {
-          console.log("DataChannel closed:", dataChannel.label);
-        };
-      };
-
-    }
-  }, [peerConnection, dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);  
+  //   }
+  // }, [peerConnection, dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);  
 
   return {
     connectionStatus,
