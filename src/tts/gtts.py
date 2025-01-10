@@ -87,13 +87,13 @@ class GTTS(TTSInterface):
                 audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
                 # 处理音频，重采样到22050Hz，单声道，16bit
                 audio_resampled = (
-                    audio.set_frame_rate(22050)
+                    audio.set_frame_rate(16000)
                         .set_channels(1)
                         .set_sample_width(2)  # 16bit sample_width (16/8=2)
                 )
                 pcm_data_16K = audio_resampled.raw_data
                 # 使用 wave_header_chunk 发送处理后的数据
-                yield wave_header_chunk(pcm_data_16K, 1, 2, 22050)
+                yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
         #send silent audio
         if not simultaneous:
