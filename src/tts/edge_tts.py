@@ -157,9 +157,11 @@ class EdgeTTS(TTSInterface):
             if chunk["type"] == "audio":
                 total_data += chunk["data"]
                 # 如果接收到的数据达到一个完整的块大小
-                if len(total_data) >= CHUNK_SIZE and is_first_chunk:
-                    print(f"First chunk Time elapsed: {time.time() - start_time:.2f} seconds")
-                    is_first_chunk = False
+                if len(total_data) >= CHUNK_SIZE:
+                    if is_first_chunk:
+                        print(f"First chunk Time elapsed: {time.time() - start_time:.2f} seconds")
+                        is_first_chunk = False
+
                     # 使用 BytesIO 来读取音频数据
                     with io.BytesIO(total_data[:CHUNK_SIZE]) as audio_io:
                         audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
@@ -175,23 +177,6 @@ class EdgeTTS(TTSInterface):
                     
                     # 移除已经处理的音频数据, 并且向前overlapped
                     total_data = total_data[CHUNK_SIZE:]
-
-        # 处理剩余的数据
-        if total_data:
-            print(f"Time elapsed: {time.time() - start_time:.2f} seconds")
-            # 使用 BytesIO 来读取剩余的音频数据
-            with io.BytesIO(total_data) as audio_io:
-                audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
-                # 处理音频，重采样到16kHz，单声道，16bit
-                audio_resampled = (
-                    audio.set_frame_rate(16000)
-                        .set_channels(1)
-                        .set_sample_width(2)  # 16bit sample_width (16/8=2)
-                )
-                pcm_data_16K = audio_resampled.raw_data
-                
-                # 使用 wave_header_chunk 发送处理后的数据
-                yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
         #send silent audio
         if not simultaneous:
