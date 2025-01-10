@@ -217,15 +217,6 @@ const useWebRTC = (
       // Set session active when the data channel is opened
       dataChannel.addEventListener("open", () => {
         console.log("DataChannel opened and ready to use:", dataChannel.label);
-        const audioConfig = {
-          type: 'config',
-          data: {
-              is_simultaneous: isSimultaneous,
-              target_lang: targetLang,
-          }
-        };
-        dataChannel.send(JSON.stringify(audioConfig));
-
         const pingInterval = setInterval(() => {
           if (dataChannel.readyState === 'open') {
             dataChannel.send(JSON.stringify({ type: "ping" }));
