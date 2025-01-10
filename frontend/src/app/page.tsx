@@ -15,7 +15,7 @@ const useAudioManager = (setIsPlayingAudio: Function, setIsRecording: Function) 
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null); // 追踪当前播放的音频
 
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
-    const audio = new Int16Array(audioData);
+    //const audio = new Int16Array(audioData);
 
     // Queue 3s of audio, will start playing immediately
     //wavStreamPlayer.add16BitPCM(chunk.data, chunk.track);
@@ -24,7 +24,7 @@ const useAudioManager = (setIsPlayingAudio: Function, setIsRecording: Function) 
       // mimeType: str
       // data: bytes Int16Array
     //}
-    wavStreamPlayer.add16BitPCM(audio, 'my-track');
+    wavStreamPlayer.add16BitPCM(audioData, 'my-track');
     setIsPlayingAudio(true)
     // get data for visualization
     const frequencyData = wavStreamPlayer.getFrequencies();
