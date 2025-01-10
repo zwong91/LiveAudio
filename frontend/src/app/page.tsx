@@ -176,7 +176,7 @@ const useWebRTC = (
       setupConnection();
 
       // 创建 DataChannel 对象, 触发ICE协商
-      const dc = pc.createDataChannel('c');
+      const dc = pc.createDataChannel('c-events');
       setDataChannel(dc);
       return () => {
         if (reconnectTimer) {
@@ -192,6 +192,59 @@ const useWebRTC = (
     }
   }, [reconnectAttempts]);
 
+    // Attach event listeners to the data channel when a new one is created
+  useEffect(() => {
+    if (dataChannel) {
+      // Append new server events to the list
+      // dataChannel.addEventListener("message", async (e) => {
+      //   console.log("Received message:", e.data);
+      //   try {
+      //     let audioData: ArrayBuffer;
+
+      //     if (e.data instanceof ArrayBuffer) {
+      //       audioData = e.data;
+      //     } else if (e.data instanceof Blob) {
+      //       audioData = await e.data.arrayBuffer();
+      //     } else {
+      //       throw new Error("Unsupported data type received");
+      //     }
+      //     checkAndBufferAudio(audioData);
+      //   } catch (error) {
+      //     console.error("Error processing WebRTC message:", error);
+      //   }
+      // });
+
+      // Set session active when the data channel is opened
+      dataChannel.addEventListener("open", () => {
+        console.log("DataChannel opened and ready to use:", dataChannel.label);
+        const audioConfig = {
+          type: 'config',
+          data: {
+              is_simultaneous: isSimultaneous,
+              target_lang: targetLang,
+          }
+        };
+        dataChannel.send(JSON.stringify(audioConfig));
+
+        const pingInterval = setInterval(() => {
+          if (dataChannel.readyState === 'open') {
+            dataChannel.send(JSON.stringify({ type: "ping" }));
+          } else {
+            console.error("DataChannel is not open, unable to send data.");
+          }
+        }, 5000);
+
+      });
+
+      // Handle the close event
+      dataChannel.addEventListener("close", () => {
+        console.log("DataChannel has been closed:", dataChannel.label);
+        // Perform cleanup or additional logic here
+      });
+
+    }
+  }, [dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);
+  
   useEffect(() => {
     if (peerConnection) { 
       peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
@@ -214,7 +267,6 @@ const useWebRTC = (
       };
       peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
         const dataChannel = event.channel;
-        setDataChannel(dataChannel)
         dataChannel.onopen = async () => {
           console.log("DataChannel opened and ready to use:", dataChannel.label);
           // Connect to microphone
@@ -273,7 +325,7 @@ const useWebRTC = (
       };
   
     }
-  }, [peerConnection, dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);  
+  }, [peerConnection, isSimultaneous, targetLang, checkAndBufferAudio]);  
 
   return {
     connectionStatus,
