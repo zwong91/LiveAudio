@@ -43,14 +43,6 @@ class GTTS(TTSInterface):
         language = langid.classify(text)[0].strip()
         if language == 'zh':
             language = 'zh-CN'
-            
-        #1. send talking audio
-        if not simultaneous:
-            audio = AudioSegment.from_wav(self.talking_wav)
-            # 重采样为 16kHz，单声道，16-bit
-            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            pcm_data_16K = audio_resampled.raw_data
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
         voices = []
         languages = gtts.lang.tts_langs()
@@ -62,49 +54,48 @@ class GTTS(TTSInterface):
 
         file_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
 
-        #2. stream synthesize audio
-        with io.BytesIO() as f:
-            for i, chunk in enumerate(gTTS(text=text, lang=language, tld=self.tld, slow=False).stream()):
-                f.write(chunk)
-            # 将 BytesIO 中的数据重置指针，并加载为 AudioSegment
-            f.seek(0)
-            audio: AudioSegment = AudioSegment.from_mp3(f)
-            if self.speed != 1.0:
-                audio = audio.speedup(
-                    playback_speed=self.speed,
-                    chunk_size=self.chunk_length,
-                    crossfade=self.crossfade_length,
-                )
-            #audio.export(file_path, format="wav")
-
-            # 处理音频，重采样到16kHz，单声道，16bit
-            audio_resampled = (
-                audio.set_frame_rate(16000)
-                    .set_channels(1)
-                    .set_sample_width(2)  # 16bit sample_width 16/8=2  16k-mono-mp3
-            )
-            pcm_data_16K = audio_resampled.raw_data
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
-
-        # #2. Generate audio with gTTS stream
-        # for i, chunk in enumerate(gTTS(text=text, lang=language, tld=self.tld, slow=False).stream()):
-        #     if i == 0:
-        #         print(f"First chunk Time elapsed: {time.time() - start_time:.2f} seconds")            
-        #     # 使用 BytesIO 来读取音频数据
-        #     with io.BytesIO(chunk) as audio_io:
-        #         audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
-        #         # 处理音频，重采样到22050Hz，单声道，16bit
-        #         audio_resampled = (
-        #             audio.set_frame_rate(22050)
-        #                 .set_channels(1)
-        #                 .set_sample_width(2)  # 16bit sample_width (16/8=2)
+        #stream synthesize audio
+        # with io.BytesIO() as f:
+        #     for i, chunk in enumerate(gTTS(text=text, lang=language, tld=self.tld, slow=False).stream()):
+        #         f.write(chunk)
+        #     # 将 BytesIO 中的数据重置指针，并加载为 AudioSegment
+        #     f.seek(0)
+        #     audio: AudioSegment = AudioSegment.from_mp3(f)
+        #     if self.speed != 1.0:
+        #         audio = audio.speedup(
+        #             playback_speed=self.speed,
+        #             chunk_size=self.chunk_length,
+        #             crossfade=self.crossfade_length,
         #         )
-        #         pcm_data_16K = audio_resampled.raw_data
-        #         # 使用 wave_header_chunk 发送处理后的数据
-        #         yield wave_header_chunk(pcm_data_16K, 1, 2, 22050)
+        #     #audio.export(file_path, format="wav")
 
+        #     # 处理音频，重采样到16kHz，单声道，16bit
+        #     audio_resampled = (
+        #         audio.set_frame_rate(16000)
+        #             .set_channels(1)
+        #             .set_sample_width(2)  # 16bit sample_width 16/8=2  16k-mono-mp3
+        #     )
+        #     pcm_data_16K = audio_resampled.raw_data
+        #     yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
-        #3. send silent audio
+        #Generate audio with gTTS stream
+        for i, chunk in enumerate(gTTS(text=text, lang=language, tld=self.tld, slow=False).stream()):
+            if i == 0:
+                print(f"First chunk Time elapsed: {time.time() - start_time:.2f} seconds")            
+            # 使用 BytesIO 来读取音频数据
+            with io.BytesIO(chunk) as audio_io:
+                audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
+                # 处理音频，重采样到22050Hz，单声道，16bit
+                audio_resampled = (
+                    audio.set_frame_rate(22050)
+                        .set_channels(1)
+                        .set_sample_width(2)  # 16bit sample_width (16/8=2)
+                )
+                pcm_data_16K = audio_resampled.raw_data
+                # 使用 wave_header_chunk 发送处理后的数据
+                yield wave_header_chunk(pcm_data_16K, 1, 2, 22050)
+
+        #send silent audio
         if not simultaneous:
             audio = AudioSegment.from_wav(self.silence_wav)
             # 重采样为 16kHz，单声道，16-bit

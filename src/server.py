@@ -284,6 +284,36 @@ class Server:
                 logging.debug(f"Track {track.kind} ended")
                 track.stop()
                 #await recorder.stop()
+                
+        @pc.on("datachannel")
+        def on_datachannel(channel):
+            logging.debug(f"DataChannel created: {channel.label}")
+            @channel.on("open")
+            async def on_open():
+                logging.debug("DataChannel opened")
+                channel.send(json.dumps({'type': 'pong'}))
+            @channel.on("message")
+            def on_message(message):
+                if isinstance(message, str):
+                    try:
+                        # 尝试解析 JSON 格式的字符串消息
+                        parsed_message = json.loads(message)
+                        message_type = parsed_message.get("type")
+                        if message_type == "config":
+                            is_simultaneous = parsed_message["data"].get("is_simultaneous")
+                            target_lang = parsed_message["data"].get("target_lang")
+                            print(f"Configuration received - Simultaneous: {is_simultaneous}, Target: {target_lang}")
+                            client.update_config(parsed_message["data"])
+                            logging.debug(f"Updated config: {client.config}")
+                        elif message_type == "ping":
+                            logging.debug("Ping received. Sending pong...")
+                            channel.send(json.dumps({'type': 'pong'}))
+                        else:
+                            logging.warning(f"Unknown message type: {message_type}")
+                    except json.JSONDecodeError:
+                        logging.error("Failed to decode JSON from string message")
+                else:
+                    logging.warning("Received an unsupported message type")
 
         @s2s_response.on("open")            
         async def on_open():
@@ -306,11 +336,6 @@ class Server:
                         logging.debug(f"Updated config: {client.config}")
                     elif message_type == "ping":
                         logging.debug("Ping received. Sending pong...")
-                        #s2s_response.send(b"pongpong")
-                    elif message.type == "start":
-                        logger.debug(f'RTC DC: Recording started with track')
-                    elif message.type == "stop":
-                        logger.debug('RTC DC: Recording stopped')
                     else:
                         logging.warning(f"Unknown message type: {message_type}")
                 except json.JSONDecodeError:
