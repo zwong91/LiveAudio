@@ -6,6 +6,7 @@ import { useMicVAD, utils } from "@ricky0123/vad-react"
 
 import LanguageSelection from './languageselect';
 import { WavRecorder, WavStreamPlayer } from 'wavtools-patch';
+import { json } from "stream/consumers";
 
 const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 16000 });
 
@@ -196,23 +197,16 @@ const useWebRTC = (
   useEffect(() => {
     if (dataChannel) {
       // Append new server events to the list
-      // dataChannel.addEventListener("message", async (e) => {
-      //   console.log("Received message:", e.data);
-      //   try {
-      //     let audioData: ArrayBuffer;
-
-      //     if (e.data instanceof ArrayBuffer) {
-      //       audioData = e.data;
-      //     } else if (e.data instanceof Blob) {
-      //       audioData = await e.data.arrayBuffer();
-      //     } else {
-      //       throw new Error("Unsupported data type received");
-      //     }
-      //     checkAndBufferAudio(audioData);
-      //   } catch (error) {
-      //     console.error("Error processing WebRTC message:", error);
-      //   }
-      // });
+      dataChannel.addEventListener("message", async (e) => {
+        console.log("Received channel message:", e.data);
+        try {
+          // 解析 JSON 数据
+          const json = JSON.parse(e.data);
+          console.log("Parsed JSON:", json);
+        } catch (error) {
+          console.error("Error processing WebRTC message:", error);
+        }
+      });
 
       // Set session active when the data channel is opened
       dataChannel.addEventListener("open", () => {
