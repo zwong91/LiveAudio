@@ -12,17 +12,14 @@ const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 16000 });
 
 // 音频管理器
 const useAudioManager = (setIsPlayingAudio: Function, setIsRecording: Function) => {
-  const [audioDuration, setAudioDuration] = useState<number>(0);
-  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null); // 追踪当前播放的音频
-
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
     //const audio = new Int16Array(audioData);
 
     // Queue 3s of audio, will start playing immediately
     //wavStreamPlayer.add16BitPCM(chunk.data, chunk.track);
     // json: {
-      // track: str
-      // mimeType: str
+      // track: str "my-track"
+      // mimeType: str "pcm16"
       // data: bytes Int16Array
     //}
     wavStreamPlayer.add16BitPCM(audioData, 'my-track');
@@ -41,11 +38,6 @@ const useAudioManager = (setIsPlayingAudio: Function, setIsRecording: Function) 
     // }
 
     // // 如果没有检测到 "END_OF_AUDIO" 信号，继续缓存音频并立即播放
-    // const audioBlob = new Blob([audioData], { type: "audio/wav" });
-    // setAudioQueue((prevQueue: Blob[]) => {
-    //   const newQueue = [...prevQueue, audioBlob];
-    //   return newQueue;
-    // });
   };
 
   return {
