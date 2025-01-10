@@ -240,7 +240,7 @@ class XTTS_v2(TTSInterface):
             gpt_cond_latent,
             speaker_embedding,
             # Streaming reduce it to get faster response, but degrade quality
-            stream_chunk_size=20,
+            stream_chunk_size=30,
             overlap_wav_len=1024,
             # GPT inference
             temperature=0.01,
@@ -273,12 +273,4 @@ class XTTS_v2(TTSInterface):
         #real_time_factor= (time.time() - t0) / generated_seconds
         real_time_factor= (time.time() - t0) / wav.shape[0] * 24000 ## 4 bytes per sample, 24000 Hz
         print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
-        
-        #send silent audio
-        if not simultaneous:
-            audio = AudioSegment.from_wav(self.silence_wav)
-            # 重采样为 16kHz，单声道，16-bit
-            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            pcm_data_16K = audio_resampled.raw_data
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
