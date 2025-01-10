@@ -6,7 +6,7 @@ interface LanguageSelectionProps {
 
 const LanguageSelection = ({ onLanguageChange }: LanguageSelectionProps) => {
   const [isSimultaneous, setIsSimultaneous] = useState(false); // 是否启用同声传译
-  const [targetLang, setTargetLang] = useState('英语'); // 目标语言
+  const [targetLang, setTargetLang] = useState('中文'); // 目标语言
 
   // 处理同声传译启用与禁用
   const handleSimultaneousChange = (e: React.ChangeEvent<HTMLInputElement>) => {
