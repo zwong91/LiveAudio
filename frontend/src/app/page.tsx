@@ -198,11 +198,11 @@ const useWebRTC = (
     if (dataChannel) {
       // Append new server events to the list
       dataChannel.addEventListener("message", async (e) => {
-        console.log("Received channel message:", e.data);
+        console.log("c-events channel received message:", e.data);
         try {
           // 解析 JSON 数据
           const json = JSON.parse(e.data);
-          console.log("Parsed JSON:", json);
+          //console.log("Parsed JSON:", json);
         } catch (error) {
           console.error("Error processing WebRTC message:", error);
         }
