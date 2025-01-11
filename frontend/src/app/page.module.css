@@ -124,31 +124,6 @@
   cursor: pointer;
 }
 
-.requestPermissionButton {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  border: none;
-  background: #ffb800;
-  color: white;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(255, 184, 0, 0.4);
-}
-
-.requestPermissionButton:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(255, 184, 0, 0.5);
-}
-
-.requestPermissionButton:active {
-  transform: scale(0.95);
-}
-
 .controls {
   position: absolute;
   bottom: 140px; /* 将按钮进一步上移 */
