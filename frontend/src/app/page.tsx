@@ -61,10 +61,24 @@ const useWebRTC = (
   const [dataChannel, setDataChannel] = useState<RTCDataChannel | null>(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [reconnectTimer, setReconnectTimer] = useState<NodeJS.Timeout | null>(null);
+  
   useEffect(() => {
     // Ensure WebRTC only runs in the browser
     if (typeof window !== "undefined" && window.RTCPeerConnection) {
 
+      // 请求麦克风权限
+      const requestMicrophonePermission = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          stream.getTracks().forEach(track => track.stop()); // 停止音频流，释放资源
+        } catch (error) {
+          alert("麦克风权限被拒绝，无法进行 WebRTC 通信");
+          setConnectionStatus("permission-denied");
+          return;
+        }
+      };
+
+      requestMicrophonePermission();
       // 从环境变量中获取值
       const username = process.env.NEXT_PUBLIC_USERNAME;
       const credential = process.env.NEXT_PUBLIC_CREDENTIAL;
@@ -108,7 +122,6 @@ const useWebRTC = (
           realm: 'gtp.aleopool.cc',
         },
       ];
-
 
       // 配置 ICE 服务器
       const pcConfig = {
