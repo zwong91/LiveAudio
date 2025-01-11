@@ -336,7 +336,7 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(true);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioList, setAudioList] = useState<string[]>([]);
-
+  const [hasPermission, setHasPermission] = useState(false);
   const [isSimultaneous, setIsSimultaneous] = useState(false);
   const [targetLang, setTargetLang] = useState('中文');
   const handleLanguageChange = (newIsSimultaneous: boolean, newTargetLang: string) => {
@@ -430,6 +430,7 @@ const startCall = () => {
   requestMicrophonePermission()
     .then(() => {
       // 在此处继续执行 WebRTC 相关的代码
+      setHasPermission(true);
     })
     .catch(() => {
       console.error("Failed to get microphone permission");
@@ -480,13 +481,13 @@ const startCall = () => {
       </div>
 
       <div className={styles.controls}>
-        <button
-          className={styles.startCallButton}
-          onClick={startCall}
-        >
-          Start Call
-        </button>
-      </div>
+      <button
+        className={styles.requestPermissionButton}
+        onClick={hasPermission ? startCall : requestPermissions} // 只有在权限被授予后才启动通话
+      >
+        {hasPermission ? 'Start Call' : 'Request Permissions'}
+      </button>
+    </div>
 
       <div className={styles.controls}>
         <button
