@@ -483,7 +483,7 @@ const startCall = () => {
       <div className={styles.requestPermissionButton}>
       <button
         className={styles.requestPermissionButton}
-        onClick={requestPermissions} // 只有在权限被授予后才启动通话
+        onClick={startCall} // 只有在权限被授予后才启动通话
       >
         {'Request Permissions'}
       </button>
