@@ -267,7 +267,10 @@ class XTTS_v2(TTSInterface):
             pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
             # such as chunk size 9600, (a.k.a 24K*20ms*2)
             print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+            if i == 0:
+                yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+            else:
+                yield pcm_data_16K
             
         wav = torch.cat(wav_chunks, dim=0)
         #real_time_factor= (time.time() - t0) / generated_seconds
