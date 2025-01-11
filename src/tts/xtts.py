@@ -252,7 +252,14 @@ class XTTS_v2(TTSInterface):
             speed=1.0,
             enable_text_splitting=True,
         )
-        
+
+        if not simultaneous:
+            audio = AudioSegment.from_wav(self.talking_wav)
+            # 重采样为 16kHz，单声道，16-bit
+            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+            pcm_data_16K = audio_resampled.raw_data
+            yield pcm_data_16K
+    
         #stream synthesize audio
         for i, chunk in enumerate(chunks):
             if i == 0:
@@ -267,11 +274,8 @@ class XTTS_v2(TTSInterface):
             pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
             # such as chunk size 9600, (a.k.a 24K*20ms*2)
             print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
-            if i == 0:
-                yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
-            else:
-                yield pcm_data_16K
-            
+            yield pcm_data_16K
+
         wav = torch.cat(wav_chunks, dim=0)
         #real_time_factor= (time.time() - t0) / generated_seconds
         real_time_factor= (time.time() - t0) / wav.shape[0] * 24000 ## 4 bytes per sample, 24000 Hz

@@ -146,7 +146,8 @@ class ParlerTTS(TTSInterface):
                 )
                 pcm_data_16K = audio_resampled.raw_data
                 # 使用 wave_header_chunk 发送处理后的数据
-                yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+                #yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+                yield pcm_data_16K
 
         # Continue streaming the rest of the audio
         first_token = False
@@ -171,7 +172,8 @@ class ParlerTTS(TTSInterface):
                     )
                     pcm_data_16K = audio_resampled.raw_data
                     # 使用 wave_header_chunk 发送处理后的数据
-                    yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+                    #yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+                    yield pcm_data_16K
                 first_token = True
             except StopIteration:
                 generation_completed = True

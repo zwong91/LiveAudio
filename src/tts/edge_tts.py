@@ -149,6 +149,13 @@ class EdgeTTS(TTSInterface):
         #     pcm_data_16K = audio_resampled.raw_data
         #     yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
+        if not simultaneous:
+            audio = AudioSegment.from_wav(self.talking_wav)
+            # 重采样为 16kHz，单声道，16-bit
+            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+            pcm_data_16K = audio_resampled.raw_data
+            yield pcm_data_16K
+
         # FIXME: ms-edge 浏览器也是有时候就是没有语音数据返回, ask microsoft. 还有就是mp3 chunk边界间隙依赖上一个chunk, 最终的方式应该是直接yield chunk["data"]， 前端用mpv实时流播放器
         CHUNK_SIZE = 20 * 1024  # 假设每个块大约1024字节（根据实际格式调整）
         total_data = b""  # 用于存储接收到的音频数据
@@ -172,9 +179,10 @@ class EdgeTTS(TTSInterface):
                             print(f"First chunk Time elapsed: {time.time() - start_time:.2f} seconds")
                             is_first_chunk = False
                             # 使用 wave_header_chunk 发送处理后的数据
-                            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
-                        else:
-                            yield pcm_data_16K
+                            #yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+                        # raw pcm data
+                        yield pcm_data_16K
+                    
                     # 移除已经处理的音频数据, 并且向前overlapped
                     total_data = total_data[CHUNK_SIZE:]
                 
