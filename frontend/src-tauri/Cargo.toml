@@ -7,7 +7,7 @@ license = "mit"
 repository = ""
 default-run = "frontend"
 edition = "2021"
-rust-version = "1.84"
+rust-version = "1.76"
 
 [lib]
 name = "app_lib"
