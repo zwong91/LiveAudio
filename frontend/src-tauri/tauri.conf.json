@@ -3,7 +3,7 @@
   "build": {
     "beforeBuildCommand": "npm run export",
     "beforeDevCommand": "npm run export:dev",
-    "frontendDist": "../dist",
+    "frontendDist": "../.next",
     "devUrl": "http://localhost:3000"
   },
   "bundle": {

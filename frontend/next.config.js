@@ -3,15 +3,12 @@ const CopyPlugin = require("copy-webpack-plugin");
 const isProd = process.env.NODE_ENV === 'production';
 
 const internalHost = process.env.TAURI_DEV_HOST || 'localhost';
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
 
   // Transpile the specific packages you need
   transpilePackages: ['onnxruntime-web', '@ricky0123/vad-web'],
-  // 配置 assetPrefix，否则服务器无法正确解析您的资产。
-  assetPrefix: isProd ? undefined : `http://${internalHost}:3000`,
 
   // Webpack custom configuration
   webpack: (config) => {
