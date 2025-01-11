@@ -6,13 +6,28 @@
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "export": "cross-env BUILD_MODE=export BUILD_APP=1 next build",
+    "export:dev": "concurrently -r \"cross-env BUILD_MODE=export BUILD_APP=1 next dev\"",
+    "app:dev": "concurrently -r \"yarn tauri dev\"",
+    "app:build": "yarn tauri build",
+    "prompts": "node ./scripts/fetch-prompts.mjs",
+    "prepare": "husky install",
+    "proxy-dev": "sh ./scripts/init-proxy.sh && proxychains -f ./scripts/proxychains.conf yarn dev"
   },
   "dependencies": {
     "@ricky0123/vad-react": "^0.0.27",
     "@types/node": "20.5.7",
     "@types/react": "18.2.21",
     "@types/react-dom": "18.2.7",
+    "@tauri-apps/plugin-clipboard-manager": "^2.2.0",
+    "@tauri-apps/plugin-dialog": "~2",
+    "@tauri-apps/plugin-fs": "~2",
+    "@tauri-apps/plugin-http": "~2",
+    "@tauri-apps/plugin-notification": "~2",
+    "@tauri-apps/plugin-shell": "~2",
+    "@tauri-apps/plugin-updater": "~2",
+    "@tauri-apps/plugin-window-state": "^2.2.0",
     "cors": "^2.8.5",
     "eslint": "8.48.0",
     "eslint-config-next": "13.4.19",
@@ -25,6 +40,8 @@
     "wavtools-patch": "^0.1.9"
   },
   "devDependencies": {
+    "@tauri-apps/api": "^2.2.0",
+    "@tauri-apps/cli": "^2.2.0",
     "copy-webpack-plugin": "^11.0.0",
     "msgpack-lite": "^0.1.26"
   }
