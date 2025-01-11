@@ -10,6 +10,18 @@ import { json } from "stream/consumers";
 
 const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 16000 });
 
+// 请求麦克风权限
+const requestMicrophonePermission = async () => {
+  try {
+    //ios 确保在用户交互下请求权限
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    stream.getTracks().forEach(track => track.stop()); // 停止音频流，释放资源
+  } catch (error) {
+    alert("麦克风权限被拒绝，无法进行 WebRTC 通信");
+    return;
+  }
+};
+
 // 音频管理器
 const useAudioManager = (setIsPlayingAudio: Function, setIsRecording: Function) => {
   const checkAndBufferAudio = (audioData: ArrayBuffer) => {
@@ -65,20 +77,6 @@ const useWebRTC = (
   useEffect(() => {
     // Ensure WebRTC only runs in the browser
     if (typeof window !== "undefined" && window.RTCPeerConnection) {
-
-      // 请求麦克风权限
-      const requestMicrophonePermission = async () => {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          stream.getTracks().forEach(track => track.stop()); // 停止音频流，释放资源
-        } catch (error) {
-          alert("麦克风权限被拒绝，无法进行 WebRTC 通信");
-          setConnectionStatus("permission-denied");
-          return;
-        }
-      };
-
-      requestMicrophonePermission();
       // 从环境变量中获取值
       const username = process.env.NEXT_PUBLIC_USERNAME;
       const credential = process.env.NEXT_PUBLIC_CREDENTIAL;
@@ -427,6 +425,17 @@ export default function Home() {
     };
   }, []);
 
+// 处理开始通话的逻辑，确保在用户交互下请求权限
+const startCall = () => {
+  requestMicrophonePermission()
+    .then(() => {
+      // 在此处继续执行 WebRTC 相关的代码
+    })
+    .catch(() => {
+      console.error("Failed to get microphone permission");
+    });
+};
+
   return (
     <div className={styles.container}>
       <div className={styles.statusBar}>
@@ -468,6 +477,15 @@ export default function Home() {
         <LanguageSelection
           onLanguageChange={handleLanguageChange} // Pass the language change handler
         />
+      </div>
+
+      <div className={styles.controls}>
+        <button
+          className={styles.startCallButton}
+          onClick={startCall}
+        >
+          Start Call
+        </button>
       </div>
 
       <div className={styles.controls}>
