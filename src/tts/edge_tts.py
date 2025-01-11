@@ -162,10 +162,11 @@ class EdgeTTS(TTSInterface):
         is_first_chunk = True
         for chunk in communicate.stream_sync():
             if chunk["type"] == "audio":
+                total_data += chunk["data"]
                 # 如果接收到的数据达到一个完整的块大小
                 if len(total_data) >= CHUNK_SIZE:
                     # 使用 BytesIO 来读取音频数据
-                    with io.BytesIO(chunk["data"]) as audio_io:
+                    with io.BytesIO(total_data[:CHUNK_SIZE]) as audio_io:
                         audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
                         # 处理音频，重采样到16kHz，单声道，16bit
                         audio_resampled = (
