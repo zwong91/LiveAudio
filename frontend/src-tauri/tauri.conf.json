@@ -1,9 +1,9 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
-    "beforeBuildCommand": "yarn export",
-    "beforeDevCommand": "yarn export:dev",
-    "frontendDist": "../out",
+    "beforeBuildCommand": "npm run export",
+    "beforeDevCommand": "npm run export:dev",
+    "frontendDist": "../dist",
     "devUrl": "http://localhost:3000"
   },
   "bundle": {
