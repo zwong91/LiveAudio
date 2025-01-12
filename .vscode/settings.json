@@ -1,4 +1,5 @@
 {
+  "github.gitProtocol": "ssh",
   "githubPullRequests.experimental.chat": true,
   "githubPullRequests.experimental.notificationsView": true,
   "githubPullRequests.assignCreated": "${user}",
@@ -27,8 +28,6 @@
     "formatting.gofumpt": true
   },
 
-  "github.gitProtocol": "ssh",
-
   // 编辑器通用设置
   "editor.formatOnSave": true,
   "editor.tabSize": 2,
@@ -38,15 +37,72 @@
   "typescript.updateImportsOnFileMove.enabled": "always",
   "javascript.updateImportsOnFileMove.enabled": "always",
 
-  // 文件自动保存
-  "files.autoSave": "afterDelay",
-  "files.autoSaveDelay": 1000,
-
-  "files.associations": { "*.stow-local-ignore": "ignore" },
+  "files.associations": {
+    "*.appxmanifest": "xml",
+    "*.ash": "shellscript",
+    "*.compose.override.yaml": "dockercompose",
+    "*.compose.yaml": "dockercompose",
+    "*.flutter-plugins": "properties",
+    "*.flutter-plugins-dependencies": "json",
+    "*.graphqlconfig": "json",
+    "*.mcmeta": "json",
+    "*.metadata": "yaml",
+    "*.mustache": "handlebars",
+    "*.pwsh": "powershell",
+    "*.sql": "sql",
+    "*.stow-local-ignore": "ignore",
+    ".env": "env",
+    ".env.*": "env",
+    ".env.*.local": "env",
+    ".gcloudignore": "ignore",
+    ".markdownlintrc": "json",
+    "authorized_keys": "ssh_config",
+    "pubspec.lock": "yaml"
+    },
+    "files.autoSave": "onWindowChange",
+    "files.exclude": {
+        "**/.classpath": true,
+        "**/.factorypath": true,
+        "**/.project": true,
+        "**/.settings": true,
+        ".elixir_ls": true,
+        "_build": true,
+        "deps": true,
+        "node_modules": false,
+        "vendor": true
+    },
+  "files.insertFinalNewline": true,
+  "files.restoreUndoStack": false,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
 
   // Git 设置
   "git.enableSmartCommit": true,
   "git.autofetch": true,
+  "git.allowForcePush": true,
+  "git.autoRepositoryDetection": "subFolders",
+  "git.autoStash": true,
+  "git.confirmForcePush": false,
+  "git.confirmSync": false,
+  "git.enableCommitSigning": true,
+  "git.ignoredRepositories": [".vscode"],
+  "git.inputValidationLength": 80,
+  "git.inputValidationSubjectLength": 80,
+  "git.pruneOnFetch": true,
+  "git.pullBeforeCheckout": true,
+  "git.repositoryScanMaxDepth": 4,
+  "git.scanRepositories": ["/home/es/Code"],
+  "git.timeline.showUncommitted": true,
+  "gitProjectManager.baseProjectsFolders": ["/home/es/Code"],
+  "gitProjectManager.ignoredFolders": [
+      "build",
+      "deps",
+      "dist",
+      "docs",
+      "node_modules"
+  ],
+  "gitProjectManager.storeRepositoriesBetweenSessions": true,
+  "gitProjectManager.unversionedProjects": ["/home/es/Code/localhost"],
 
   // Copilot 详细配置
   "github.copilot.chat.codeGeneration.instructions": [
