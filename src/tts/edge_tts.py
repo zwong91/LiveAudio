@@ -12,7 +12,7 @@ from src.utils.audio_utils import wave_header_chunk
 import langid
 
 language_list = [
-    'en-US-JennyNeural', 'en-US-GuyNeural', 'en-US-AnaNeural', 'en-US-AriaNeural', 
+    'en-US-JennyNeural', 'en-US-GuyNeural', 'en-US-AnaNeural', 'en-US-AriaNeural',
     'en-US-ChristopherNeural', 'en-US-EricNeural', 'en-US-MichelleNeural', 'en-US-RogerNeural',
     'es-MX-DaliaNeural', 'es-MX-JorgeNeural', 'ko-KR-SunHiNeural', 'ko-KR-InJoonNeural',
     'ja-JP-NanamiNeural', 'ja-JP-KeitaNeural', 'fr-FR-DeniseNeural', 'fr-FR-EloiseNeural',
@@ -54,7 +54,7 @@ class EdgeTTS(TTSInterface):
 
     """
     CHANNELS = 1
-    RATE = 24000  # azure (16000) system (22050), 
+    RATE = 24000  # azure (16000) system (22050),
     """
     def get_stream_info(self) -> dict:
         return {
@@ -164,7 +164,7 @@ class EdgeTTS(TTSInterface):
             if chunk["type"] == "audio":
                 total_data += chunk["data"]
                 # 如果接收到的数据达到一个完整的块大小
-                if len(total_data) >= CHUNK_SIZE:
+                if len(total_data) >= CHUNK_SIZE and is_first_chunk:
                     # 使用 BytesIO 来读取音频数据
                     with io.BytesIO(total_data[:CHUNK_SIZE]) as audio_io:
                         audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
@@ -182,7 +182,25 @@ class EdgeTTS(TTSInterface):
                             #yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
                         # raw pcm data
                         yield pcm_data_16K
-                    
+
                     # 移除已经处理的音频数据, 并且向前overlapped
                     total_data = total_data[CHUNK_SIZE:]
-                
+
+        # 使用 BytesIO 来读取剩余的音频数据
+        with io.BytesIO(total_data[:]) as audio_io:
+            audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
+            # 处理音频，重采样到16kHz，单声道，16bit
+            audio_resampled = (
+                audio.set_frame_rate(16000)
+                    .set_channels(1)
+                    .set_sample_width(2)  # 16bit sample_width (16/8=2)
+            )
+            pcm_data_16K = audio_resampled.raw_data
+            yield pcm_data_16K
+
+        if not simultaneous:
+            audio = AudioSegment.from_wav(self.silence_wav)
+            # 重采样为 16kHz，单声道，16-bit
+            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+            pcm_data_16K = audio_resampled.raw_data
+            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
