@@ -203,4 +203,5 @@ class EdgeTTS(TTSInterface):
             # 重采样为 16kHz，单声道，16-bit
             audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
             pcm_data_16K = audio_resampled.raw_data
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+            #yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
+            yield pcm_data_16K
