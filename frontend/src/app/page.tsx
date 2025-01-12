@@ -21,31 +21,50 @@ const isIOS = () => {
 // 请求麦克风权限
 const requestMicrophonePermission = async () => {
 	try {
-		const constraints = {
+		if (isIOS()) {
+			// iOS设备需要用户手动触发，先显示提示
+			alert('请在接下来的系统弹窗中允许访问麦克风。如果没有看到弹窗，请检查浏览器设置。');
+		}
+
+		const stream = await navigator.mediaDevices.getUserMedia({
 			audio: {
 				echoCancellation: true,
 				noiseSuppression: true,
 				autoGainControl: true,
 			},
-			video: false,
-		};
+		});
 
-		// 直接尝试获取权限
-		const stream = await navigator.mediaDevices.getUserMedia(constraints);
 		const audioTracks = stream.getAudioTracks();
-
 		if (audioTracks.length === 0) {
 			throw new Error('没有获取到音频轨道');
 		}
 
-		console.log('成功获取麦克风权限');
-		console.log('音频轨道:', audioTracks[0].label);
+		// iOS Safari需要保持一个活跃的音频流
+		if (isIOS()) {
+			// 保持流活跃但静音
+			audioTracks.forEach((track) => {
+				track.enabled = false; // 静音但保持活跃
+			});
+			// 不要立即停止流
+		} else {
+			// 非iOS设备可以停止流
+			stream.getTracks().forEach((track) => track.stop());
+		}
 
-		// 获取权限后立即释放音频流
-		stream.getTracks().forEach((track) => track.stop());
 		return true;
 	} catch (error: any) {
 		console.error('麦克风权限错误:', error);
+
+		if (isIOS()) {
+			alert('请确保已在Safari设置中允许本网站访问麦克风，然后重新加载页面。\n设置路径：设置 > Safari > 高级 > 网站设置');
+		} else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+			alert('麦克风权限被拒绝。请在浏览器设置中允许访问麦克风，然后刷新页面。');
+		} else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+			alert('未检测到麦克风设备。');
+		} else {
+			alert(`无法访问麦克风：${error.message || '未知错误'}`);
+		}
+
 		return false;
 	}
 };
@@ -487,10 +506,10 @@ export default function Home() {
 		<div className={styles.container}>
 			{!hasPermission && (
 				<div className={styles.permissionPrompt}>
-					<button onClick={() => requestMicrophonePermission()} className={styles.permissionButton}>
-						授予麦克风访问权限
+					<button onClick={startCall} className={styles.permissionButton}>
+						{isIOS() ? '点击开始通话' : '授予麦克风权限'}
 					</button>
-					<p className={styles.permissionText}>需要麦克风权限才能继续使用</p>
+					<p className={styles.permissionText}>{isIOS() ? '在iOS设备上需要点击开始后允许麦克风访问' : '需要麦克风权限才能继续使用'}</p>
 				</div>
 			)}
 			<div className={styles.statusBar}>
