@@ -21,12 +21,6 @@ const isIOS = () => {
 // 请求麦克风权限
 const requestMicrophonePermission = async () => {
 	try {
-		if (isIOS()) {
-			// iOS设备需要用户手动触发
-			alert("请点击'允许'以授予麦克风访问权限。如果未看到权限请求，请检查浏览器设置。");
-			await new Promise((resolve) => setTimeout(resolve, 1000)); // 给用户时间阅读提示
-		}
-
 		const constraints = {
 			audio: {
 				echoCancellation: true,
@@ -36,10 +30,10 @@ const requestMicrophonePermission = async () => {
 			video: false,
 		};
 
+		// 直接尝试获取权限
 		const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-		// 验证是否真的获得了音轨
 		const audioTracks = stream.getAudioTracks();
+
 		if (audioTracks.length === 0) {
 			throw new Error('没有获取到音频轨道');
 		}
@@ -47,21 +41,11 @@ const requestMicrophonePermission = async () => {
 		console.log('成功获取麦克风权限');
 		console.log('音频轨道:', audioTracks[0].label);
 
-		// 释放音频流
+		// 获取权限后立即释放音频流
 		stream.getTracks().forEach((track) => track.stop());
 		return true;
 	} catch (error: any) {
 		console.error('麦克风权限错误:', error);
-
-		if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-			alert('麦克风权限被拒绝。请在浏览器设置中允许访问麦克风，然后刷新页面重试。');
-		} else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-			alert('未检测到麦克风设备，请确保设备已正确连接。');
-		} else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-			alert('麦克风被其他应用程序占用，请关闭其他使用麦克风的应用后重试。');
-		} else {
-			alert(`无法访问麦克风：${error.message || '未知错误'}`);
-		}
 		return false;
 	}
 };
@@ -229,6 +213,7 @@ const useWebRTC = (
 			// 创建 DataChannel 对象, 触发ICE协商
 			const dc = pc.createDataChannel('c-events');
 			setDataChannel(dc);
+			setupDataChannelListeners(dc);
 			return () => {
 				if (reconnectTimer) {
 					clearTimeout(reconnectTimer);
@@ -243,41 +228,75 @@ const useWebRTC = (
 		}
 	}, [reconnectAttempts]);
 
-	// Attach event listeners to the data channel when a new one is created
+	// 添加重连函数
+	const reconnectDataChannel = () => {
+		if (peerConnection && peerConnection.connectionState === 'connected') {
+			console.log('Attempting to recreate DataChannel...');
+			const newDc = peerConnection.createDataChannel('c-events');
+			setDataChannel(newDc);
+			setupDataChannelListeners(newDc);
+		} else {
+			console.log('Cannot recreate DataChannel: PeerConnection not connected');
+		}
+	};
+
+	// 抽取DataChannel监听器设置逻辑到独立函数
+	const setupDataChannelListeners = (dc: RTCDataChannel) => {
+		dc.addEventListener('message', async (e) => {
+			console.log('c-events channel received message:', e.data);
+			try {
+				const json = JSON.parse(e.data);
+			} catch (error) {
+				console.error('Error processing WebRTC message:', error);
+			}
+		});
+
+		dc.addEventListener('open', () => {
+			console.log('DataChannel opened and ready to use:', dc.label);
+			// 发送初始配置
+			const audioConfig = {
+				type: 'config',
+				data: {
+					is_simultaneous: isSimultaneous,
+					target_lang: targetLang,
+				},
+			};
+			if (dc.readyState === 'open') {
+				dc.send(JSON.stringify(audioConfig));
+			}
+			// 设置ping间隔
+			const pingInterval = setInterval(() => {
+				if (dc.readyState === 'open') {
+					dc.send(JSON.stringify({ type: 'ping' }));
+				} else {
+					clearInterval(pingInterval);
+				}
+			}, 5000);
+		});
+
+		dc.addEventListener('close', () => {
+			console.log('DataChannel closed, attempting to reconnect...');
+			setTimeout(() => {
+				reconnectDataChannel();
+			}, 2000); // 2秒后尝试重连
+		});
+
+		dc.addEventListener('error', (error) => {
+			console.error('DataChannel error:', error);
+			setTimeout(() => {
+				reconnectDataChannel();
+			}, 2000);
+		});
+	};
+
+	// 修改原有的useEffect
 	useEffect(() => {
 		if (dataChannel) {
-			// Append new server events to the list
-			dataChannel.addEventListener('message', async (e) => {
-				console.log('c-events channel received message:', e.data);
-				try {
-					// 解析 JSON 数据
-					const json = JSON.parse(e.data);
-					//console.log("Parsed JSON:", json);
-				} catch (error) {
-					console.error('Error processing WebRTC message:', error);
-				}
-			});
-
-			// Set session active when the data channel is opened
-			dataChannel.addEventListener('open', () => {
-				console.log('DataChannel opened and ready to use:', dataChannel.label);
-				const pingInterval = setInterval(() => {
-					if (dataChannel.readyState === 'open') {
-						dataChannel.send(JSON.stringify({ type: 'ping' }));
-					} else {
-						console.error('DataChannel is not open, unable to send data.');
-					}
-				}, 5000);
-			});
-
-			// Handle the close event
-			dataChannel.addEventListener('close', () => {
-				console.log('DataChannel has been closed:', dataChannel.label);
-				// Perform cleanup or additional logic here
-			});
+			setupDataChannelListeners(dataChannel);
 		}
-	}, [dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);
+	}, [dataChannel, isSimultaneous, targetLang]);
 
+	// 修改peerConnection的ondatachannel处理
 	useEffect(() => {
 		if (peerConnection) {
 			peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
@@ -299,39 +318,18 @@ const useWebRTC = (
 			};
 			peerConnection.ondatachannel = (event: RTCDataChannelEvent) => {
 				const dataChannel = event.channel;
+				setDataChannel(dataChannel);
+				setupDataChannelListeners(dataChannel);
+
 				dataChannel.onopen = async () => {
 					console.log('DataChannel opened and ready to use:', dataChannel.label);
-					// Connect to microphone
 					await wavStreamPlayer.connect();
-					const audioConfig = {
-						type: 'config',
-						data: {
-							is_simultaneous: isSimultaneous,
-							target_lang: targetLang,
-						},
-					};
-					// 发送配置数据
-					if (dataChannel.readyState === 'open') {
-						dataChannel.send(JSON.stringify(audioConfig));
-					} else {
-						console.error('DataChannel is not open, unable to send data.');
-					}
-
 					wavStreamPlayer.onStop = () => setIsPlayingAudio(false);
-
-					const pingInterval = setInterval(() => {
-						if (dataChannel.readyState === 'open') {
-							dataChannel.send(JSON.stringify({ type: 'ping' }));
-						} else {
-							console.error('DataChannel is not open, unable to send data.');
-						}
-					}, 5000);
 				};
+
 				dataChannel.onmessage = async (event: MessageEvent) => {
-					console.log('Received message:', event.data);
 					try {
 						let audioData: ArrayBuffer;
-
 						if (event.data instanceof ArrayBuffer) {
 							audioData = event.data;
 						} else if (event.data instanceof Blob) {
@@ -339,19 +337,10 @@ const useWebRTC = (
 						} else {
 							throw new Error('Unsupported data type received');
 						}
-
 						checkAndBufferAudio(audioData);
 					} catch (error) {
 						console.error('Error processing WebRTC message:', error);
 					}
-				};
-
-				dataChannel.onclose = async () => {
-					console.log('DataChannel closed:', dataChannel.label);
-					// Interrupt the audio (halt playback) at any time
-					// To restart, need to call .add16BitPCM() again
-					const trackOffset = wavStreamPlayer.interrupt();
-					console.log(`Track ID: ${trackOffset.trackId}, sample number: ${trackOffset.offset}, time in track: ${trackOffset.currentTime}`);
 				};
 			};
 		}
@@ -466,6 +455,22 @@ export default function Home() {
 		};
 	}, []);
 
+	// 组件加载时自动请求权限
+	useEffect(() => {
+		const initializeMicrophone = async () => {
+			const hasPermission = await requestMicrophonePermission();
+			if (hasPermission) {
+				setHasPermission(true);
+				// 继续执行WebRTC相关代码
+			} else {
+				console.error('未能获取麦克风权限');
+				setHasPermission(false);
+			}
+		};
+
+		initializeMicrophone();
+	}, []); // 空依赖数组表示只在组件挂载时执行一次
+
 	// 处理开始通话的逻辑，确保在用户交互下请求权限
 	const startCall = async () => {
 		const hasPermission = await requestMicrophonePermission();
@@ -480,12 +485,12 @@ export default function Home() {
 
 	return (
 		<div className={styles.container}>
-			{!hasPermission && isIOS() && (
+			{!hasPermission && (
 				<div className={styles.permissionPrompt}>
-					<button onClick={startCall} className={styles.permissionButton}>
-						点击启用麦克风
+					<button onClick={() => requestMicrophonePermission()} className={styles.permissionButton}>
+						授予麦克风访问权限
 					</button>
-					<p className={styles.permissionText}>在iOS设备上，您需要明确允许网站使用麦克风</p>
+					<p className={styles.permissionText}>需要麦克风权限才能继续使用</p>
 				</div>
 			)}
 			<div className={styles.statusBar}>
