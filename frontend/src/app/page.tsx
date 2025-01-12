@@ -276,7 +276,8 @@ const useWebRTC = (
 
 	// 抽取DataChannel监听器设置逻辑到独立函数
 	const setupDataChannelListeners = (dc: RTCDataChannel) => {
-		dc.addEventListener('message', async (e) => {
+		// 设置单一的消息处理器，使用 onmessage 而不是 addEventListener
+		dc.onmessage = async (e) => {
 			try {
 				if (e.data instanceof ArrayBuffer || e.data instanceof Blob) {
 					await handleAudioData(e.data);
@@ -294,52 +295,55 @@ const useWebRTC = (
 			} catch (error) {
 				console.error('Error processing WebRTC message:', error);
 			}
-		});
+		};
 
-		dc.addEventListener('open', () => {
+		// 使用 onopen 而不是 addEventListener
+		dc.onopen = async () => {
 			console.log('DataChannel opened and ready to use:', dc.label);
-			// 发送初始配置
-			const audioConfig = {
-				type: 'config',
-				data: {
-					is_simultaneous: isSimultaneous,
-					target_lang: targetLang,
-				},
-			};
-			if (dc.readyState === 'open') {
-				dc.send(JSON.stringify(audioConfig));
-			}
-			// 设置ping间隔
-			const pingInterval = setInterval(() => {
+			if (dc.label === 'c-events') {
+				// 只在客户端通道上设置配置和 ping
+				const audioConfig = {
+					type: 'config',
+					data: {
+						is_simultaneous: isSimultaneous,
+						target_lang: targetLang,
+					},
+				};
 				if (dc.readyState === 'open') {
-					dc.send(JSON.stringify({ type: 'ping' }));
-				} else {
-					clearInterval(pingInterval);
+					dc.send(JSON.stringify(audioConfig));
+					// 设置ping间隔
+					const pingInterval = setInterval(() => {
+						if (dc.readyState === 'open') {
+							dc.send(JSON.stringify({ type: 'ping' }));
+						} else {
+							clearInterval(pingInterval);
+						}
+					}, 5000);
 				}
-			}, 5000);
-		});
+			}
+			// 对于服务器通道，初始化音频播放器
+			if (dc.label === 's-events') {
+				await wavStreamPlayer.connect();
+				wavStreamPlayer.onStop = () => setIsPlayingAudio(false);
+			}
+		};
 
-		dc.addEventListener('close', () => {
+		// 使用 onclose 而不是 addEventListener
+		dc.onclose = () => {
 			console.log('DataChannel closed, attempting to reconnect...');
 			setTimeout(() => {
 				reconnectDataChannel();
-			}, 2000); // 2秒后尝试重连
-		});
+			}, 2000);
+		};
 
-		dc.addEventListener('error', (error) => {
+		// 使用 onerror 而不是 addEventListener
+		dc.onerror = (error) => {
 			console.error('DataChannel error:', error);
 			setTimeout(() => {
 				reconnectDataChannel();
 			}, 2000);
-		});
+		};
 	};
-
-	// 修改原有的useEffect
-	useEffect(() => {
-		if (dataChannel) {
-			setupDataChannelListeners(dataChannel);
-		}
-	}, [dataChannel, isSimultaneous, targetLang]);
 
 	// 修改peerConnection的ondatachannel处理
 	useEffect(() => {
