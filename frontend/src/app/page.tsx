@@ -10,15 +10,65 @@ import { json } from "stream/consumers";
 
 const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 16000 });
 
+// 检测是否为iOS设备
+const isIOS = () => {
+  return [
+    'iPad Simulator',
+    'iPhone Simulator',
+    'iPod Simulator',
+    'iPad',
+    'iPhone',
+    'iPod',
+    'MacIntel'
+  ].includes(navigator.platform)
+  || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+};
+
 // 请求麦克风权限
 const requestMicrophonePermission = async () => {
   try {
-    //ios 确保在用户交互下请求权限
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    stream.getTracks().forEach(track => track.stop()); // 停止音频流，释放资源
-  } catch (error) {
-    alert("麦克风权限被拒绝，无法进行 WebRTC 通信");
-    return;
+    if (isIOS()) {
+      // iOS设备需要用户手动触发
+      alert("请点击'允许'以授予麦克风访问权限。如果未看到权限请求，请检查浏览器设置。");
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 给用户时间阅读提示
+    }
+
+    const constraints = {
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      },
+      video: false
+    };
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+    // 验证是否真的获得了音轨
+    const audioTracks = stream.getAudioTracks();
+    if (audioTracks.length === 0) {
+      throw new Error("没有获取到音频轨道");
+    }
+
+    console.log("成功获取麦克风权限");
+    console.log("音频轨道:", audioTracks[0].label);
+
+    // 释放音频流
+    stream.getTracks().forEach(track => track.stop());
+    return true;
+  } catch (error: any) {
+    console.error("麦克风权限错误:", error);
+
+    if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+      alert("麦克风权限被拒绝。请在浏览器设置中允许访问麦克风，然后刷新页面重试。");
+    } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+      alert("未检测到麦克风设备，请确保设备已正确连接。");
+    } else if (error.name === "NotReadableError" || error.name === "TrackStartError") {
+      alert("麦克风被其他应用程序占用，请关闭其他使用麦克风的应用后重试。");
+    } else {
+      alert(`无法访问麦克风：${error.message || '未知错误'}`);
+    }
+    return false;
   }
 };
 
@@ -73,7 +123,7 @@ const useWebRTC = (
   const [dataChannel, setDataChannel] = useState<RTCDataChannel | null>(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [reconnectTimer, setReconnectTimer] = useState<NodeJS.Timeout | null>(null);
-  
+
   useEffect(() => {
     // Ensure WebRTC only runs in the browser
     if (typeof window !== "undefined" && window.RTCPeerConnection) {
@@ -232,9 +282,9 @@ const useWebRTC = (
 
     }
   }, [dataChannel, isSimultaneous, targetLang, checkAndBufferAudio]);
-  
+
   useEffect(() => {
-    if (peerConnection) { 
+    if (peerConnection) {
       peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
         if (event.candidate) {
           console.log('获取到ICE候选:', event.candidate.type, event.candidate.address);
@@ -274,7 +324,7 @@ const useWebRTC = (
         }
 
         wavStreamPlayer.onStop = () => setIsPlayingAudio(false);
-        
+
         const pingInterval = setInterval(() => {
             if (dataChannel.readyState === 'open') {
               dataChannel.send(JSON.stringify({ type: "ping" }));
@@ -310,9 +360,9 @@ const useWebRTC = (
           console.log(`Track ID: ${trackOffset.trackId}, sample number: ${trackOffset.offset}, time in track: ${trackOffset.currentTime}`);
         };
       };
-  
+
     }
-  }, [peerConnection, isSimultaneous, targetLang, checkAndBufferAudio]);  
+  }, [peerConnection, isSimultaneous, targetLang, checkAndBufferAudio]);
 
   return {
     connectionStatus,
@@ -426,19 +476,29 @@ export default function Home() {
   }, []);
 
 // 处理开始通话的逻辑，确保在用户交互下请求权限
-const startCall = () => {
-  requestMicrophonePermission()
-    .then(() => {
-      // 在此处继续执行 WebRTC 相关的代码
-      setHasPermission(true);
-    })
-    .catch(() => {
-      console.error("Failed to get microphone permission");
-    });
+const startCall = async () => {
+  const hasPermission = await requestMicrophonePermission();
+  if (hasPermission) {
+    setHasPermission(true);
+    // 继续执行WebRTC相关代码
+  } else {
+    console.error("未能获取麦克风权限");
+    setHasPermission(false);
+  }
 };
 
   return (
     <div className={styles.container}>
+      {!hasPermission && (
+        <div className={styles.permissionPrompt}>
+          <button onClick={startCall} className={styles.permissionButton}>
+            点击启用麦克风
+          </button>
+          <p className={styles.permissionText}>
+            {isIOS() ? "在iOS设备上，您需要明确允许网站使用麦克风" : "需要麦克风权限才能继续"}
+          </p>
+        </div>
+      )}
       <div className={styles.statusBar}>
         <div className={styles.connectionStatus}>
           <div
