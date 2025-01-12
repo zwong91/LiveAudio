@@ -104,21 +104,6 @@ const useAudioManager = (setIsPlayingAudio: Function, setIsRecording: Function) 
 	};
 };
 
-// 统一的音频处理函数
-const handleAudioData = async (data: ArrayBuffer | Blob) => {
-	try {
-		let audioData: ArrayBuffer;
-		if (data instanceof Blob) {
-			audioData = await data.arrayBuffer();
-		} else {
-			audioData = data;
-		}
-		checkAndBufferAudio(audioData);
-	} catch (error) {
-		console.error('Error processing audio data:', error);
-	}
-};
-
 // WebRTC 管理器
 const useWebRTC = (
 	audioQueue: Blob[],
@@ -135,6 +120,21 @@ const useWebRTC = (
 	const [dataChannel, setDataChannel] = useState<RTCDataChannel | null>(null);
 	const [reconnectAttempts, setReconnectAttempts] = useState(0);
 	const [reconnectTimer, setReconnectTimer] = useState<NodeJS.Timeout | null>(null);
+
+	// 将handleAudioData移动到这里
+	const handleAudioData = async (data: ArrayBuffer | Blob) => {
+		try {
+			let audioData: ArrayBuffer;
+			if (data instanceof Blob) {
+				audioData = await data.arrayBuffer();
+			} else {
+				audioData = data;
+			}
+			checkAndBufferAudio(audioData);
+		} catch (error) {
+			console.error('Error processing audio data:', error);
+		}
+	};
 
 	useEffect(() => {
 		// Ensure WebRTC only runs in the browser
