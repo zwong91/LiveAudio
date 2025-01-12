@@ -262,9 +262,31 @@ const useWebRTC = (
 	// 抽取DataChannel监听器设置逻辑到独立函数
 	const setupDataChannelListeners = (dc: RTCDataChannel) => {
 		dc.addEventListener('message', async (e) => {
-			console.log('c-events channel received message:', e.data);
 			try {
-				const json = JSON.parse(e.data);
+				// 检查数据类型
+				if (e.data instanceof ArrayBuffer || e.data instanceof Blob) {
+					// 音频数据处理
+					let audioData: ArrayBuffer;
+					if (e.data instanceof Blob) {
+						audioData = await e.data.arrayBuffer();
+					} else {
+						audioData = e.data;
+					}
+					checkAndBufferAudio(audioData);
+				} else {
+					// 尝试解析JSON消息
+					try {
+						const json = JSON.parse(e.data);
+						console.log('Received JSON message:', json);
+						// 处理其他类型的消息
+						if (json.type === 'pong') {
+							console.log('Received pong from server');
+						}
+						// 可以添加其他消息类型的处理
+					} catch (jsonError) {
+						console.error('Invalid JSON message received:', e.data);
+					}
+				}
 			} catch (error) {
 				console.error('Error processing WebRTC message:', error);
 			}
