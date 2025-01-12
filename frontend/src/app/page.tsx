@@ -104,6 +104,21 @@ const useAudioManager = (setIsPlayingAudio: Function, setIsRecording: Function) 
 	};
 };
 
+// 统一的音频处理函数
+const handleAudioData = async (data: ArrayBuffer | Blob) => {
+	try {
+		let audioData: ArrayBuffer;
+		if (data instanceof Blob) {
+			audioData = await data.arrayBuffer();
+		} else {
+			audioData = data;
+		}
+		checkAndBufferAudio(audioData);
+	} catch (error) {
+		console.error('Error processing audio data:', error);
+	}
+};
+
 // WebRTC 管理器
 const useWebRTC = (
 	audioQueue: Blob[],
@@ -263,26 +278,15 @@ const useWebRTC = (
 	const setupDataChannelListeners = (dc: RTCDataChannel) => {
 		dc.addEventListener('message', async (e) => {
 			try {
-				// 检查数据类型
 				if (e.data instanceof ArrayBuffer || e.data instanceof Blob) {
-					// 音频数据处理
-					let audioData: ArrayBuffer;
-					if (e.data instanceof Blob) {
-						audioData = await e.data.arrayBuffer();
-					} else {
-						audioData = e.data;
-					}
-					checkAndBufferAudio(audioData);
+					await handleAudioData(e.data);
 				} else {
-					// 尝试解析JSON消息
 					try {
 						const json = JSON.parse(e.data);
 						console.log('Received JSON message:', json);
-						// 处理其他类型的消息
 						if (json.type === 'pong') {
 							console.log('Received pong from server');
 						}
-						// 可以添加其他消息类型的处理
 					} catch (jsonError) {
 						console.error('Invalid JSON message received:', e.data);
 					}
@@ -369,18 +373,8 @@ const useWebRTC = (
 				};
 
 				dataChannel.onmessage = async (event: MessageEvent) => {
-					try {
-						let audioData: ArrayBuffer;
-						if (event.data instanceof ArrayBuffer) {
-							audioData = event.data;
-						} else if (event.data instanceof Blob) {
-							audioData = await event.data.arrayBuffer();
-						} else {
-							throw new Error('Unsupported data type received');
-						}
-						checkAndBufferAudio(audioData);
-					} catch (error) {
-						console.error('Error processing WebRTC message:', error);
+					if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
+						await handleAudioData(event.data);
 					}
 				};
 			};
