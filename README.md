@@ -16,7 +16,7 @@ apt update
 # (Ubuntu / Debian User) Install sox + ffmpeg
 apt install libsox-dev espeak-ng ffmpeg libopenblas-dev vim git-lfs -y
 
-# (Ubuntu / Debian User) Install pyaudio 
+# (Ubuntu / Debian User) Install pyaudio
 apt install build-essential \
     cmake \
     libasound-dev \
@@ -51,7 +51,7 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 cd /workspace/LiveAudio/src/xtts
 pip install -e .[all,dev,notebooks]  -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-#4. download xtts-v2 
+#4. download xtts-v2
 HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2  --local-dir  XTTS-v2
 
 
@@ -62,12 +62,6 @@ pip install git+https://github.com/huggingface/parler-tts.git
 (rt) root@ash:~/audio# nvidia-smi
 (rt) root@ash:~/audio# nvcc --version
 (rt) root@ash:~/audio# pip show torch
-```
-
-## Q
-***"`GLIBCXX_3.4.32' not found" error at runtime. GCC 13.2.0***
-```
-https://stackoverflow.com/questions/76974555/glibcxx-3-4-32-not-found-error-at-runtime-gcc-13-2-0
 ```
 
 ## Docker Setup
@@ -132,6 +126,17 @@ HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile cf
 export PYANNOTE_AUTH_TOKEN=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
 ASR_TYPE=sensevoice python -m unittest test.server.test_server
 ```
+
+## FAQ
+1. "`GLIBCXX_3.4.32' not found" error at runtime. GCC 13.2.0***
+
+[https://stackoverflow.com/questions/76974555/glibcxx-3-4-32-not-found-error-at-runtime-gcc-13-2-0]
+
+2. How clone a voice submit the filename of a wave file containing the source voice
+
+voice cloning works best with a 22050 Hz mono 16bit WAV file containing a short (~5-30 sec) sample of the target speaker's voice. The sample should be a clean recording with no background noise or music. The speaker should be speaking in a natural, conversational tone. The sample should be representative of the speaker's voice, including their accent, intonation, and speaking style.
+
+```bash
 
 Resources
 ---------
