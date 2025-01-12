@@ -136,8 +136,6 @@ ASR_TYPE=sensevoice python -m unittest test.server.test_server
 
 voice cloning works best with a 22050 Hz mono 16bit WAV file containing a short (~5-30 sec) sample of the target speaker's voice. The sample should be a clean recording with no background noise or music. The speaker should be speaking in a natural, conversational tone. The sample should be representative of the speaker's voice, including their accent, intonation, and speaking style.
 
-```bash
-
 Resources
 ---------
 * [WebRTC docs](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API) - on https://developer.mozilla.org
