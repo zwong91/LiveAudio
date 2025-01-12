@@ -237,29 +237,30 @@
 
 .permissionPrompt {
 	position: fixed;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	text-align: center;
+	bottom: 20px; /* 改为底部定位 */
+	left: 20px; /* 改为左侧定位 */
+	transform: none; /* 移除居中变换 */
+	text-align: left; /* 文本左对齐 */
 	z-index: 1000;
-	background: white;
-	padding: 20px;
+	background: rgba(0, 0, 0, 0.5); /* 改为半透明背景 */
+	padding: 15px;
 	border-radius: 8px;
-	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .permissionButton {
-	padding: 10px 20px;
-	background-color: #007bff;
+	padding: 8px 16px;
+	background-color: #52c41a; /* 使用绿色按钮 */
 	color: white;
 	border: none;
-	border-radius: 4px;
+	border-radius: 20px;
 	cursor: pointer;
-	margin-bottom: 10px;
+	margin-bottom: 8px;
+	font-size: 14px;
 }
 
 .permissionText {
-	color: #666;
-	font-size: 14px;
+	color: white; /* 改为白色文字 */
+	font-size: 12px;
 	margin: 0;
 }
