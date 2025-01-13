@@ -157,8 +157,8 @@ class EdgeTTS(TTSInterface):
             yield pcm_data_16K
 
         # FIXME: ms-edge 浏览器也是有时候就是没有语音数据返回, ask microsoft. 还有就是mp3 chunk边界间隙依赖上一个chunk, 最终的方式应该是直接yield chunk["data"]， 前端用mpv实时流播放器
-        CHUNK_SIZE = 20 * 1024  # 20KB 确保包含足够完整MP3帧
-        OVERLAP = 2 * 1024     # 2KB 重叠区域
+        CHUNK_SIZE = 10 * 1024  # 10KB 确保包含足够完整MP3帧
+        OVERLAP = 1 * 1024     # 1KB 重叠区域
 
         total_data = b""
         is_first_chunk = True
@@ -166,7 +166,9 @@ class EdgeTTS(TTSInterface):
         for chunk in communicate.stream_sync():
             if chunk["type"] == "audio":
                 total_data += chunk["data"]
-
+                if is_first_chunk:
+                    print(f"First chunk latency: {time.time() - start_time:.2f}s")
+                    is_first_chunk = False
                 if len(total_data) >= CHUNK_SIZE:
                     # 处理主要数据块
                     main_chunk = total_data[:CHUNK_SIZE]
