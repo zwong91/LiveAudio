@@ -20,21 +20,13 @@ import base64
 
 sys.path.insert(1, "../vc")
 
-# coqui-tts 0.22.0
-from src.xtts.TTS.api import TTS
-from src.xtts.TTS.tts.configs.xtts_config import XttsConfig
-from src.xtts.TTS.tts.models.xtts import Xtts
-
-from src.xtts.TTS.utils.generic_utils import get_user_data_dir
-from src.xtts.TTS.utils.manage import ModelManager
-
 # coqui-tts 0.25.1
-# from TTS.api import TTS
-# from TTS.tts.configs.xtts_config import XttsConfig
-# from TTS.tts.models.xtts import Xtts
+from TTS.api import TTS
+from TTS.tts.configs.xtts_config import XttsConfig
+from TTS.tts.models.xtts import Xtts
 
-# from trainer.io import get_user_data_dir
-# from TTS.utils.manage import ModelManager
+from trainer.io import get_user_data_dir
+from TTS.utils.manage import ModelManager
 
 from src.utils.audio_utils import postprocess_tts_wave_int16, convertSampleRateTo16khz, wave_header_chunk
 
@@ -45,6 +37,9 @@ class XTTS_v2(TTSInterface):
         target_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "liuyifei.wav")
         self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
         self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "silence.wav")
+
+        self.openvoice_v2 = TTS("voice_conversion_models/multilingual/multi-dataset/openvoice_v2").to("cuda")
+
         # print("Loading model...")
         # config = XttsConfig()
         # config.load_json("XTTS-v2/config.json")
@@ -177,19 +172,29 @@ class XTTS_v2(TTSInterface):
             speed=1.0,            # 保持正常语速
             enable_text_splitting=True
         )
-        output_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
+        source_wav = f"/asset/audio_{uuid4().hex[:8]}.wav"
 
         inference_time = time.time() - t0
         print(f"I: Time to generate audio: {round(inference_time*1000)} milliseconds")
         real_time_factor= (time.time() - t0) / out['wav'].shape[-1] * 24000
         print(f"Real-time factor (RTF): {real_time_factor}")
 
-        torchaudio.save(output_path, torch.tensor(out["wav"]).unsqueeze(0), 24000)
+        torchaudio.save(source_wav, torch.tensor(out["wav"]).unsqueeze(0), 24000)
 
         end_time = time.time()
         print(f"XTTSv2 text_to_speech time: {end_time - start_time:.4f} seconds")
-        return output_path
 
+        t0 = time.time()
+        # TODO: vc voice conversion OpenVoiceV2
+        output_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
+
+        self.openvoice_v2.voice_conversion_to_file(
+        source_wav=source_wav,
+        target_wav=target_wav_files[0],
+        file_path=output_path
+        )
+        print(f"OpenVoice v2 voice conversion time: {time.time() - t0:.4f} seconds")
+        return output_path
 
     async def text_to_speech_stream(self, text: str, vc_uid: str, simultaneous: bool) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
