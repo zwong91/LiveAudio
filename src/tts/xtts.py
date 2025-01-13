@@ -167,13 +167,15 @@ class XTTS_v2(TTSInterface):
             language,
             gpt_cond_latent,
             speaker_embedding,
-            # GPT inference
-            temperature=0.01,
-            length_penalty=1.0,
-            repetition_penalty=5.0,
-            do_sample=True,
-            speed=1.0,
-            enable_text_splitting=True,
+            # 克隆声音最佳参数
+            temperature=0.65,      # 降低随机性，保持声音特征
+            length_penalty=1.0,    # 保持默认
+            repetition_penalty=7.0, # 适度控制重复
+            do_sample=False,       # 关闭采样提高稳定性
+            top_k=50,             # 限制采样范围
+            top_p=0.85,           # 核采样阈值
+            speed=1.0,            # 保持正常语速
+            enable_text_splitting=True
         )
         output_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
 
