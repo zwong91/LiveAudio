@@ -22,7 +22,7 @@ sys.path.insert(1, "../vc")
 
 # coqui-tts 0.22.0
 from src.xtts.TTS.api import TTS
-from src.xtts.TTS.tts.configs.xtts_config import XttsConfig    
+from src.xtts.TTS.tts.configs.xtts_config import XttsConfig
 from src.xtts.TTS.tts.models.xtts import Xtts
 
 from src.xtts.TTS.utils.generic_utils import get_user_data_dir
@@ -51,7 +51,7 @@ class XTTS_v2(TTSInterface):
         # self.model = Xtts.init_from_config(config)
         # self.model.load_checkpoint(config, checkpoint_dir="XTTS-v2", use_deepspeed=True)
         # self.model.to(device)
-        
+
         model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
         logging.info("⏳Downloading model")
         ModelManager().download_model(model_name)
@@ -64,7 +64,7 @@ class XTTS_v2(TTSInterface):
         self.model = Xtts.init_from_config(config)
         self.model.load_checkpoint(config, checkpoint_dir=model_path, use_deepspeed=True)
         self.model.to(device)
-        
+
         model_million_params = sum(p.numel() for p in self.model.parameters()) / 1e6
         logging.debug(f"{model_million_params}M parameters")
 
@@ -78,7 +78,7 @@ class XTTS_v2(TTSInterface):
         print(f"Embedding speaker latents computed in {latent_calculation_time:.4f} seconds")
         self.gpt_cond_latent = gpt_cond_latent
         self.speaker_embedding = speaker_embedding
-        
+
         # 缓存 gpt_cond_latent 和 speaker_embedding
         self.latent_cache = {}
 
@@ -128,7 +128,7 @@ class XTTS_v2(TTSInterface):
 
         if language not in self.supported_languages:
             print(f"Language you put {language} in is not in our Supported Languages, please choose from {self.supported_languages}")
-        
+
         # 构造目标路径，获取匹配的 .wav 文件
         supported_extensions = ["wav", "m4a", "flac", "mp3"]
 
@@ -160,16 +160,13 @@ class XTTS_v2(TTSInterface):
         # 调用模型函数，传递匹配的文件列表
         gpt_cond_latent, speaker_embedding = self.get_cached_latents(vc_uid, target_wav_files)
         print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
-        
+
         t0 = time.time()
-        chunks = self.model.inference_stream(
+        out = self.model.inference(
             text,
             language,
             gpt_cond_latent,
             speaker_embedding,
-            # Streaming
-            stream_chunk_size=512,
-            overlap_wav_len=1024,
             # GPT inference
             temperature=0.01,
             length_penalty=1.0,
@@ -180,18 +177,14 @@ class XTTS_v2(TTSInterface):
             speed=1.0,
             enable_text_splitting=True,
         )
-        wav_chunks = []
         output_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
-        for i, chunk in enumerate(chunks):
-            wav_chunks.append(chunk)
 
-        wav = torch.cat(wav_chunks, dim=0)
-        real_time_factor= (time.time() - t0) / wav.shape[0] * 24000
-        print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
-        wav_audio = wav.squeeze().unsqueeze(0).cpu()
+        inference_time = time.time() - t0
+        print(f"I: Time to generate audio: {round(inference_time*1000)} milliseconds")
+        real_time_factor= (time.time() - t0) / out['wav'].shape[-1] * 24000
+        print(f"Real-time factor (RTF): {real_time_factor}")
 
-        # Saving to a file on disk
-        torchaudio.save(output_path, wav_audio, 24000, format="wav")
+        torchaudio.save(output_path, torch.tensor(out["wav"]).unsqueeze(0), 24000)
 
         end_time = time.time()
         print(f"XTTSv2 text_to_speech time: {end_time - start_time:.4f} seconds")
@@ -259,7 +252,7 @@ class XTTS_v2(TTSInterface):
             audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
             pcm_data_16K = audio_resampled.raw_data
             yield pcm_data_16K
-    
+
         #stream synthesize audio
         for i, chunk in enumerate(chunks):
             if i == 0:
@@ -280,4 +273,3 @@ class XTTS_v2(TTSInterface):
         #real_time_factor= (time.time() - t0) / generated_seconds
         real_time_factor= (time.time() - t0) / wav.shape[0] * 24000 ## 4 bytes per sample, 24000 Hz
         print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
-
