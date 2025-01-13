@@ -161,7 +161,7 @@ class EdgeTTS(TTSInterface):
         total_data = b""  # 用于存储接收到的音频数据
         is_first_chunk = True
         CHUNK_THRESHOLD = 120
-        chunk_len = 3 if len(text) > CHUNK_THRESHOLD else 1
+        chunk_len = 5 if len(text) > CHUNK_THRESHOLD else 1
         for chunk in communicate.stream_sync():
             if chunk["type"] == "audio":
                 total_data += chunk["data"]
