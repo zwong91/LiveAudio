@@ -160,11 +160,13 @@ class EdgeTTS(TTSInterface):
         CHUNK_SIZE = 20 * 1024  # 假设每个块大约1024字节（根据实际格式调整）
         total_data = b""  # 用于存储接收到的音频数据
         is_first_chunk = True
+        CHUNK_THRESHOLD = 120
+        chunk_len = 2 if len(text) > CHUNK_THRESHOLD else 1
         for chunk in communicate.stream_sync():
             if chunk["type"] == "audio":
                 total_data += chunk["data"]
                 # 如果接收到的数据达到一个完整的块大小
-                if len(total_data) >= CHUNK_SIZE and is_first_chunk:
+                if len(total_data) >= CHUNK_SIZE and chunk_len > 0:
                     # 使用 BytesIO 来读取音频数据
                     with io.BytesIO(total_data[:CHUNK_SIZE]) as audio_io:
                         audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
@@ -183,6 +185,7 @@ class EdgeTTS(TTSInterface):
                         # raw pcm data
                         yield pcm_data_16K
 
+                    chunk_len -= 1
                     # 移除已经处理的音频数据, 并且向前overlapped
                     total_data = total_data[CHUNK_SIZE:]
 
