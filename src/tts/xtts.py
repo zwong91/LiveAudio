@@ -99,8 +99,12 @@ class XTTS_v2(TTSInterface):
         else:
             print(f"Cache miss for {vc_uid} with encoded file names {bs64}")
             # 计算并返回新的 latents 和 speaker_embedding
-            gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(audio_path=target_wav_files)
-            # 缓存结果
+            gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(
+                audio_path=target_wav_files,
+                gpt_cond_len=120,
+                gpt_cond_chunk_len=6,
+                max_ref_length=150)
+
             self.latent_cache[cache_key] = (gpt_cond_latent, speaker_embedding)
             return gpt_cond_latent, speaker_embedding
 
@@ -184,9 +188,9 @@ class XTTS_v2(TTSInterface):
             gpt_cond_latent,
             speaker_embedding,
             # 克隆声音最佳参数
-            temperature=0.65,      # 降低随机性，保持声音特征
-            length_penalty=1.0,    # 保持默认
-            repetition_penalty=7.0, # 适度控制重复
+            temperature=0.4,      # 降低随机性，保持声音特征
+            length_penalty=1.2,    # 保持自然长度
+            repetition_penalty=5.0, # 适度控制重复
             do_sample=False,       # 关闭采样提高稳定性
             top_k=50,             # 限制采样范围
             top_p=0.85,           # 核采样阈值
@@ -196,7 +200,7 @@ class XTTS_v2(TTSInterface):
         src_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
 
         inference_time = time.time() - t0
-        print(f"I: Time to generate audio: {round(inference_time*1000)} milliseconds")
+        print(f"Time to generate audio: {inference_time} seconds")
         real_time_factor= (time.time() - t0) / out['wav'].shape[-1] * 24000
         print(f"Real-time factor (RTF): {real_time_factor}")
 
