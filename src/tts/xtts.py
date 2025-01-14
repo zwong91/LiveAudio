@@ -205,28 +205,29 @@ class XTTS_v2(TTSInterface):
         end_time = time.time()
         print(f"XTTSv2 text_to_speech time: {end_time - start_time:.4f} seconds")
 
-        t0 = time.time()
         # TODO: vc voice conversion OpenVoiceV2
-        save_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
+        #t0 = time.time()
+        #save_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
 
-        reference_speaker = target_wav_files[0] # This is the voice you want to clone
-        target_se, audio_name = se_extractor.get_se(reference_speaker, self.tone_color_converter, vad=True)
-        source_se = torch.load(f'checkpoints_v2/base_speakers/ses/{ov_ses_lang}.pth', map_location="cuda:0")
+        #reference_speaker = target_wav_files[0] # This is the voice you want to clone
+        #target_se, audio_name = se_extractor.get_se(reference_speaker, self.tone_color_converter, vad=True)
+        #source_se = torch.load(f'checkpoints_v2/base_speakers/ses/{ov_ses_lang}.pth', map_location="cuda:0")
         # Run the tone color converter
-        encode_message = "@MyShell"
-        self.tone_color_converter.convert(
-            audio_src_path=src_path,
-            src_se=source_se,
-            tgt_se=target_se,
-            output_path=save_path,
-            message=encode_message)
+        #encode_message = "@MyShell"
+        # self.tone_color_converter.convert(
+        #     audio_src_path=src_path,
+        #     src_se=source_se,
+        #     tgt_se=target_se,
+        #     output_path=save_path,
+        #     message=encode_message)
+
         # self.openvoice_v2.voice_conversion_to_file(
         #     source_wav=source_wav,
         #     target_wav=target_wav_files[0],
         #     file_path=save_path
         # )
-        print(f"OpenVoice v2 voice conversion time: {time.time() - t0:.4f} seconds")
-        return save_path
+        #print(f"OpenVoice v2 voice conversion time: {time.time() - t0:.4f} seconds")
+        return src_path
 
     async def text_to_speech_stream(self, text: str, vc_uid: str, simultaneous: bool) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
