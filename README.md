@@ -54,8 +54,13 @@ pip install -e .[all,server,notebooks,bn,ja,ko,zh,languages]  -i https://pypi.tu
 #4. download xtts-v2
 HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2  --local-dir  XTTS-v2
 
+##5. openvice v2
+cd OpenVoice
+pip install -e .   -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-#5. parler-tts
+wget https://myshell-public-repo-host.s3.amazonaws.com/openvoice/checkpoints_v2_0417.zip
+
+#6. parler-tts
 pip install git+https://github.com/huggingface/parler-tts.git
 # pip install flash-attn
 
