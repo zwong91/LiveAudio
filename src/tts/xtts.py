@@ -116,14 +116,14 @@ class XTTS_v2(TTSInterface):
     def normalize_language_code(self, language: str) -> str:
         # 语言代码映射
         LANG_MAP = {
-            'en': 'EN',
-            'zh': 'ZH',
-            'ko': 'KR',
-            'ja': 'JP',
-            'fr': 'FR',
-            'es': 'ES'
+            'en': 'en-newest',
+            'zh': 'zh',
+            'ko': 'kr',
+            'ja': 'jp',
+            'fr': 'fr',
+            'es': 'es'
         }
-        return LANG_MAP.get(language.lower(), 'EN')  # 默认返回EN
+        return LANG_MAP.get(language.lower(), 'en-newest')  # 默认返回EN
 
     async def text_to_speech(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> Tuple[str]:
         """ Coqui TTS engine's inability to handle multiple synthesis requests in parallel
