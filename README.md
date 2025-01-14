@@ -49,7 +49,7 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 #3 xtts
 cd /workspace/LiveAudio/src/xtts
-pip install -e .[all,dev,notebooks]  -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install -e .[all,server,notebooks,bn,ja,ko,zh,languages]  -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 #4. download xtts-v2
 HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2  --local-dir  XTTS-v2
