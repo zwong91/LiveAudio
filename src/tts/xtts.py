@@ -211,7 +211,7 @@ class XTTS_v2(TTSInterface):
 
         reference_speaker = target_wav_files[0] # This is the voice you want to clone
         target_se, audio_name = se_extractor.get_se(reference_speaker, self.tone_color_converter, vad=True)
-        source_se = torch.load(f'checkpoints_v2/base_speakers/ses/{ov_ses_lang}.pth', map_location=device)
+        source_se = torch.load(f'checkpoints_v2/base_speakers/ses/{ov_ses_lang}.pth', map_location="cuda:0")
         # Run the tone color converter
         encode_message = "@MyShell"
         self.tone_color_converter.convert(
