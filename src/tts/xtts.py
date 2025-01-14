@@ -101,9 +101,9 @@ class XTTS_v2(TTSInterface):
             # 计算并返回新的 latents 和 speaker_embedding
             gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(
                 audio_path=target_wav_files,
-                gpt_cond_len=120,
+                gpt_cond_len=160,
                 gpt_cond_chunk_len=6,
-                max_ref_length=150)
+                max_ref_length=120)
 
             self.latent_cache[cache_key] = (gpt_cond_latent, speaker_embedding)
             return gpt_cond_latent, speaker_embedding
