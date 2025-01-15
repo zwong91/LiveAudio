@@ -21,7 +21,7 @@ import torch.multiprocessing as mp
 
 import ormsgpack
 
-from typing import List
+from typing import Optional, List
 import shutil
 
 
