@@ -49,8 +49,8 @@ class TTSRequest(BaseModel):
 
 class TTSRequestV1(BaseModel):
     tts_text: str
-    speed:  Optional[float] = 1.0
     vc_uid: str
+    speed:  Optional[float]
 
 class TTSManager:
     def __init__(self, tts_pipeline):
