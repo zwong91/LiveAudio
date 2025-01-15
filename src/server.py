@@ -678,6 +678,10 @@ class Server:
             # If no cleanup is requested, return the original file
             return speaker_wav
 
+    async def generate_tts(self, request: TTSRequest):
+        task_id = await self.tts_manager.gen_tts(request.tts_text, request.vc_uid)
+        return {"task_id": task_id}
+
     async def generate_tts_v1(self, request: TTSRequestV1):
         task_id = await self.tts_manager.gen_tts(request.tts_text, request.vc_uid, request.speed)
         return {"task_id": task_id}
