@@ -70,6 +70,8 @@ targets:
         ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: true
         EXCLUDED_ARCHS[sdk=iphonesimulator*]: arm64
         EXCLUDED_ARCHS[sdk=iphoneos*]: arm64-sim x86_64
+        DEVELOPMENT_TEAM: YOUR_TEAM_ID # 替换为你的开发者团队ID
+        CODE_SIGN_STYLE: Automatic
       groups: [app]
     dependencies:
       - framework: libapp.a

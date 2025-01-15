@@ -25,7 +25,7 @@ tauri = { version = "2", features = [
 ] }
 tauri-plugin-window-state = "2.2.0"
 percent-encoding = "2.3.1"
-reqwest = {version = "0.12.9", features = ["rustls-tls", "http2", "charset"], default-features = false} 
+reqwest = {version = "0.12.9", features = ["rustls-tls", "http2", "charset"], default-features = false}
 futures-util = "0.3.30"
 bytes = "1.7.2"
 tauri-plugin-clipboard-manager = "2.2.0"
@@ -43,5 +43,3 @@ tauri-plugin-updater = "2"
 # If you use cargo directly instead of tauri's cli you can use this feature flag to switch between tauri's `dev` and `build` modes.
 # DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
-
-
