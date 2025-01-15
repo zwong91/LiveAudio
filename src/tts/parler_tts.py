@@ -31,8 +31,8 @@ class ParlerTTS(TTSInterface):
             )
             # voice_prompt = (
             #     "John's voice is deep and smooth, with a calm and reassuring tone. He speaks slowly and clearly, with a slight southern accent."
-            # )            
-        
+            # )
+
         self.play_steps_in_s = 0.5
         self.voice_parameters = {}
         self.buffer_duration_s = 1.0
@@ -57,7 +57,7 @@ class ParlerTTS(TTSInterface):
             "channels": 1,
         }
 
-    async def text_to_speech(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> Tuple[str]:
+    async def text_to_speech(self, text: str, vc_uid: str, speed: Optional[float] = None) -> Tuple[str]:
         """使用 elevenlabs 库将文本转语音"""
         pass
 
@@ -66,7 +66,7 @@ class ParlerTTS(TTSInterface):
         language = langid.classify(text)[0].strip()
         if language == 'zh':
             language = 'zh-CN'
-            
+
         #1. send talking audio
         if not simultaneous:
             audio = AudioSegment.from_wav(self.talking_wav)

@@ -36,7 +36,7 @@ class SystemTTS(TTSInterface):
             "channels": 1,
         }
 
-    async def text_to_speech(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> Tuple[str]:
+    async def text_to_speech(self, text: str, vc_uid: str, speed: Optional[float] = None) -> Tuple[str]:
         """使用 pyttsx3 库将文本转语音"""
         pass
 
@@ -45,7 +45,7 @@ class SystemTTS(TTSInterface):
         language = langid.classify(text)[0].strip()
         if language == 'zh':
             language = 'zh-CN'
-            
+
         #1. send talking audio
         if not simultaneous:
             audio = AudioSegment.from_wav(self.talking_wav)

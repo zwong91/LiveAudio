@@ -63,9 +63,11 @@ class EdgeTTS(TTSInterface):
             "channels": 1,
         }
 
-    async def text_to_speech(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> Tuple[str]:
+    async def text_to_speech(self, text: str, vc_uid: str, speed: Optional[float] = None) -> Tuple[str]:
         """使用 edge_tts 库将文本转语音"""
         start_time = time.time()
+        v_speed = 1.0 if speed is None else float(speed)
+        v_speed = max(0.5, min(2.0, v_speed))
         audio_buffer = io.BytesIO()
         language, _ = langid.classify(text)
         if language == "zh":

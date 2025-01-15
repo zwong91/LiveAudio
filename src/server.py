@@ -47,6 +47,11 @@ class TTSRequest(BaseModel):
     tts_text: str
     vc_uid: str
 
+class TTSRequestV1(BaseModel):
+    tts_text: str
+    speed:  Optional[float] = 1.0
+    vc_uid: str
+
 class TTSManager:
     def __init__(self, tts_pipeline):
         self.task_queue = asyncio.Queue()  # 用于存储任务
@@ -54,24 +59,24 @@ class TTSManager:
         self.tts_pipeline = tts_pipeline
         self.lock = asyncio.Lock()  # 用于保护并发
 
-    async def _process_task(self, task_id, text, vc_uid):
+    async def _process_task(self, task_id, text, vc_uid, speed):
         """
         处理队列中的每个 TTS 任务。
         """
         try:
-            audio_path = await self.tts_pipeline.text_to_speech(text, vc_uid)
+            audio_path = await self.tts_pipeline.text_to_speech(text, vc_uid, speed)
             # 将生成的文件返回给调用者
             self.processing_tasks[task_id] = {'status': 'completed', 'file_path': audio_path, 'media_type': 'audio/wav'}
         except Exception as e:
             # 任务失败时记录
             self.processing_tasks[task_id] = {'status': 'failed', 'error': str(e)}
 
-    async def gen_tts(self, text: str, vc_uid: str):
+    async def gen_tts(self, text: str, vc_uid: str, speed: Optional[float] = 1.0):
         """
         启动一个新的任务，返回任务 ID
         """
         task_id = uuid.uuid4().hex[:8]  # 生成任务 ID
-        await self.task_queue.put((task_id, text, vc_uid))  # 将任务放入队列
+        await self.task_queue.put((task_id, text, vc_uid, speed))  # 将任务放入队列
         return task_id
 
     async def start_processing(self):
@@ -79,8 +84,8 @@ class TTSManager:
         启动一个异步任务处理队列
         """
         while True:
-            task_id, text, vc_uid = await self.task_queue.get()  # 从队列获取任务
-            await self._process_task(task_id, text, vc_uid)  # 处理任务
+            task_id, text, vc_uid, speed = await self.task_queue.get()  # 从队列获取任务
+            await self._process_task(task_id, text, vc_uid, speed)  # 处理任务
             self.task_queue.task_done()  # 标记任务已完成
 
     async def get_task_result(self, task_id: str):
@@ -188,6 +193,12 @@ class Server:
         self.app.get("/get_task_result/{task_id}")(self.get_task_result)
         self.app.get("/health")(self.health)
 
+        self.app.get("/v1/asset/{filename}")(self.get_asset_file)
+        self.app.post("/v1/generate_accent/{vc_name}")(self.upload_audio_files)
+        self.app.post("/v1/generate_tts")(self.generate_tts_v1)
+        self.app.get("/v1/get_task_result/{task_id}")(self.get_task_result)
+        self.app.get("/v1/health")(self.health)
+
         self.app.websocket("/stream")(self.websocket_endpoint)
         self.app.websocket("/stream-vc")(self.websocket_endpoint)
 
@@ -213,7 +224,7 @@ class Server:
         # STUN 和 TURN 服务器配置
         #result = await self.turn({'ttl': 86400})
         ice_servers = [
-            RTCIceServer( 
+            RTCIceServer(
                 urls=["stun:gtp.aleopool.cc:3478"]
             ),
             RTCIceServer(
@@ -249,7 +260,7 @@ class Server:
             print(f"ICE connection state is {pc.iceConnectionState}")
             if pc.iceConnectionState == "failed":
                 await pc.close()
-                self.pcs.discard(pc)   
+                self.pcs.discard(pc)
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
@@ -284,7 +295,7 @@ class Server:
                 logging.debug(f"Track {track.kind} ended")
                 track.stop()
                 #await recorder.stop()
-                
+
         @pc.on("datachannel")
         def on_datachannel(channel):
             logging.debug(f"DataChannel created: {channel.label}")
@@ -315,7 +326,7 @@ class Server:
                 else:
                     logging.warning("Received an unsupported message type")
 
-        @s2s_response.on("open")            
+        @s2s_response.on("open")
         async def on_open():
             print(f"DataChannel {s2s_response.label} opened")
 
@@ -406,7 +417,7 @@ class Server:
                 async with session.post(url, json=data) as response:
                     # 检查响应状态码
                     if response.status == 201:
-                        sdp_data = await response.text() 
+                        sdp_data = await response.text()
                         protocol_version = response.headers.get('protocol-version')
                         etag = response.headers.get('etag')
                         location = response.headers.get('location')
@@ -516,7 +527,7 @@ class Server:
                         # Optionally, send confirmation back to the client
                         await websocket.send_json({"type": "session_ack", "sessionid": sessionid})
                     else:
-                        await websocket.send_json({"type": "error", "message": "No rtc sessionid provided."})              
+                        await websocket.send_json({"type": "error", "message": "No rtc sessionid provided."})
 
                 elif msg_type == 'start':
                     request_data = parsed_message.get('request', {})
@@ -667,8 +678,8 @@ class Server:
             # If no cleanup is requested, return the original file
             return speaker_wav
 
-    async def generate_tts(self, request: TTSRequest):
-        task_id = await self.tts_manager.gen_tts(request.tts_text, request.vc_uid)
+    async def generate_tts_v1(self, request: TTSRequestV1):
+        task_id = await self.tts_manager.gen_tts(request.tts_text, request.vc_uid, request.speed)
         return {"task_id": task_id}
 
     async def get_task_result(self, task_id: str):
@@ -694,7 +705,7 @@ class Server:
             backlog=2048
         )
         server = uvicorn.Server(uvicorn_config)
-        
+
         # 捕获外部中断信号（SIGINT、SIGTERM）进行优雅关闭
         loop = asyncio.get_event_loop()
         loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(self.shutdown(server)))
@@ -706,7 +717,7 @@ class Server:
         """Gracefully shutdown the server."""
         print("Shutting down server gracefully...")
         await server.shutdown()
-        
+
         # Shutdown rtc tasks: Close WebRTC connections
         if self.pcs:
             coros = [pc.close() for pc in self.pcs]

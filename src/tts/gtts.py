@@ -34,7 +34,7 @@ class GTTS(TTSInterface):
             "channels": 1,
         }
 
-    async def text_to_speech(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> Tuple[str]:
+    async def text_to_speech(self, text: str, vc_uid: str, speed: Optional[float] = None) -> Tuple[str]:
         """使用 gtts 库将文本转语音"""
         pass
 

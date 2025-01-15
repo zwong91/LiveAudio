@@ -1,7 +1,7 @@
 from typing import Optional, Tuple, AsyncGenerator
 
 class TTSInterface:
-    async def text_to_speech(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> Tuple[str]:
+    async def text_to_speech(self, text: str, vc_uid: str, speed: Optional[float] = None) -> Tuple[str]:
         """
         将文本转换为语音，并返回音频文件路径
         """

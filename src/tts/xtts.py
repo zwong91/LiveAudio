@@ -129,18 +129,22 @@ class XTTS_v2(TTSInterface):
         }
         return LANG_MAP.get(language.lower(), 'en-newest')  # 默认返回EN
 
-    async def text_to_speech(self, text: str, vc_uid: str, target_lang: Optional[str] = None) -> Tuple[str]:
+    async def text_to_speech(self, text: str, vc_uid: str, speed: Optional[float] = None) -> Tuple[str]:
         """ Coqui TTS engine's inability to handle multiple synthesis requests in parallel
         voice clone worked: a 22050 Hz mono 16bit WAV file containing a short (~5-30 sec) sample
         Args:
             text (str): _description_
             vc_uid (str): _description_
-            target_lang (Optional[str], optional): _description_. Defaults to None.
+            speed (Optional[float], optional): _description_. Defaults to None.
 
         Returns:
             Tuple[str]: _description_
         """
         start_time = time.time()
+
+        v_speed = 1.0 if speed is None else float(speed)
+        v_speed = max(0.5, min(2.0, v_speed))
+
         language = langid.classify(text)[0].strip()
         ov_ses_lang = self.normalize_language_code(language)
         if language == 'zh':
@@ -179,7 +183,7 @@ class XTTS_v2(TTSInterface):
 
         # 调用模型函数，传递匹配的文件列表
         gpt_cond_latent, speaker_embedding = self.get_cached_latents(vc_uid, target_wav_files)
-        print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}")
+        print(f"Target wav files:{target_wav_files}, Detected language: {language}, tts text: {text}, speed: {v_speed}")
 
         t0 = time.time()
         out = self.model.inference(
@@ -194,7 +198,7 @@ class XTTS_v2(TTSInterface):
             do_sample=False,       # 关闭采样提高稳定性
             top_k=50,             # 限制采样范围
             top_p=0.85,           # 核采样阈值
-            speed=1.0,            # 保持正常语速
+            speed=v_speed,          # 默认是1 normal speed
             enable_text_splitting=True
         )
         src_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
