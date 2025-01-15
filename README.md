@@ -141,6 +141,11 @@ ASR_TYPE=sensevoice python -m unittest test.server.test_server
 
 voice cloning works best with a 22050 Hz mono 16bit WAV file containing a short (~5-30 sec) sample of the target speaker's voice. The sample should be a clean recording with no background noise or music. The speaker should be speaking in a natural, conversational tone. The sample should be representative of the speaker's voice, including their accent, intonation, and speaking style.
 
+3. Coqui AI XTTS-v2 tts 架构 high level
+XTTS 利用 VQ-VAE 模型将音频离散化为音频标记。
+它使用 GPT 模型根据输入文本和说话者潜变量speaker latents 预测这些音频标记。说话者潜变量speaker latents通过一系列自注意力层计算得出。
+GPT 模型的输出被传递给解码器模型，输出音频信号。使用扩散模型将 GPT 输出转换为声谱图帧，然后利用 UnivNet 生成最终的音频信号。
+
 Resources
 ---------
 * [WebRTC docs](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API) - on https://developer.mozilla.org
