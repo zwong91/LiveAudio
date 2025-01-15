@@ -103,7 +103,7 @@ class XTTS_v2(TTSInterface):
                 audio_path=target_wav_files,
                 gpt_cond_len=140,
                 gpt_cond_chunk_len=6,
-                max_ref_length=60)
+                max_ref_length=120)
 
             self.latent_cache[cache_key] = (gpt_cond_latent, speaker_embedding)
             return gpt_cond_latent, speaker_embedding
