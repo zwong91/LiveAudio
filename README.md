@@ -133,6 +133,7 @@ ASR_TYPE=sensevoice python -m unittest test.server.test_server
 ```
 
 ## FAQ
+
 1. "`GLIBCXX_3.4.32' not found" error at runtime. GCC 13.2.0***
 
 [https://stackoverflow.com/questions/76974555/glibcxx-3-4-32-not-found-error-at-runtime-gcc-13-2-0]
@@ -149,7 +150,8 @@ GPT 模型的输出被传递给解码器模型，输出音频信号。使用扩�
 
 Resources
 ---------
-* [WebRTC docs](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API) - on https://developer.mozilla.org
-* [Ollama](https://ollama.com/) - A local LLM inference engine for running Llama 3, Mistral, Gemma, and other LLMs
-* [aiortc](https://aiortc.readthedocs.io/en/latest/) - A Python Library for WebRTC and ORTC communication
-* [SenseVoice](https://github.com/FunAudioLLM/SenseVoice) and [SenseVoice space](https://www.modelscope.cn/studios/iic/SenseVoice).
+
+* [WebRTC docs](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API) - on <https://developer.mozilla.org>
+- [Ollama](https://ollama.com/) - A local LLM inference engine for running Llama 3, Mistral, Gemma, and other LLMs
+- [aiortc](https://aiortc.readthedocs.io/en/latest/) - A Python Library for WebRTC and ORTC communication
+- [SenseVoice](https://github.com/FunAudioLLM/SenseVoice) and [SenseVoice space](https://www.modelscope.cn/studios/iic/SenseVoice).

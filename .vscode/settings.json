@@ -99,7 +99,8 @@
   "github.copilot.chat.codeGeneration.instructions": [
     { "file": ".prettierrc.yaml" },
     { "file": "copilot/copilot-instructions.md" },
-    { "file": "copilot/style-guide.md" }
+    { "file": "copilot/style-guide.md" },
+    { "text": "Dont apologize. Dont apologize. Dont apologize." }
   ],
   "github.copilot.chat.commitMessageGeneration.instructions": [
     { "file": "copilot/copilot-commit-message-instructions.md" },
