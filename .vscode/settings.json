@@ -86,7 +86,7 @@
   "git.autoStash": true,
   "git.confirmForcePush": false,
   "git.confirmSync": false,
-  "git.enableCommitSigning": true,
+  "git.enableCommitSigning": false,
   "git.ignoredRepositories": [".vscode"],
   "git.inputValidationLength": 80,
   "git.inputValidationSubjectLength": 80,
@@ -98,16 +98,16 @@
   // Copilot 详细配置
   "github.copilot.chat.codeGeneration.instructions": [
     { "file": ".prettierrc.yaml" },
-    { "file": ".copilot/copilot-instructions.md" },
-    { "file": ".copilot/style-guide.md" }
+    { "file": "copilot/copilot-instructions.md" },
+    { "file": "copilot/style-guide.md" }
   ],
   "github.copilot.chat.commitMessageGeneration.instructions": [
-    { "file": ".copilot/copilot-commit-message-instructions.md" },
-    { "file": ".copilot/gitmojis.yaml" }
+    { "file": "copilot/copilot-commit-message-instructions.md" },
+    { "file": "copilot/gitmojis.yaml" }
   ],
   "github.copilot.chat.reviewSelection.instructions": [
-    { "file": ".copilot/copilot-instructions.md" },
-    { "file": ".copilot/style-guide.md" }
+    { "file": "copilot/copilot-instructions.md" },
+    { "file": "copilot/style-guide.md" }
   ],
   "github.copilot.chat.temporalContext.enabled": true,
   "github.copilot.chat.testGeneration.instructions": [
