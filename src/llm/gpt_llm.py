@@ -26,7 +26,7 @@ from .prompt import translation_prompt, chat_prompt
 
 class OpenAILLM(LLMInterface):
     def __init__(
-        self, 
+        self,
         model: str = "gpt-4o-mini",
         tools=None,
         tool_choice=NOT_GIVEN,
@@ -50,7 +50,7 @@ class OpenAILLM(LLMInterface):
         #     with open(vault_path, "r", encoding="utf-8") as vault_file:
         #         self.vault_content = vault_file.readlines()
         # self.vault_embeddings = self.embedding_model.encode(self.vault_content, convert_to_tensor=True) if self.vault_content else []
-    
+
     def get_relevant_context(self, user_input, vault_embeddings, top_k=3):
         """
         Retrieves the top-k most relevant context from the vault based on the user input.
@@ -166,12 +166,9 @@ class OpenAILLM(LLMInterface):
 
         out = self.generate(history, query, simultaneous, target_lang, stream, max_lengths)
         response = ""
+        #FIXME: 这里yeild 流式输出作为 tts 的流式输入
         async for text in out:
-            # which stores the transcription if interruption occurred. stop generating
-            # if not interrupt_queue.empty():
-            #     print("interruption detected LLM")
-            #     break
-            # TODO: text output queue where the result is accumulated
+            #yield text
             response += text
 
         # remove the tool utterances from the response
@@ -182,4 +179,4 @@ class OpenAILLM(LLMInterface):
 
         end_time = time.time()
         print(f"openai llm time: {end_time - start_time:.4f} seconds")
-        return response, history       
+        return response, history
