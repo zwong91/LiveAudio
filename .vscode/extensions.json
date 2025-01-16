@@ -4,6 +4,6 @@
     "esbenp.prettier-vscode",
     "foxundermoon.shell-format",
     "jnoortheen.nix-ide",
-    "seatonjiang.gitmoji-vscode"
+    "seatonjiang.gitmoji-vscode",
   ]
 }

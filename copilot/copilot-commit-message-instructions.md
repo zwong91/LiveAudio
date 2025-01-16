@@ -10,6 +10,8 @@ Write a concise and descriptive commit message based solely on the provided chan
 - **Do not include speculative justifications** like "to improve A", "for better B", "for improved C", "to enhance D". Instead, **only describe what was done**.
 - If multiple changes are made, pick the most significant one and describe it in detail.
 
+- Be make sure AI commit messages are in English.
+
 ## Important: Avoid these patterns at all costs
 
 - "Update settings" → Always describe **what was updated**.

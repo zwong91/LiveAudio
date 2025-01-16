@@ -1,7 +1,7 @@
 [alias]
 lg = log --color --graph --pretty=format:'%C(magenta)%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
 [commit]
-gpgsign = true
+gpgsign = false
 [core]
 excludesfile = ~/.gitignore
 [fetch]
@@ -33,4 +33,4 @@ required = true
 autoSetupRemote = true
 gpgSign = if-asked
 [tag]
-gpgSign = true
+gpgSign = false

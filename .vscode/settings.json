@@ -17,8 +17,6 @@
   "gitlens.showWelcomeOnInstall": false,
   "gitlens.showWhatsNewAfterUpgrades": false,
   "gitlens.views.searchAndCompare.files.layout": "tree",
-  "gitmoji.showEmojiCode": true,
-  "gitpod.showReleaseNotes": false,
   "go.inlayHints.compositeLiteralFields": true,
   "go.inlayHints.functionTypeParameters": true,
   "go.inlayHints.rangeVariableTypes": true,
@@ -77,6 +75,10 @@
   "files.trimTrailingWhitespace": true,
 
   // Git 设置
+  "gitmoji.showEmojiCode": true,      // 显示emoji代码
+  "gitmoji.addCustomEmoji": [],     // 允许自定义emoji
+  "gitmoji.onlyUseCustomEmoji": false,// 使用默认和自定义emoji
+
   "git.enableSmartCommit": true,
   "git.autofetch": true,
   "git.allowForcePush": true,
@@ -91,18 +93,7 @@
   "git.pruneOnFetch": true,
   "git.pullBeforeCheckout": true,
   "git.repositoryScanMaxDepth": 4,
-  "git.scanRepositories": ["/home/es/Code"],
   "git.timeline.showUncommitted": true,
-  "gitProjectManager.baseProjectsFolders": ["/home/es/Code"],
-  "gitProjectManager.ignoredFolders": [
-      "build",
-      "deps",
-      "dist",
-      "docs",
-      "node_modules"
-  ],
-  "gitProjectManager.storeRepositoriesBetweenSessions": true,
-  "gitProjectManager.unversionedProjects": ["/home/es/Code/localhost"],
 
   // Copilot 详细配置
   "github.copilot.chat.codeGeneration.instructions": [
@@ -123,8 +114,7 @@
     { "file": ".prettierrc.yaml" },
     { "file": "package.json" },
     { "file": "tsconfig.eslint.json" },
-    { "file": "tsconfig.json" },
-    { "file": "vitest.config.ts" }
+    { "file": "tsconfig.json" }
   ],
   "github.copilot.enable": {
     "*": true,
