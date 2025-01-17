@@ -2,7 +2,6 @@ from .edge_tts import EdgeTTS
 from .gtts import GTTS
 from .system_tts import SystemTTS
 from .elevenlabs_tts import ElevenlabTTS
-from .parler_tts import ParlerTTS
 from .xtts import XTTS_v2
 
 class TTSFactory:
@@ -16,8 +15,6 @@ class TTSFactory:
             return ElevenlabTTS(**kwargs)
         elif tts_type == "system":
             return SystemTTS(**kwargs)
-        elif tts_type == "parler":
-            return ParlerTTS(**kwargs)
         elif tts_type == "xtts-v2":
             return XTTS_v2(**kwargs)
         else:
