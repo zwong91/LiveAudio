@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "start-backend",
+      "type": "shell",
+      "command": "conda activate rt && python -m src.main --port 8765",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": "Application startup complete"
+        }
+      }
+    },
+    {
+      "label": "stop-backend",
+      "type": "shell",
+      "command": "pkill -f 'python -m src.main'"
+    }
+  ]
+}
