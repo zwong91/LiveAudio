@@ -10,10 +10,6 @@ const nextConfig = {
 	// Transpile the specific packages you need
 	transpilePackages: ['onnxruntime-web', '@ricky0123/vad-web'],
 
-	experimental: {
-		runtime: 'nodejs',
-	},
-
 	// Webpack custom configuration
 	webpack: (config) => {
 		// Add support for TypeScript files (.ts, .tsx)
