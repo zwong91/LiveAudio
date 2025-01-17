@@ -12,6 +12,9 @@ const wavStreamPlayer = new WavStreamPlayer({ sampleRate: 16000 });
 
 // 检测是否为iOS设备
 const isIOS = () => {
+	if (typeof window === 'undefined' || !window.navigator) {
+		return false;
+	}
 	return (
 		['iPad Simulator', 'iPhone Simulator', 'iPod Simulator', 'iPad', 'iPhone', 'iPod', 'MacIntel'].includes(navigator.platform) ||
 		(navigator.userAgent.includes('Mac') && 'ontouchend' in document)
@@ -20,10 +23,14 @@ const isIOS = () => {
 
 // 请求麦克风权限
 const requestMicrophonePermission = async () => {
+	if (typeof window === 'undefined' || !window.navigator?.mediaDevices) {
+		console.warn('Browser does not support mediaDevices API');
+		return false;
+	}
+
 	try {
 		if (isIOS()) {
-			// iOS设备需要用户手动触发，先显示提示
-			alert('请在接下来的系统弹窗中允许访问麦克风。如果没有看到弹窗，请检查浏览器设置。');
+			alert("Please allow microphone access in the system popup. If you don't see the popup, check your browser settings.");
 		}
 
 		const stream = await navigator.mediaDevices.getUserMedia({
@@ -36,33 +43,31 @@ const requestMicrophonePermission = async () => {
 
 		const audioTracks = stream.getAudioTracks();
 		if (audioTracks.length === 0) {
-			throw new Error('没有获取到音频轨道');
+			throw new Error('No audio track detected');
 		}
 
-		// iOS Safari需要保持一个活跃的音频流
 		if (isIOS()) {
-			// 保持流活跃但静音
 			audioTracks.forEach((track) => {
-				track.enabled = false; // 静音但保持活跃
+				track.enabled = false;
 			});
-			// 不要立即停止流
 		} else {
-			// 非iOS设备可以停止流
 			stream.getTracks().forEach((track) => track.stop());
 		}
 
 		return true;
 	} catch (error: any) {
-		console.error('麦克风权限错误:', error);
+		console.error('Microphone permission error:', error);
 
 		if (isIOS()) {
-			alert('请确保已在Safari设置中允许本网站访问麦克风，然后重新加载页面。\n设置路径：设置 > Safari > 高级 > 网站设置');
+			alert(
+				'Please ensure microphone access is enabled in Safari settings, then reload the page.\nPath: Settings > Safari > Advanced > Website Settings'
+			);
 		} else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-			alert('麦克风权限被拒绝。请在浏览器设置中允许访问麦克风，然后刷新页面。');
+			alert('Microphone access denied. Please enable microphone access in your browser settings and refresh the page.');
 		} else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-			alert('未检测到麦克风设备。');
+			alert('No microphone device detected.');
 		} else {
-			alert(`无法访问麦克风：${error.message || '未知错误'}`);
+			alert(`Cannot access microphone: ${error.message || 'Unknown error'}`);
 		}
 
 		return false;
