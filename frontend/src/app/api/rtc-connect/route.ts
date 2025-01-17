@@ -84,3 +84,5 @@ export async function PATCH(req: NextRequest) {
 export async function HEAD(req: NextRequest) {
 	return new NextResponse('Method Not Allowed', { status: 405 });
 }
+
+export const runtime = 'edge';
