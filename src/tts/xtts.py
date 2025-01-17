@@ -30,11 +30,6 @@ from TTS.utils.manage import ModelManager
 
 from src.utils.audio_utils import postprocess_tts_wave_int16, convertSampleRateTo16khz, wave_header_chunk
 
-# OpenVoice V2
-sys.path.insert(1, "../OpenVoice")
-from openvoice import se_extractor
-from openvoice.api import ToneColorConverter
-
 class XTTS_v2(TTSInterface):
     def __init__(self, voice: str = 'liuyifei'):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -43,10 +38,7 @@ class XTTS_v2(TTSInterface):
         self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
         self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "silence.wav")
 
-        #self.openvoice_v2 = TTS("voice_conversion_models/multilingual/multi-dataset/openvoice_v2").to("cuda")
-        ckpt_converter = 'checkpoints_v2/converter'
-        self.tone_color_converter = ToneColorConverter(f'{ckpt_converter}/config.json', device=device)
-        self.tone_color_converter.load_ckpt(f'{ckpt_converter}/checkpoint.pth')
+        self.ov = TTS("voice_conversion_models/multilingual/multi-dataset/openvoice_v2").to("cuda")
 
         # print("Loading model...")
         # config = XttsConfig()
@@ -101,9 +93,9 @@ class XTTS_v2(TTSInterface):
             # 计算并返回新的 latents 和 speaker_embedding
             gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(
                 audio_path=target_wav_files,
-                gpt_cond_len=140,
-                gpt_cond_chunk_len=6,
-                max_ref_length=120)
+                gpt_cond_len=140,      #音频秒数
+                gpt_cond_chunk_len=6, #音频被分割成块,音频块大小（秒）
+                max_ref_length=120) #decoder最大参考音频秒数
 
             self.latent_cache[cache_key] = (gpt_cond_latent, speaker_embedding)
             return gpt_cond_latent, speaker_embedding
@@ -217,21 +209,9 @@ class XTTS_v2(TTSInterface):
         #t0 = time.time()
         #save_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
 
-        #reference_speaker = target_wav_files[0] # This is the voice you want to clone
-        #target_se, audio_name = se_extractor.get_se(reference_speaker, self.tone_color_converter, vad=True)
-        #source_se = torch.load(f'checkpoints_v2/base_speakers/ses/{ov_ses_lang}.pth', map_location="cuda:0")
-        # Run the tone color converter
-        #encode_message = "@MyShell"
-        # self.tone_color_converter.convert(
-        #     audio_src_path=src_path,
-        #     src_se=source_se,
-        #     tgt_se=target_se,
-        #     output_path=save_path,
-        #     message=encode_message)
-
-        # self.openvoice_v2.voice_conversion_to_file(
+        # self.ov.voice_conversion_to_file(
         #     source_wav=source_wav,
-        #     target_wav=target_wav_files[0],
+        #     target_wav=target_wav_files,
         #     file_path=save_path
         # )
         #print(f"OpenVoice v2 voice conversion time: {time.time() - t0:.4f} seconds")
