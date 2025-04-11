@@ -32,7 +32,7 @@ from .prompt import translation_prompt, chat_prompt
 class OllamaLLM(LLMInterface):
     def __init__(
         self,
-        model: str = "qwen2.5",
+        model: str = "qwen2.5:0.5b",
     ):
         # Ollama should be installed and running
         #curl -fsSL https://ollama.com/install.sh | sh
@@ -47,7 +47,7 @@ class OllamaLLM(LLMInterface):
         #     with open(vault_path, "r", encoding="utf-8") as vault_file:
         #         self.vault_content = vault_file.readlines()
         # self.vault_embeddings = self.embedding_model.encode(self.vault_content, convert_to_tensor=True) if self.vault_content else []
-    
+
     def get_relevant_context(self, user_input, vault_embeddings, top_k=3):
         """
         Retrieves the top-k most relevant context from the vault based on the user input.
@@ -112,7 +112,7 @@ class OllamaLLM(LLMInterface):
 
         if history is None:
             history = []
-        
+
         query += f"\n\nalways use {target_lang} answer" if target_lang else ""
         history.append({"role": "user", "content": query})
         template = translation_prompt if simultaneous else chat_prompt
@@ -138,4 +138,4 @@ class OllamaLLM(LLMInterface):
 
         end_time = time.time()
         print(f"ollama llm time: {end_time - start_time:.4f} seconds")
-        return response_content, history     
+        return response_content, history

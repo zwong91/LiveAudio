@@ -20,7 +20,7 @@ import base64
 
 sys.path.insert(1, "../vc")
 
-# coqui-tts 0.25.1
+# coqui-tts 0.25.3
 from TTS.api import TTS
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
@@ -94,8 +94,8 @@ class XTTS_v2(TTSInterface):
             gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(
                 audio_path=target_wav_files,
                 gpt_cond_len=140,      #音频秒数
-                gpt_cond_chunk_len=6, #音频被分割成块,音频块大小（秒）
-                max_ref_length=120) #decoder最大参考音频秒数
+                gpt_cond_chunk_len=6,  #音频被分割成块,音频块大小（秒）
+                max_ref_length=120)    #decoder最大参考音频秒数
 
             self.latent_cache[cache_key] = (gpt_cond_latent, speaker_embedding)
             return gpt_cond_latent, speaker_embedding

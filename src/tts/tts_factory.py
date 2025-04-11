@@ -3,6 +3,7 @@ from .gtts import GTTS
 from .system_tts import SystemTTS
 from .elevenlabs_tts import ElevenlabTTS
 from .xtts import XTTS_v2
+from .piper_tts import PiperTTS
 
 class TTSFactory:
     @staticmethod
@@ -17,5 +18,7 @@ class TTSFactory:
             return SystemTTS(**kwargs)
         elif tts_type == "xtts-v2":
             return XTTS_v2(**kwargs)
+        elif tts_type == "piper":
+            return PiperTTS(**kwargs)
         else:
             raise ValueError(f"Unknown TTS pipeline type: {tts_type}")
