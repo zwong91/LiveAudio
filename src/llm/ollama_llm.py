@@ -1,5 +1,5 @@
 from .llm_interface import LLMInterface
-from typing import List, Optional, Tuple, Dict
+from typing import List, Optional, Tuple, Dict, AsyncGenerator
 import os
 import time
 import json
@@ -29,113 +29,51 @@ client = OpenAI(
 from ollama import AsyncClient
 
 from .prompt import translation_prompt, chat_prompt
+
 class OllamaLLM(LLMInterface):
-    def __init__(
-        self,
-        model: str = "qwen3:0.6b",
-    ):
-        # Ollama should be installed and running
-        #curl -fsSL https://ollama.com/install.sh | sh
-        #ollama.pull(model)
+    def __init__(self, model: str = "qwen3:0.6b"):
         self.model = model
+        self._request_id = None
+        self._current_task = None
 
-        # self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-        # # Load initial content from vault.txt
-        # self.vault_content = []
-        # vault_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vault.txt")
-        # if os.path.exists(vault_path):
-        #     with open(vault_path, "r", encoding="utf-8") as vault_file:
-        #         self.vault_content = vault_file.readlines()
-        # self.vault_embeddings = self.embedding_model.encode(self.vault_content, convert_to_tensor=True) if self.vault_content else []
-
-    def get_relevant_context(self, user_input, vault_embeddings, top_k=3):
-        """
-        Retrieves the top-k most relevant context from the vault based on the user input.
-        Local RAG embedding search
-        """
-        if len(vault_embeddings) == 0: # Check if the tensor has any elements
-            return []
-        # Encode the user input
-        input_embedding = self.embedding_model.encode([user_input], convert_to_tensor=True)
-        # Compute cosine similarity between the input and vault embeddings
-        cos_scores = util.cos_sim(input_embedding, vault_embeddings)[0]
-        # Adjust top_k if it's greater than the number of available scores
-        top_k = min(top_k, len(cos_scores))
-        # Sort the scores and get the top-k indices
-        top_indices = torch.topk(cos_scores, k=top_k)[1].tolist()
-        print(f"Length of vault_content: {len(self.vault_content)}")
-        print(f"Top indices: {top_indices}")
-        # Get the corresponding context from the vault
-        relevant_context = [self.vault_content[idx].strip() for idx in top_indices]
-        return relevant_context
-
-    async def generate(self, history: List[Dict[str, str]], vault_input: str, simultaneous: bool, target_lang: str, max_length: int = 256) -> Tuple[str, List[Dict[str, str]]]:
-        # with open("vault.txt", "a", encoding="utf-8") as vault_file:
-        #     print("Wrote to info.")
-        #     vault_file.write(vault_input + "\n")
-        # vault_content = open("vault.txt", "r", encoding="utf-8").readlines()
-        # vault_embeddings = self.embedding_model.encode(vault_content)
-        # print(f"Length of vault_content: {len(vault_content)}")
-
-        # relevant_context = self.get_relevant_context(vault_input, self.vault_embeddings)
-        query = vault_input + "\n\n" + f"always use {target_lang} answer" if target_lang else vault_input
-        # if relevant_context:
-        #     query = "\n".join(relevant_context) + "\n\n" + vault_input
-
-        if history is None:
-            history = []
-        history.append({"role": "user", "content": query})
-        template = translation_prompt if simultaneous else chat_prompt
-        system_prompt = template.replace("{{target_lang}}", target_lang or "")
-        print(f"query: {query}, sys-prompt: {system_prompt}")
-        messages = [
-            {"role": "system", "content": system_prompt}
-        ]
-        messages.extend(history)
-        stream = await AsyncClient().chat(
-            model=self.model,
-            messages=messages,
-            stream=True,
-            options={
-                'num_predict': 256,
-                'temperature': 1,
-            },
-        )
-
-        async for chunk in stream:
-            if chunk["message"]["content"] is not None:
-                yield chunk["message"]["content"]
-
-
-    async def generate_response(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str, stream:  bool, max_tokens: int = 256) -> Tuple[str, List[Dict[str, str]]]:
-        start_time = time.time()
-
+    def _prepare_messages(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str):
+        """准备消息上下文"""
         if history is None:
             history = []
 
-        query += f"\n\nalways use {target_lang} answer" if target_lang else ""
+        query = query + "\n\n" + f"always use {target_lang} answer" if target_lang else query
         history.append({"role": "user", "content": query})
+
         template = translation_prompt if simultaneous else chat_prompt
         system_prompt = template.replace("{{target_lang}}", target_lang or "")
-        print(f"query: {query}, sys-prompt: {system_prompt}")
-        messages = [
-            {"role": "system", "content": system_prompt}
-        ]
+
+        messages = [{"role": "system", "content": system_prompt}]
         messages.extend(history)
-        #response = await aclient.chat.completions.create(
-        response = client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            max_tokens=256,
-            temperature=1,
-        )
+        return messages, history
 
-        role = response.choices[0].message.role
-        response_content = response.choices[0].message.content
+    async def generate_stream(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
+        """流式生成回复，支持中断"""
+        try:
+            messages, updated_history = self._prepare_messages(history, query, simultaneous, target_lang)
 
-        history.append({"role": "assistant", "content": response_content})
-        history = history[-20:]
+            start_time = time.time()
+            stream = await AsyncClient().chat(
+                model=self.model,
+                messages=messages,
+                stream=True,
+                options={
+                    'num_predict': 256,
+                    'temperature': 1,
+                },
+            )
 
-        end_time = time.time()
-        print(f"ollama llm time: {end_time - start_time:.4f} seconds")
-        return response_content, history
+            async for chunk in stream:
+                if chunk["message"]["content"] is not None:
+                    yield chunk["message"]["content"]
+
+        except asyncio.CancelledError:
+            print("LLM generation cancelled")
+            raise
+        finally:
+            end_time = time.time()
+            print(f"ollama llm time: {end_time - start_time:.4f} seconds")

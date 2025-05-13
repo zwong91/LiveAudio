@@ -1,29 +1,26 @@
 from .llm_interface import LLMInterface
-from typing import List, Optional, Tuple, Dict
+from typing import List, Optional, Tuple, Dict, AsyncGenerator
 import os
 import time
 import json
 import random
 
 from dotenv import load_dotenv
-# Load environment variables
 load_dotenv(override=True)
 
 import torch
 import asyncio
-
+from sentence_transformers import SentenceTransformer, util
 from llama_cpp import Llama
-
 from .prompt import translation_prompt, chat_prompt
 
 class LlamaLLM(LLMInterface):
     def __init__(
-        self, 
+        self,
         model_path="Qwen/Qwen2.5-1.5B-Instruct-GGUF",
         device="cuda",
-        sys_prompt="",
-        chat_format=None,
         temperature=0.7,
+        chat_format=None,
     ):
         self.model = Llama.from_pretrained(
             repo_id=model_path,
@@ -35,77 +32,77 @@ class LlamaLLM(LLMInterface):
         )
         self.temperature = temperature
 
-        # self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-        # # Load initial content from vault.txt
-        # self.vault_content = []
-        # vault_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vault.txt")
-        # if os.path.exists(vault_path):
-        #     with open(vault_path, "r", encoding="utf-8") as vault_file:
-        #         self.vault_content = vault_file.readlines()
-        # self.vault_embeddings = self.embedding_model.encode(self.vault_content, convert_to_tensor=True) if self.vault_content else []
-    
+        # Initialize embedding model and vault content
+        self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.vault_content = []
+        vault_path = os.path.join(os.path.abspath(os.getcwd()), "vault.txt")
+        if os.path.exists(vault_path):
+            with open(vault_path, "r", encoding="utf-8") as vault_file:
+                self.vault_content = vault_file.readlines()
+        self.vault_embeddings = self.embedding_model.encode(self.vault_content, convert_to_tensor=True) if self.vault_content else []
+
     def get_relevant_context(self, user_input, vault_embeddings, top_k=3):
-        """
-        Retrieves the top-k most relevant context from the vault based on the user input.
-        Local RAG embedding search
-        """
-        if len(vault_embeddings) == 0: # Check if the tensor has any elements
+        """获取知识库中最相关的上下文"""
+        if len(vault_embeddings) == 0:
             return []
-        # Encode the user input
+
         input_embedding = self.embedding_model.encode([user_input], convert_to_tensor=True)
-        # Compute cosine similarity between the input and vault embeddings
         cos_scores = util.cos_sim(input_embedding, vault_embeddings)[0]
-        # Adjust top_k if it's greater than the number of available scores
         top_k = min(top_k, len(cos_scores))
-        # Sort the scores and get the top-k indices
         top_indices = torch.topk(cos_scores, k=top_k)[1].tolist()
+
         print(f"Length of vault_content: {len(self.vault_content)}")
         print(f"Top indices: {top_indices}")
-        # Get the corresponding context from the vault
         relevant_context = [self.vault_content[idx].strip() for idx in top_indices]
         return relevant_context
 
-    async def generate(
-        self,
-        query,
-        simultaneous,
-        target_lang: str,
-        stream,
-        max_length=100,
-    ):
-        query += f"\n\nalways use {target_lang} answer" if target_lang else ""
+    def _prepare_messages(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str):
+        """准备消息上下文"""
+        if history is None:
+            history = []
+
+        # 获取相关知识库内容
+        relevant_context = self.get_relevant_context(query, self.vault_embeddings)
+        if relevant_context:
+            query = "\n".join(relevant_context) + "\n\n" + query
+
+        query = query + "\n\n" + f"always use {target_lang} answer" if target_lang else query
+        history.append({"role": "user", "content": query})
+
         template = translation_prompt if simultaneous else chat_prompt
         system_prompt = template.replace("{{target_lang}}", target_lang or "")
+
         messages = [{"role": "system", "content": system_prompt}]
-        messages.append({"role": "user", "content": query})
-        out = self.model.create_chat_completion(
-            messages, stream=True, temperature=self.temperature
-        )
-        response_text = ""
-        for o in out:
-            if "content" in o["choices"][0]["delta"].keys():
-                text = o["choices"][0]["delta"]["content"]
-                response_text += text
-                yield text
-            if o["choices"][0]["finish_reason"] is not None:
-                break
+        messages.extend(history)
+        return messages, history
 
-    async def generate_response(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str, stream:  bool, max_tokens: int = 256) -> Tuple[str, List[Dict[str, str]]]:
-        start_time = time.time()
+    async def generate_stream(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
+        """流式生成回复，支持中断"""
+        try:
+            messages, updated_history = self._prepare_messages(history, query, simultaneous, target_lang)
 
-        out = self.generate(history, query, simultaneous, target_lang, stream)
-        response = ""
-        async for text in out:
-            # which stores the transcription if interruption occurred. stop generating
-            # if not interrupt_queue.empty():
-            #     print("interruption detected LLM")
-            #     break
-            # TODO: text output queue where the result is accumulated
-            response += text
+            start_time = time.time()
+            stream = self.model.create_chat_completion(
+                messages,
+                stream=True,
+                temperature=self.temperature
+            )
 
-        history.append({"role": "assistant", "content": response})
-        history = history[-20:]
+            for output in stream:
+                if output["choices"][0]["delta"].get("content"):
+                    yield output["choices"][0]["delta"]["content"]
+                    # 让出控制权，允许检查中断
+                    await asyncio.sleep(0)
 
-        end_time = time.time()
-        print(f"llama llm time: {end_time - start_time:.4f} seconds")
-        return response, history 
+                # 更新知识库
+                with open("vault.txt", "a", encoding="utf-8") as vault_file:
+                    vault_file.write(query + "\n")
+                self.vault_content.append(query)
+                self.vault_embeddings = self.embedding_model.encode(self.vault_content, convert_to_tensor=True)
+
+        except asyncio.CancelledError:
+            print("Llama generation cancelled")
+            raise
+        finally:
+            end_time = time.time()
+            print(f"llama llm time: {end_time - start_time:.4f} seconds")
