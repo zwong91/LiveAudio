@@ -41,13 +41,6 @@ source va/bin/activate
 
 # Install dependencies using uv
 uv pip install -r requirements.txt
-
-# Install XTTS
-cd src/xtts
-uv pip install -e ".[all,server,notebooks,bn,ja,ko,zh,languages]"
-
-# Download XTTS-v2 model
-HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2 --local-dir XTTS-v2
 ```
 
 ## Docker Setup

@@ -20,7 +20,7 @@ import base64
 
 sys.path.insert(1, "../assets")
 
-# coqui-tts 0.25.3
+# coqui-tts 0.26.0
 from TTS.api import TTS
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
@@ -39,14 +39,6 @@ class XTTS_v2(TTSInterface):
         self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "silence.wav")
 
         self.ov = TTS("voice_conversion_models/multilingual/multi-dataset/openvoice_v2").to("cuda")
-
-        # print("Loading model...")
-        # config = XttsConfig()
-        # config.load_json("XTTS-v2/config.json")
-        # self.model = Xtts.init_from_config(config)
-        # self.model.load_checkpoint(config, checkpoint_dir="XTTS-v2", use_deepspeed=True)
-        # self.model.to(device)
-
         model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
         logging.info("⏳Downloading model")
         ModelManager().download_model(model_name)
