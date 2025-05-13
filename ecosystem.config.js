@@ -1,9 +1,9 @@
 module.exports = {
   apps: [
     {
-      name: "live-audio-edge",
+      name: "voice-agent-edge",
       script: "./start_app_edge.sh",
-      cwd: "/root/live-audio",
+      cwd: "/root/voice-agent",
       interpreter: "/bin/bash",
       env: {
         CONDA_DEFAULT_ENV: "rt",
@@ -11,7 +11,7 @@ module.exports = {
       },
     },
     {
-      name: "live-audio-vc-gpu",
+      name: "voice-agent-vc-gpu",
       script: "./start_app_vc_gpu.sh",
       cwd: "/root/rt-audio",
       interpreter: "/bin/bash",

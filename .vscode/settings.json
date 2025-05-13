@@ -110,7 +110,6 @@
     { "file": "copilot/copilot-instructions.md" },
     { "file": "copilot/style-guide.md" }
   ],
-  "github.copilot.chat.temporalContext.enabled": true,
   "github.copilot.chat.testGeneration.instructions": [
     { "file": ".prettierrc.yaml" },
     { "file": "package.json" },
@@ -122,5 +121,6 @@
     "markdown": true,
     "plaintext": true,
     "scminput": true
-  }
+  },
+  "github.copilot.chat.editor.temporalContext.enabled": true
 }

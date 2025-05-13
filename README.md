@@ -1,72 +1,58 @@
-# LiveAudio
+# VoiceAgent
 
-Welcome to the LiveAudio repository! This project hosts A exciting applications leveraging advanced audio understand and speech generation models to bring your audio experiences to life, designed to provide an interactive and natural chatting experience, making it easier to adopt sophisticated AI-driven dialogues in various settings.
+Welcome to the VoiceAgent repository! This project hosts exciting applications leveraging advanced audio understanding and speech generation models to bring your audio experiences to life.
 
 ## Install
 
-**Clone and install**
+### Prerequisites
 
-- Clone the repo and submodules
-
-``` sh
-
-#0  source code
-
+```sh
+# System dependencies (Ubuntu/Debian)
 apt update
-# (Ubuntu / Debian User) Install sox + ffmpeg
-apt install libsox-dev espeak-ng ffmpeg libopenblas-dev vim git-lfs -y
+apt install libsox-dev espeak-ng ffmpeg libopenblas-dev vim git-lfs \
+    build-essential cmake libasound-dev portaudio19-dev \
+    libportaudio2 libportaudiocpp0 -y
 
-# (Ubuntu / Debian User) Install pyaudio
-apt install build-essential \
-    cmake \
-    libasound-dev \
-    portaudio19-dev \
-    libportaudio2 \
-    libportaudiocpp0
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir --verbose
-
-mkdir /asset
+# Create directory
+mkdir -p /asset
 chmod 777 /asset/
-git clone https://github.com/zwong91/LiveAudio.git
-cd /workspace/LiveAudio
-git pull
 
-#1 pre_install.sh
-# 安装 miniconda, PyTorch/CUDA 的 conda 环境
+# Clone repository
+git clone https://github.com/zwong91/VoiceAgent.git
+cd VoiceAgent
+```
+
+### Environment Setup
+
+```sh
+# Install and setup miniconda
 mkdir -p ~/miniconda3
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
 bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
 rm -rf ~/miniconda3/miniconda.sh
 ~/miniconda3/bin/conda init bash && source ~/miniconda3/bin/activate
 conda config --set auto_activate_base false
-conda create -n rt python=3.10  -y
+conda create -n rt python=3.10 -y
 conda activate rt
 
-#2  LiveAudio
-cd /workspace/LiveAudio
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+# Install dependencies using uv
+CMAKE_ARGS="-DGGML_CUDA=on" uv pip install llama-cpp-python --force-reinstall
+uv pip install -r requirements.txt
 
-#3 xtts
-cd /workspace/LiveAudio/src/xtts
-pip install -e .[all,server,notebooks,bn,ja,ko,zh,languages]  -i https://pypi.tuna.tsinghua.edu.cn/simple
+# Install XTTS
+cd src/xtts
+uv pip install -e ".[all,server,notebooks,bn,ja,ko,zh,languages]"
 
-#4. download xtts-v2
-HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2  --local-dir  XTTS-v2
+# Download XTTS-v2 model
+HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2 --local-dir XTTS-v2
 
-##5. openvice v2
-cd OpenVoice
-pip install -e .   -i https://pypi.tuna.tsinghua.edu.cn/simple
-
-wget https://myshell-public-repo-host.s3.amazonaws.com/openvoice/checkpoints_v2_0417.zip
-
-#6. parler-tts
-pip install git+https://github.com/huggingface/parler-tts.git
 # pip install flash-attn
 
 (rt) root@ash:~/audio# nvidia-smi
 (rt) root@ash:~/audio# nvcc --version
-(rt) root@ash:~/audio# pip show torch
 ```
 
 ## Docker Setup
@@ -95,7 +81,7 @@ pip install git+https://github.com/huggingface/parler-tts.git
 2. You can build the container image with:
 
     ```shell
-    sudo docker build -t LiveAudio .
+    sudo docker build -t VoiceAgent .
     ```
 
     After getting your VAD token (see next sections) run:
@@ -103,14 +89,14 @@ pip install git+https://github.com/huggingface/parler-tts.git
     ```bash
     sudo docker volume create huggingface
 
-    sudo docker run --gpus all -p 8765:8765 -v huggingface:/root/.cache/huggingface  -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' LiveAudio
+    sudo docker run --gpus all -p 8765:8765 -v huggingface:/root/.cache/huggingface  -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' VoiceAgent
     ```
 
     The "volume" stuff will allow you not to re-download the huggingface models each
     time you re-run the container. If you don't need this, just use:
 
     ```bash
-    sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' LiveAudio
+    sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' VoiceAgent
     ```
 
 ## Usage

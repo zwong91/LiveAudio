@@ -22,6 +22,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /path/to/live-audio
+            cd /path/to/voice-agent
             mv dist/* .
-            supervisorctl restart live-audio
+            supervisorctl restart voice-agent

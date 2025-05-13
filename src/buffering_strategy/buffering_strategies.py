@@ -82,7 +82,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if len(self.client.buffer) > chunk_length_in_bytes:
             if self.processing_flag:
                 #self.interrupt_flag = True
-                # FIXME: TO interrupt live-audio, start talking
+                # FIXME: TO interrupt voice-agent, start talking
                 # asyncio.create_task(
                 #     self._send_interrupt_signal(channel)
                 # )
@@ -102,7 +102,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
     async def _send_interrupt_signal(self, channel, use_webrtc):
         """
         Sends an audio chunk to the specified channel using either WebRTC or WebSocket.
-    
+
         Args:
             channel: The channel object to send the chunk to.
             use_webrtc (bool): Whether to use WebRTC for sending.
@@ -110,10 +110,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """
         async def send_webrtc():
             channel.send(b"END_OF_AUDIO")
-    
+
         async def send_websocket():
             await channel.send_bytes(b"END_OF_AUDIO")
-    
+
         try:
             await (send_webrtc() if use_webrtc else send_websocket())
         except Exception as e:
@@ -122,7 +122,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
     async def _send(self, channel, use_webrtc, chunk):
         """
         Sends an audio chunk to the specified channel using either WebRTC or WebSocket.
-    
+
         Args:
             channel: The channel object to send the chunk to.
             use_webrtc (bool): Whether to use WebRTC for sending.
@@ -130,10 +130,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """
         async def send_webrtc():
             channel.send(chunk)
-    
+
         async def send_websocket():
             await channel.send_bytes(chunk)
-    
+
         try:
             await (send_webrtc() if use_webrtc else send_websocket())
         except Exception as e:
@@ -195,7 +195,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     logging.warning("TTS stream interrupted.")
                     # Send stop signal
                     # await self._send_interrupt_signal(channel)
-                    
+
                 except Exception as e:
                     logging.error(f"An error occurred during TTS: {e}")
                 finally:

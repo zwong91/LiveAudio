@@ -54,8 +54,8 @@ if ! command -v node >/dev/null || ! command -v git >/dev/null || ! command -v y
 fi
 
 # Clone the repository and install dependencies
-git clone https://github.com/zwong91/LiveAudio
-cd LiveAudio/frontend
+git clone https://github.com/zwong91/VoiceAgent
+cd VoiceAgent/frontend
 npm install
 
 # Prompt user for environment variables

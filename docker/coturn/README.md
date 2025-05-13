@@ -23,7 +23,7 @@ admin/7f0dd067662502af36934e85b43895b148edfcdb
 
 turnutils_stunclient -p 3478 audio.enty.services
 
-root@10-60-3-26:~/LiveAudio-rtc# curl -v telnet://audio.enty.services:3478
+root@10-60-3-26:~/VoiceAgent-rtc# curl -v telnet://audio.enty.services:3478
 * Host audio.enty.services:3478 was resolved.
 * IPv6: (none)
 * IPv4: 108.137.9.108
