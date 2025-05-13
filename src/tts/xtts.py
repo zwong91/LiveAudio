@@ -18,7 +18,7 @@ import langid
 import glob
 import base64
 
-sys.path.insert(1, "../vc")
+sys.path.insert(1, "../assets")
 
 # coqui-tts 0.25.3
 from TTS.api import TTS
@@ -34,9 +34,9 @@ class XTTS_v2(TTSInterface):
     def __init__(self, voice: str = 'liuyifei'):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         # 使用 os.path 确保路径正确拼接
-        target_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "liuyifei.wav")
-        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
-        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "silence.wav")
+        target_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "liuyifei.wav")
+        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "talking.wav")
+        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "silence.wav")
 
         self.ov = TTS("voice_conversion_models/multilingual/multi-dataset/openvoice_v2").to("cuda")
 
@@ -153,11 +153,11 @@ class XTTS_v2(TTSInterface):
 
         # 遍历支持的扩展名进行匹配
         for ext in supported_extensions:
-            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), f"{vc_uid}*.{ext}")
+            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), f"{vc_uid}*.{ext}")
             target_wav_files.extend(glob.glob(target_wav_pattern))
 
         if not target_wav_files:
-            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "dayang.wav")
+            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "dayang.wav")
             target_wav_files = glob.glob(target_wav_pattern)
             print(f"No WAV files found matching pattern, use default: {target_wav_files}")
         else:
@@ -205,7 +205,7 @@ class XTTS_v2(TTSInterface):
         end_time = time.time()
         print(f"XTTSv2 text_to_speech time: {end_time - start_time:.4f} seconds")
 
-        # TODO: vc voice conversion OpenVoiceV2
+        # TODO: assets voice conversion OpenVoiceV2
         #t0 = time.time()
         #save_path = f"/asset/audio_{uuid4().hex[:8]}.wav"
 
@@ -226,11 +226,11 @@ class XTTS_v2(TTSInterface):
             print(f"Language you put {language} in is not in our Supported Languages, please choose from {self.supported_languages}")
 
         # 构造目标路径，获取匹配的 .wav 文件
-        target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), f"{vc_uid}*.wav")
+        target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), f"{vc_uid}*.wav")
         target_wav_files = glob.glob(target_wav_pattern)  # 使用 glob 扩展通配符
 
         if not target_wav_files:
-            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "dayang.wav")
+            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "dayang.wav")
             target_wav_files = glob.glob(target_wav_pattern)
             print(f"No WAV files found matching pattern, use default: {target_wav_files}")
         else:

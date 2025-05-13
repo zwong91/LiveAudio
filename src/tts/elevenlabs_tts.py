@@ -24,8 +24,8 @@ class ElevenlabTTS(TTSInterface):
             api_key = os.getenv("ELEVENLABS_API_KEY")
         self.api_key = api_key
 
-        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
-        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "silence.wav")
+        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "talking.wav")
+        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "silence.wav")
 
 
     def get_stream_info(self) -> dict:

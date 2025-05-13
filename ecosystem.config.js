@@ -11,7 +11,7 @@ module.exports = {
       },
     },
     {
-      name: "voice-agent-vc-gpu",
+      name: "voice-agent-assets-gpu",
       script: "./start_app_vc_gpu.sh",
       cwd: "/root/rt-audio",
       interpreter: "/bin/bash",

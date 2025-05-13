@@ -71,7 +71,7 @@ async def receive_video(track):
         # For this example, we will just print a message
         print("Received video frame")
 
-async def main(audio_file_path="vc/liuyifei.wav"):
+async def main(audio_file_path="assets/liuyifei.wav"):
     url = "https://localhost:20000"  # Replace with your server's address
     ws_url = "wss://localhost:20000/stream"  # WebSocket URL
 
@@ -105,7 +105,7 @@ async def main(audio_file_path="vc/liuyifei.wav"):
             #         return
             #     audio_player = MediaPlayer(audio_file_path)
             #     audio_stream = audio_player.audio
-            
+
             audio_source = 'file'
             print("Using pre-recorded audio file for audio input")
             if not os.path.exists(audio_file_path):
@@ -156,4 +156,3 @@ def run_async_main():
 
 if __name__ == "__main__":
     run_async_main()
-

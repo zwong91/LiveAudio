@@ -43,8 +43,8 @@ language_list = [
 class EdgeTTS(TTSInterface):
     def __init__(self, voice: str = 'zh-CN-XiaoxiaoNeural'):
         self.voice = voice
-        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
-        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "silence.wav")
+        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "talking.wav")
+        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "silence.wav")
 
     async def get_voices(self, **kwargs):
         from edge_tts import VoicesManager

@@ -23,8 +23,8 @@ class GTTS(TTSInterface):
         self.chunk_length = 100
         self.crossfade_length = 10
         self.speed = speed
-        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "talking.wav")
-        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "vc")), "silence.wav")
+        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "talking.wav")
+        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "silence.wav")
 
 
     def get_stream_info(self) -> dict:

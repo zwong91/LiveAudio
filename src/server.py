@@ -200,7 +200,6 @@ class Server:
         self.app.get("/v1/health")(self.health)
 
         self.app.websocket("/stream")(self.websocket_endpoint)
-        self.app.websocket("/stream-vc")(self.websocket_endpoint)
 
         self.app.post("/offer")(self.offer_endpoint)
 
@@ -357,8 +356,8 @@ class Server:
         # signaling = create_signaling()
         # recorder = MediaBlackhole()
 
-        #audio_sender = pc.addTrack(MediaPlayer("vc/silence.wav", format="wav", loop=True).audio)
-        #video_sender = pc.addTrack(MediaPlayer("vc/silence.mp4", format="wav", loop=True).video)
+        #audio_sender = pc.addTrack(MediaPlayer("assets/silence.wav", format="wav", loop=True).audio)
+        #video_sender = pc.addTrack(MediaPlayer("assets/silence.mp4", format="wav", loop=True).video)
 
         # Set codec preferences for video
         # capabilities = RTCRtpSender.getCapabilities("video")
@@ -476,7 +475,7 @@ class Server:
             if pc.connectionState == "closed":
                 self.pcs.discard(pc)
 
-        pc.addTrack(MediaPlayer("vc/liuyifei.wav", format="wav", loop=True).audio)
+        pc.addTrack(MediaPlayer("assets/liuyifei.wav", format="wav", loop=True).audio)
         await pc.setLocalDescription(await pc.createOffer())
         # whip-whep protocol to cloudflare calls 201
         result = await self.post(whip_url, {"sdp": pc.localDescription.sdp})
@@ -609,7 +608,7 @@ class Server:
             file_name_without_ext, file_extension = os.path.splitext(filename)
 
             # 为每个文件生成一个独特的文件路径
-            file_location = os.path.join("vc", f"{file_uuid}_{vc_name}{file_extension}")
+            file_location = os.path.join("assets", f"{file_uuid}_{vc_name}{file_extension}")
             file_paths.append(file_location)
 
             # 保存文件到磁盘

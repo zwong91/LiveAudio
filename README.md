@@ -7,39 +7,39 @@ Welcome to the VoiceAgent repository! This project hosts exciting applications l
 ### Prerequisites
 
 ```sh
+
+# Clone repository
+git clone https://github.com/zwong91/VoiceAgent.git
+cd VoiceAgent
+
+docker run -it --platform linux/amd64 \
+  -v "$(pwd)":/mnt/ \
+  ubuntu:24.04 \
+  bash
+
 # System dependencies (Ubuntu/Debian)
 apt update
-apt install libsox-dev espeak-ng ffmpeg libopenblas-dev vim git-lfs \
+apt install curl ffmpeg libopenblas-dev vim git-lfs \
     build-essential cmake libasound-dev portaudio19-dev \
-    libportaudio2 libportaudiocpp0 -y
-
-# Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
+    libportaudio2 -y
 
 # Create directory
 mkdir -p /asset
 chmod 777 /asset/
 
-# Clone repository
-git clone https://github.com/zwong91/VoiceAgent.git
-cd VoiceAgent
 ```
 
 ### Environment Setup
 
 ```sh
-# Install and setup miniconda
-mkdir -p ~/miniconda3
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
-bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-rm -rf ~/miniconda3/miniconda.sh
-~/miniconda3/bin/conda init bash && source ~/miniconda3/bin/activate
-conda config --set auto_activate_base false
-conda create -n rt python=3.10 -y
-conda activate rt
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create and activate Python 3.10 virtual environment named 'va'
+uv venv --python=python3.10 va
+source va/bin/activate
 
 # Install dependencies using uv
-CMAKE_ARGS="-DGGML_CUDA=on" uv pip install llama-cpp-python --force-reinstall
 uv pip install -r requirements.txt
 
 # Install XTTS
@@ -48,11 +48,6 @@ uv pip install -e ".[all,server,notebooks,bn,ja,ko,zh,languages]"
 
 # Download XTTS-v2 model
 HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2 --local-dir XTTS-v2
-
-# pip install flash-attn
-
-(rt) root@ash:~/audio# nvidia-smi
-(rt) root@ash:~/audio# nvcc --version
 ```
 
 ## Docker Setup

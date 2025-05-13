@@ -1,6 +1,4 @@
 import os
-import pysbd
-import langid
 import torch
 from faster_whisper import WhisperModel
 
@@ -115,7 +113,7 @@ language_codes = {
 class FasterWhisperASR(ASRInterface):
     def __init__(self, **kwargs):
         model_size = kwargs.get("model_size", "distil-large-v3")
-        
+
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
         # Run on GPU with FP16 if available, otherwise on CPU with INT8
@@ -137,7 +135,7 @@ class FasterWhisperASR(ASRInterface):
         print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
 
         segments = list(segments)  # The transcription will actually run here.
-        
+
         os.remove(file_path)
 
         flattened_words = [

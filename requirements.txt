@@ -21,9 +21,8 @@ webrtcvad
 python-dotenv
 edge-tts
 gTTS==2.5.4
-pyttsx3==2.98
-coqui-tts==0.25.3
-elevenlabs==1.50.3
+coqui-tts==0.26.0
+elevenlabs==1.58.1
 pydub
 pyaudio
 onnx
@@ -33,7 +32,7 @@ speechbrain==1.0.0
 pyannote.audio
 asyncio==3.4.3
 sentence-transformers==2.7.0
-transformers==4.46.2
+transformers>=4.48.0
 deepspeed==0.16.1
 langid
 PyPDF2

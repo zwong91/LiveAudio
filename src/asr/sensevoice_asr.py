@@ -1,8 +1,6 @@
 import os
 import torch
-import pysbd
-import langid
-import re
+
 from funasr import AutoModel
 from funasr.utils.postprocess_utils import rich_transcription_postprocess
 
@@ -17,15 +15,9 @@ class SenseVoiceASR(ASRInterface):
         print("loading ASR model...")
         self.asr_pipeline = AutoModel(
             model=model_name,
-            trust_remote_code=True, 
+            trust_remote_code=True,
             device=device
         )
-
-    def has_sentence_boundary(self, text, language):
-        if language == "zh":
-            return bool(re.search(r"[。！？]", text))  # 中文标点符号
-        else:
-            return bool(re.search(r"[.!?]", text))  # 英文等语言标点符号
 
     async def transcribe(self, client):
         file_path = await save_audio_to_file(
