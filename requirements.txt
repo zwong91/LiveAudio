@@ -11,7 +11,7 @@ nltk==3.9.1
 stream2sentence==0.3.0
 
 huggingface
-huggingface_hub
+huggingface_hub>=0.19.4
 funasr
 python-multipart
 soundfile
@@ -26,7 +26,9 @@ elevenlabs==1.58.1
 pydub
 pyaudio
 onnx
+onnxruntime>=1.15.1
 onnxconverter_common
+numpy>=1.24.3
 pyloudnorm
 speechbrain==1.0.0
 pyannote.audio==3.1

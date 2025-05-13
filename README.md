@@ -99,7 +99,7 @@ HTTPS_PROXY=http://192.168.31.219:10792 curl -fsSL https://ollama.com/install.sh
 [pem file](generate_ssl.sh) microphone need ssl/tls
 
 ``` sh
-HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile cert.pem --keyfile private.key --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}' --llm-type ollama
+HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile cert.pem --keyfile private.key --tts-type gtts --vad-type pyannote --vad-args '{"auth_token": "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"}' --llm-type ollama
 ```
 
 ***test***

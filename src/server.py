@@ -154,7 +154,7 @@ class Server:
         self.relay = MediaRelay()
         self.pcs = set()
         self.app = FastAPI(
-            title="Audio AI Server",
+            title="Voice Agent",
             description='',
             version='0.0.1',
             contact={
@@ -174,22 +174,15 @@ class Server:
             allow_headers=["*"],
         )
 
-        # 初始化 TTSManager
         self.tts_manager = TTSManager(tts_pipeline)
         self.templates = Jinja2Templates(directory="templates")
 
         self.app.add_event_handler("startup", self.startup)
         #self.app.add_event_handler("shutdown", self.shutdown)
 
-        self.app.get("/asset/{filename}")(self.get_asset_file)
-        self.app.post("/generate_accent/{vc_name}")(self.upload_audio_files)
-        self.app.post("/generate_tts")(self.generate_tts)
-        self.app.get("/get_task_result/{task_id}")(self.get_task_result)
-        self.app.get("/health")(self.health)
-
         self.app.get("/v1/asset/{filename}")(self.get_asset_file)
         self.app.post("/v1/generate_accent/{vc_name}")(self.upload_audio_files)
-        self.app.post("/v1/generate_tts")(self.generate_tts_v1)
+        self.app.post("/v1/generate_tts")(self.generate_tts)
         self.app.get("/v1/get_task_result/{task_id}")(self.get_task_result)
         self.app.get("/v1/health")(self.health)
 
@@ -301,13 +294,13 @@ class Server:
                 if isinstance(message, str):
                     try:
                         # 尝试解析 JSON 格式的字符串消息
-                        parsed_message = json.loads(message)
-                        message_type = parsed_message.get("type")
+                        json_msg = json.loads(message)
+                        message_type = json_msg.get("type")
                         if message_type == "config":
-                            is_simultaneous = parsed_message["data"].get("is_simultaneous")
-                            target_lang = parsed_message["data"].get("target_lang")
+                            is_simultaneous = json_msg["data"].get("is_simultaneous")
+                            target_lang = json_msg["data"].get("target_lang")
                             print(f"Configuration received - Simultaneous: {is_simultaneous}, Target: {target_lang}")
-                            client.update_config(parsed_message["data"])
+                            client.update_config(json_msg["data"])
                             logging.debug(f"Updated config: {client.config}")
                         elif message_type == "ping":
                             logging.debug("Ping received. Sending pong...")
@@ -330,13 +323,13 @@ class Server:
             if isinstance(message, str):
                 try:
                     # 尝试解析 JSON 格式的字符串消息
-                    parsed_message = json.loads(message)
-                    message_type = parsed_message.get("type")
+                    json_msg = json.loads(message)
+                    message_type = json_msg.get("type")
                     if message_type == "config":
-                        is_simultaneous = parsed_message["data"].get("is_simultaneous")
-                        target_lang = parsed_message["data"].get("target_lang")
+                        is_simultaneous = json_msg["data"].get("is_simultaneous")
+                        target_lang = json_msg["data"].get("target_lang")
                         print(f"Configuration received - Simultaneous: {is_simultaneous}, Target: {target_lang}")
-                        client.update_config(parsed_message["data"])
+                        client.update_config(json_msg["data"])
                         logging.debug(f"Updated config: {client.config}")
                     elif message_type == "ping":
                         logging.debug("Ping received. Sending pong...")
@@ -497,25 +490,22 @@ class Server:
         sessionid = None  # To store the sessionid
         while True:
             try:
-                message = await websocket.receive_text()
-                parsed_message = json.loads(message)
-                #message = await websocket.receive_bytes()
-                # Decode the MessagePack data
-                #parsed_message = ormsgpack.unpackb(message)
-                msg_type = parsed_message.get('type')
+                text = await websocket.receive_text()
+                json_msg = json.loads(text)
+                msg_type = json_msg.get('type')
                 if msg_type == "config":
                     # 处理配置消息
-                    is_simultaneous = parsed_message["data"].get("is_simultaneous")
-                    target_lang = parsed_message["data"].get("target_lang")
+                    is_simultaneous = json_msg["data"].get("is_simultaneous")
+                    target_lang = json_msg["data"].get("target_lang")
                     logging.debug(f"Configuration received - Simultaneous: {is_simultaneous}, Target: {target_lang}")
-                    client.update_config(parsed_message["data"])
+                    client.update_config(json_msg["data"])
                     logging.debug(f"Updated config: {client.config}")
                 elif msg_type == "ping":
                     # 处理 ping 消息
                     logging.debug("Ping received. Sending pong...")
                     await websocket.send(json.dumps({"type": "pong"}))
                 elif msg_type == 'session':
-                    sessionid = parsed_message.get("sessionid")
+                    sessionid = json_msg.get("sessionid")
                     if sessionid is not None:
                         # Optionally, send confirmation back to the client
                         await websocket.send_json({"type": "session_ack", "sessionid": sessionid})
@@ -523,7 +513,7 @@ class Server:
                         await websocket.send_json({"type": "error", "message": "No rtc sessionid provided."})
 
                 elif msg_type == 'start':
-                    request_data = parsed_message.get('request', {})
+                    request_data = json_msg.get('request', {})
                     chunk = request_data.get('audio')
                     audio_data = base64.b64decode(chunk)
                     latency = request_data.get('latency')
@@ -671,11 +661,7 @@ class Server:
             # If no cleanup is requested, return the original file
             return speaker_wav
 
-    async def generate_tts(self, request: TTSRequest):
-        task_id = await self.tts_manager.gen_tts(request.tts_text, request.vc_uid)
-        return {"task_id": task_id}
-
-    async def generate_tts_v1(self, request: TTSRequestV1):
+    async def generate_tts(self, request: TTSRequestV1):
         task_id = await self.tts_manager.gen_tts(request.tts_text, request.vc_uid, request.speed)
         return {"task_id": task_id}
 

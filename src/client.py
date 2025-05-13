@@ -27,8 +27,8 @@ class Client:
 
     def __init__(self, use_webrtc, client_id, sampling_rate, samples_width):
         self.use_webrtc = use_webrtc
-        # client side channel
-        self.channel = None
+        # client side endpoint
+        self.endpoint = None
         self.client_id = client_id
         self.history = []
         self.speaker = None
@@ -65,14 +65,14 @@ class Client:
                 **self.config["processing_args"],
             )
         )
-    
-    def updat_datachannel(self, channel):
-        self.channel = channel 
+
+    def updat_datachannel(self, endpoint):
+        self.endpoint = endpoint
 
     def append_audio_data(self, audio_data, vc_uid):
         self.buffer.extend(audio_data)
         self.total_samples += len(audio_data) / self.samples_width
-        
+
         self.vc_uid = vc_uid
 
     def clear_buffer(self):
@@ -84,7 +84,7 @@ class Client:
     def get_file_name(self):
         return f"{self.client_id}_{self.file_counter}.wav"
 
-    def process_audio(self, channel, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+    def process_audio(self, endpoint, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
         self.buffering_strategy.process_audio(
-            channel, self.use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline
+            endpoint, self.use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline
         )
