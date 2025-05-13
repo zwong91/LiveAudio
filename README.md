@@ -108,7 +108,7 @@ HF_ENDPOINT=https://hf-mirror.com huggingface-cli download coqui/XTTS-v2 --local
 [pem file](generate_ssl.sh) microphone need ssl/tls
 
 ``` sh
-HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile cf.pem --keyfile cf.key --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}' --llm-type ollama
+HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile cert.pem --keyfile private.key --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}' --llm-type ollama
 ```
 
 ***test***

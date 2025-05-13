@@ -8,8 +8,8 @@
       "module": "src.main",
       "args": [
         "--port", "8765",
-        "--certfile", "cf.pem",
-        "--keyfile", "cf.key",
+        "--certfile", "cert.pem",
+        "--keyfile", "private.key",
         "--llm-type", "ollama",
         "--tts-type", "xtts-v2",
         "--vad-type", "silero"
