@@ -35,13 +35,13 @@ Otherwise, you may get the following error from within you browser:
 
 
 def cert_gen(
-    emailAddress="https://github.com/k2-fsa/sherpa-onnx",
-    commonName="sherpa-onnx",
+    emailAddress="https://github.com/acmesh-official/acme.sh",
+    commonName="voiceagent",
     countryName="CN",
-    localityName="k2-fsa",
-    stateOrProvinceName="k2-fsa",
-    organizationName="k2-fsa",
-    organizationUnitName="k2-fsa",
+    localityName="voice-agent",
+    stateOrProvinceName="voice-agent",
+    organizationName="voice-agent",
+    organizationUnitName="voice-agent",
     serialNumber=3,
     validityStartInSeconds=0,
     validityEndInSeconds=10 * 365 * 24 * 60 * 60,

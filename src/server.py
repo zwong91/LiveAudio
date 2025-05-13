@@ -8,21 +8,15 @@ import uvicorn
 import signal
 import os
 
+from typing import Optional, List
+import shutil
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, Form, Request, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from starlette.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
-import torch
-import torchaudio
-import torch.multiprocessing as mp
-
-import ormsgpack
-
-from typing import Optional, List
-import shutil
 
 
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel, RTCConfiguration, RTCIceServer

@@ -41,6 +41,9 @@ source va/bin/activate
 
 # Install dependencies using uv
 uv pip install -r requirements.txt
+
+# Install ollama https://github.com/ollama/ollama/releases
+HTTPS_PROXY=http://192.168.31.219:10792 curl -fsSL https://ollama.com/install.sh | sh
 ```
 
 ## Docker Setup

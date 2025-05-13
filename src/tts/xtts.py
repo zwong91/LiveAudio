@@ -38,7 +38,7 @@ class XTTS_v2(TTSInterface):
         self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "talking.wav")
         self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "silence.wav")
 
-        self.ov = TTS("voice_conversion_models/multilingual/multi-dataset/openvoice_v2").to("cuda")
+        self.ov = TTS("voice_conversion_models/multilingual/multi-dataset/openvoice_v2").to(device)
         model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
         logging.info("⏳Downloading model")
         ModelManager().download_model(model_name)

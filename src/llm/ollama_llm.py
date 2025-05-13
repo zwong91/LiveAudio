@@ -32,7 +32,7 @@ from .prompt import translation_prompt, chat_prompt
 class OllamaLLM(LLMInterface):
     def __init__(
         self,
-        model: str = "qwen2.5:0.5b",
+        model: str = "qwen3:0.6b",
     ):
         # Ollama should be installed and running
         #curl -fsSL https://ollama.com/install.sh | sh
