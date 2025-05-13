@@ -1,179 +1,470 @@
 import asyncio
-import logging
+import json
 import os
 import time
-from collections import deque
-
+import logging
 from .buffering_strategy_interface import BufferingStrategyInterface
+from collections import deque
+import io
 from ..eou.eou_detector import EOUDetector
 
 logger = logging.getLogger(__name__)
 
-# Constants for punctuation
-CN_SENTENCE_END = set("。！？…")
-EN_SENTENCE_END = set(".!?")
-CLAUSE_BREAKS = set("，,；;")
-
 class SilenceAtEndOfChunk(BufferingStrategyInterface):
     """
-    Buffering strategy: process audio chunks upon detecting silence at end of chunk.
+    A buffering strategy that processes audio at the end of each chunk with
+    silence detection.
+
+    This class is responsible for handling audio chunks, detecting silence at
+    the end of each chunk, and initiating the transcription process for the
+    chunk.
+
+    Attributes:
+        client (Client): The client instance associated with this buffering
+                         strategy.
+        chunk_length_seconds (float): Length of each audio chunk in seconds.
+        chunk_offset_seconds (float): Offset time in seconds to be considered
+                                      for processing audio chunks.
     """
 
-    def __init__(self, client, *, chunk_length_seconds=None, chunk_offset_seconds=None, error_if_not_realtime=False):
+    def __init__(self, client, **kwargs):
+        """
+        Initialize the SilenceAtEndOfChunk buffering strategy.
+
+        Args:
+            client (Client): The client instance.
+            **kwargs: Additional keyword arguments:
+                - chunk_length_seconds (float): Length of each audio chunk
+                - chunk_offset_seconds (float): Offset time for processing
+                - allow_interruption (bool): 是否允许用户打断 AI 的发言
+                - interrupt_on_speech_start (bool): 是否在检测到语音开始时就中断
+                - interrupt_min_duration (float): 最小中断持续时间(秒)，防止误触发
+        """
         self.client = client
+        # Initialize EOUDetector
         self.eou_detector = EOUDetector()
 
-        self.chunk_length_seconds = float(
-            os.getenv("BUFFERING_CHUNK_LENGTH_SECONDS", chunk_length_seconds)
-        )
-        self.chunk_offset_seconds = float(
-            os.getenv("BUFFERING_CHUNK_OFFSET_SECONDS", chunk_offset_seconds)
-        )
-        self.error_if_not_realtime = bool(
-            os.getenv("ERROR_IF_NOT_REALTIME", str(error_if_not_realtime)) == "True"
-        )
+        # 中断控制参数
+        self.allow_interruption = kwargs.get("allow_interruption", True)
+        self.interrupt_on_speech_start = kwargs.get("interrupt_on_speech_start", True)
+        self.interrupt_min_duration = kwargs.get("interrupt_min_duration", 0.3)
+        self.last_speech_start = 0
 
+        self.chunk_length_seconds = os.environ.get(
+            "BUFFERING_CHUNK_LENGTH_SECONDS"
+        )
+        if not self.chunk_length_seconds:
+            self.chunk_length_seconds = kwargs.get("chunk_length_seconds")
+        self.chunk_length_seconds = float(self.chunk_length_seconds)
+
+        self.chunk_offset_seconds = os.environ.get(
+            "BUFFERING_CHUNK_OFFSET_SECONDS"
+        )
+        if not self.chunk_offset_seconds:
+            self.chunk_offset_seconds = kwargs.get("chunk_offset_seconds")
+        self.chunk_offset_seconds = float(self.chunk_offset_seconds)
+
+        # 语音处理状态
         self.interrupt_flag = False
         self.processing_task = None
         self.llm_task = None
 
+        # 语音数据队列
+        self.input_queue = asyncio.Queue()
         self.interrupt_queue = asyncio.Queue()
 
-    def process_audio(self, endpoint, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
-        if not self._ready_for_new_chunk():
-            return
-        if self.processing_task and not self.processing_task.done():
-            asyncio.create_task(self._request_interrupt())
-        else:
-            self._start_processing(endpoint, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
+    async def stop_llm_task(self):
+        """停止 LLM 生成任务"""
+        if self.llm_task and not self.llm_task.done():
+            self.llm_task.cancel()
+            try:
+                await self.llm_task
+            except asyncio.CancelledError:
+                logging.info("LLM task cancelled")
+            self.llm_task = None
 
-    def _ready_for_new_chunk(self) -> bool:
-        bytes_ready = (
+    def process_audio(self, endpoint, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+        """处理音频数据，管理任务状态"""
+        # 检查是否需要处理新的音频块
+        if not self._should_process_new_chunk():
+            return
+
+        # 如果正在处理，尝试中断
+        if self.processing_task and not self.processing_task.done():
+            asyncio.create_task(self._handle_interrupt())
+            return
+
+        # 开始处理新的音频块
+        self._start_new_processing(endpoint, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
+
+    def _should_process_new_chunk(self):
+        """判断是否需要处理新的音频块"""
+        chunk_length_in_bytes = (
             self.chunk_length_seconds
             * self.client.sampling_rate
             * self.client.samples_width
         )
-        return len(self.client.buffer) > bytes_ready
+        return len(self.client.buffer) > chunk_length_in_bytes
 
-    async def _request_interrupt(self):
+    async def _handle_interrupt(self):
+        """处理中断请求
+
+        实现了以下中断处理策略：
+        1. 如果不允许中断，直接返回
+        2. 避免重复中断
+        3. 发送中断信号
+        4. 优雅地关闭当前任务
+        5. 清理状态
+        """
+        # 检查是否允许中断
+        if not self.allow_interruption:
+            return
+
+        # 避免重复中断
         if self.interrupt_flag:
             return
-        self.interrupt_flag = True
-        await self.interrupt_queue.put(True)
-        try:
-            await asyncio.wait_for(self.processing_task, timeout=2.0)
-        except asyncio.TimeoutError:
-            logger.warning("Interrupt timeout, cancelling task")
-            self.processing_task.cancel()
-        finally:
-            self._reset_state()
 
-    def _start_processing(self, endpoint, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
-        # swap buffers
+        logger.info("User interruption detected")
+        self.interrupt_flag = True
+        await self.interrupt_queue.put("interrupt")
+
+        # 等待当前任务结束
+        if self.processing_task:
+            try:
+                await asyncio.wait_for(self.processing_task, timeout=1.0)
+            except asyncio.TimeoutError:
+                logger.warning("Processing task interrupt timeout")
+            finally:
+                self.processing_task = None
+
+        # 清理 LLM 任务
+        if self.llm_task:
+            try:
+                self.llm_task.cancel()
+                await self.llm_task
+            except asyncio.CancelledError:
+                pass
+            finally:
+                self.llm_task = None
+
+        # 重置状态
+        self._clear_buffers()
+        self.interrupt_flag = False
+
+        logger.info("Interrupt handling completed")
+
+    def _start_new_processing(self, endpoint, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+        """启动新的音频处理任务"""
         self.client.scratch_buffer.extend(self.client.buffer)
         self.client.buffer.clear()
-        self.processing_task = asyncio.create_task(
-            self._process_chunk(endpoint, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
-        )
 
-    async def _process_chunk(self, endpoint, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+        if self.processing_task is None or self.processing_task.done():
+            self.processing_task = asyncio.create_task(
+                self.process_audio_async(endpoint, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline)
+            )
+
+    async def process_audio_async(self, endpoint, use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+        """异步处理音频并生成响应"""
         start = time.time()
         try:
-            if not await self._detect_silence(vad_pipeline):
+            # 1. VAD 检测
+            if not await self._handle_vad_detection(vad_pipeline):
                 return
 
-            text = await self._transcribe(asr_pipeline)
-            if not text:
+            # 2. 语音转文字
+            transcription = await self._transcribe_audio(asr_pipeline)
+            if not transcription:
                 return
 
-            if not await self._await_end_of_utterance(text):
+            # 3. EOU 检测
+            if not await self._check_conversation_complete(transcription["text"]):
                 return
 
-            await self._respond(endpoint, use_webrtc, llm_pipeline, tts_pipeline, text)
+            # 4. 生成和播放响应
+            await self._generate_and_play_response(
+                endpoint, use_webrtc, llm_pipeline, tts_pipeline, transcription["text"]
+            )
 
         except Exception as e:
-            logger.error("Processing error: %s", e)
+            logging.error(f"Error in audio processing: {e}")
+            raise
         finally:
-            logger.info(f"Chunk processed in {time.time() - start:.2f}s")
-            self._reset_buffers()
+            end = time.time()
+            print(f"Total processing time: {end - start:.2f}s")
+            self._clear_buffers()
 
-    async def _detect_silence(self, vad_pipeline) -> bool:
-        results = await vad_pipeline.detect_activity(self.client)
-        if not results:
-            return False
-        last_end = results[-1]["end"]
-        buf_duration = len(self.client.scratch_buffer) / (self.client.sampling_rate * self.client.samples_width)
-        return last_end < buf_duration - self.chunk_offset_seconds
-
-    async def _transcribe(self, asr_pipeline) -> str:
-        result = await asr_pipeline.transcribe(self.client)
-        text = result.get("text", "").strip()
-        return text
-
-    async def _await_end_of_utterance(self, text: str) -> bool:
-        # clear on interrupt
-        if not self.interrupt_queue.empty():
-            await self.interrupt_queue.get()
-            self.interrupt_flag = False
+    async def _handle_vad_detection(self, vad_pipeline):
+        """处理 VAD 检测结果"""
+        vad_results = await vad_pipeline.detect_activity(self.client)
+        if not vad_results:
+            self._clear_buffers()
             return False
 
-        # use detector
-        return self.eou_detector.is_turn_complete([{"role": "user", "content": text}])
+        last_segment_should_end_before = (
+            len(self.client.scratch_buffer)
+            / (self.client.sampling_rate * self.client.samples_width)
+        ) - self.chunk_offset_seconds
 
-    async def _respond(self, endpoint, use_webrtc, llm_pipeline, tts_pipeline, text: str):
-        buffer = []
-        async for chunk in llm_pipeline.generate_stream(
-            self.client.history,
-            text,
-            self.client.config.get("is_simultaneous"),
-            self.client.config.get("target_lang")
-        ):
-            if self.interrupt_flag:
-                break
-            buffer.append(chunk)
-            current = "".join(buffer)
-            if self._is_sentence_end(current) or self._has_clause_break(current):
-                await self._play_tts(endpoint, use_webrtc, tts_pipeline, current)
-                buffer.clear()
-        # remaining
-        if buffer and not self.interrupt_flag:
-            await self._play_tts(endpoint, use_webrtc, tts_pipeline, "".join(buffer))
-        # update history
-        if not self.interrupt_flag:
-            self.client.history.append({"role": "assistant", "content": text})
+        return vad_results[-1]["end"] < last_segment_should_end_before
 
-    async def _play_tts(self, endpoint, use_webrtc, tts_pipeline, text: str):
+    async def _transcribe_audio(self, asr_pipeline):
+        """转录音频"""
+        transcription = await asr_pipeline.transcribe(self.client)
+        if not transcription["text"]:
+            self._clear_buffers()
+            return None
+        return transcription
+
+    async def _check_conversation_complete(self, text):
+        """检查对话是否完成"""
+        # 检查对话完成状态
+        messages = self._prepare_messages(text)
+        if not self.eou_detector.is_turn_complete(messages):
+            logging.debug("User hasn't finished speaking")
+            self._partial_clear()
+            return False
+
+        return True
+
+    async def _generate_and_play_response(
+        self,
+        endpoint,
+        use_webrtc,
+        llm_pipeline,
+        tts_pipeline,
+        text: str
+    ):
+        """生成并播放 LLM 响应
+
+        Args:
+            endpoint: WebSocket endpoint
+            use_webrtc: 是否使用 WebRTC
+            llm_pipeline: LLM 管道
+            tts_pipeline: TTS 管道
+            text: 输入文本
+        """
+        response_buffer = []
         try:
-            async for audio in tts_pipeline.text_to_speech_stream(
+            # 创建并开始 LLM 生成流
+            self.llm_task = asyncio.create_task(
+                llm_pipeline.generate_stream(
+                    self.client.history,
+                    text,
+                    self.client.config["is_simultaneous"],
+                    self.client.config["target_lang"]
+                ).__aiter__().__anext__()
+            )
+
+            # 实时处理 LLM 输出
+            async for chunk in self.llm_task:
+                if self.interrupt_flag:
+                    break
+
+                response_buffer.append(chunk)
+                current_text = "".join(response_buffer)
+
+                # 如果积累的文本较长且有分句标记，也进行转换
+                if self._has_clause_break(current_text):
+                    await self._stream_tts(
+                        endpoint,
+                        use_webrtc,
+                        tts_pipeline,
+                        current_text
+                    )
+                    response_buffer = []
+
+            # 处理剩余文本
+            if response_buffer and not self.interrupt_flag:
+                await self._stream_tts(
+                    endpoint,
+                    use_webrtc,
+                    tts_pipeline,
+                    "".join(response_buffer)
+                )
+
+            # 更新对话历史
+            if not self.interrupt_flag:
+                self.client.history.append({
+                    "role": "assistant",
+                    "content": "".join(response_buffer)
+                })
+
+        except asyncio.CancelledError:
+            logger.info("Response generation interrupted")
+        except Exception as e:
+            logger.error(f"Error generating response: {e}")
+            raise
+        finally:
+            self.llm_task = None
+
+    async def _stream_tts(
+        self,
+        endpoint,
+        use_webrtc,
+        tts_pipeline,
+        text: str
+    ):
+        """流式处理文本到语音转换
+
+        Args:
+            endpoint: WebSocket endpoint
+            use_webrtc: 是否使用 WebRTC
+            tts_pipeline: TTS 管道
+            text: 要转换的文本块
+        """
+        try:
+            async for audio_chunk in tts_pipeline.text_to_speech_stream(
                 text,
                 self.client.vc_uid,
-                self.client.config.get("is_simultaneous")
+                self.client.config["is_simultaneous"]
             ):
                 if self.interrupt_flag:
-                    return
-                if use_webrtc:
-                    endpoint.send(audio)
-                else:
-                    await endpoint.send_bytes(audio)
-        except Exception:
-            logger.exception("TTS error")
+                    break
+                await self._send(endpoint, use_webrtc, audio_chunk)
+        except Exception as e:
+            logger.error(f"Error in TTS streaming: {e}")
+            # 继续处理，不中断整个流程
+            pass
 
-    def _reset_buffers(self):
-        self.client.buffer.clear()
+    async def _send(self, endpoint, use_webrtc: bool, chunk: bytes):
+        """发送音频数据
+
+        Args:
+            endpoint: 目标端点
+            use_webrtc: 是否使用 WebRTC
+            chunk: 音频数据块
+        """
+        try:
+            if use_webrtc:
+                endpoint.send(chunk)
+            else:
+                await endpoint.send_bytes(chunk)
+        except Exception as e:
+            logger.error(f"发送失败: {e}")
+            raise
+
+    def _update_client_state(self, updated_history):
+        """Update client state after TTS process ends."""
+        self.client.history = updated_history
         self.client.scratch_buffer.clear()
+        self.client.increment_file_counter()
+
+    def _prepare_messages(self, transcription_text: str) -> tuple[str, bool]:
+        """准备要发送给 LLM 的消息
+
+        Args:
+            transcription_text: 转录文本
+
+        Returns:
+            tuple: (处理后的文本, 是否完整对话)
+        """
+        if not transcription_text:
+            return False
+
+        user_message = {
+            "role": "user",
+            "content": transcription_text
+        }
+        messages = getattr(self.client, 'history', []).copy()  # 复制现有历史
+        messages.append(user_message)  # 添加新消息
+
+        return messages
+
+    async def _check_interrupts(self):
+        """监听中断信号"""
+        try:
+            while True:
+                interrupt_data = await self.interrupt_queue.get()
+                if interrupt_data == "interrupt":
+                    return True
+                await asyncio.sleep(0.1)
+        except asyncio.CancelledError:
+            pass
+
+    def _clear_buffers(self):
+        """清理所有缓冲区和状态"""
+        # 清理音频缓冲
+        self.client.scratch_buffer.clear()
+        self.client.buffer.clear()
+
+        # 清理状态标志
         self.interrupt_flag = False
+
+        # 清理任务
         self.processing_task = None
         self.llm_task = None
 
-    def _reset_state(self):
-        self._reset_buffers()
-        while not self.interrupt_queue.empty():
-            self.interrupt_queue.get_nowait()
+    def _partial_clear(self):
+        """部分清理,保留 scratch_buffer"""
+        # 只清理 buffer
+        self.client.buffer.clear()
 
-    def _is_sentence_end(self, text: str) -> bool:
+        # 重置标志
+        self.interrupt_flag = False
+
+    async def _process_llm_stream(self, response_stream):
+        """处理 LLM 响应流
+
+        Args:
+            response_stream: LLM 响应生成器
+
+        Returns:
+            str: 累积的响应文本
+        """
+        response_buffer = []
+
+        try:
+            async for chunk in response_stream:
+                if self.interrupt_flag:
+                    break
+                response_buffer.append(chunk)
+
+            return "".join(response_buffer)
+
+        except asyncio.CancelledError:
+            # 任务被取消时返回已累积的文本
+            return "".join(response_buffer)
+        except Exception as e:
+            logger.error(f"Error processing LLM stream: {e}")
+            raise
+
+    def _is_complete_sentence(self, text: str) -> bool:
+        """判断是否是完整的句子
+
+        Args:
+            text: 要检查的文本
+
+        Returns:
+            bool: 是否是完整句子
+        """
+        # 中文标点符号
+        cn_stops = "。！？…"
+        # 英文标点符号
+        en_stops = ".!?"
+
         if not text:
             return False
-        return text[-1] in CN_SENTENCE_END.union(EN_SENTENCE_END)
+
+        # 去除尾部空白
+        text = text.strip()
+
+        # 检查是否以标点结尾
+        return any(text.endswith(stop) for stop in cn_stops + en_stops)
 
     def _has_clause_break(self, text: str) -> bool:
-        return len(text) >= 10 and any(ch in CLAUSE_BREAKS for ch in text)
+        """检查是否有分句标记(逗号、分号等)
+
+        Args:
+            text: 要检查的文本
+
+        Returns:
+            bool: 是否有分句标记
+        """
+        # 分句标记
+        breaks = "，,；;"
+
+        # 文本太短就返回 False
+        if len(text) < 10:
+            return False
+
+        return any(mark in text for mark in breaks)
