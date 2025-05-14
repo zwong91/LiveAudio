@@ -36,21 +36,6 @@ class OllamaLLM(LLMInterface):
                 self.vault_content = vault_file.readlines()
         self.vault_embeddings = self.embedding_model.encode(self.vault_content, convert_to_tensor=True) if self.vault_content else []
 
-
-    async def _get_client(self):
-        """Get a working client with retries"""
-        for attempt in range(self._max_retries):
-            try:
-                # Quick health check
-                await self._client.health()
-                return self._client
-            except Exception as e:
-                if attempt == self._max_retries - 1:
-                    raise RuntimeError(f"Failed to connect to Ollama at {self.base_url}")
-                await asyncio.sleep(self._retry_delay * (attempt + 1))
-                self._client = AsyncClient(host=self.base_url)
-
-
     def get_relevant_context(self, user_input, vault_embeddings, top_k=3):
         """获取知识库中最相关的上下文"""
         if len(vault_embeddings) == 0:
@@ -100,8 +85,7 @@ class OllamaLLM(LLMInterface):
 
         start_time = time.time()
         try:
-            client = await self._get_client()
-            stream = await client.chat(
+            stream = await self._client.chat(
                 model=self.model,
                 messages=messages,
                 stream=True,
