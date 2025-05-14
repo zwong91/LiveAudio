@@ -243,19 +243,17 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         response_buffer = []
         try:
             # 创建并开始 LLM 生成流
-            self.llm_task = asyncio.create_task(
-                llm.generate_stream(
-                    self.client.history,
-                    text,
-                    self.client.config["is_simultaneous"],
-                    self.client.config["target_lang"]
-                ).__aiter__().__anext__()
+            stream = llm.generate_stream(
+                self.client.history,
+                text,
+                self.client.config["is_simultaneous"],
+                self.client.config["target_lang"]
             )
 
             buffer = ""
             seg_idx = 1  # 句子序号从 1 开始
             # 实时处理 LLM 输出
-            async for delta in self.llm_task:
+            async for delta in stream:
                 if self.interrupt_flag:
                     break
 
