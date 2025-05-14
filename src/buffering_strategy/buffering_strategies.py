@@ -75,8 +75,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """处理音频数据，管理任务状态"""
         # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
         # Interrupt handling/AI preemption 清除 流缓冲区并发送 truncate
-        vad_task = asyncio.create_task(self._handle_vad_detection(vad, 1))
-        has_speech = await vad_task
+        has_speech = await self._handle_vad_detection(vad, 1)
 
         # 如果正在处理且检测到新语音，执行中断
         if (self.allow_interruption and
@@ -134,6 +133,18 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """处理 VAD 检测结果"""
 
         buffer = self.client.scratch_buffer if buffer_type == 0 else self.client.buffer
+
+        # 检查 buffer 是否有效
+        if not buffer or len(buffer) == 0:
+            logger.debug("Buffer is empty, skipping VAD detection")
+            return False
+
+        # 检查 buffer 大小是否足够处理
+        min_samples = int(0.1 * self.client.sampling_rate)  # 至少0.1秒的音频
+        if len(buffer) < min_samples:
+            logger.debug("Buffer too small for VAD detection")
+            return False
+
         vad_results = await vad.detect_activity(self.client, buffer_type)
         if not vad_results:
             return False
