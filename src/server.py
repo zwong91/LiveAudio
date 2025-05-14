@@ -28,7 +28,7 @@ from aiortc import MediaStreamTrack, VideoStreamTrack
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse, Connect
 
-from utils.audio_utils import ulaw_to_pcm16k
+from .utils.audio_utils import ulaw_to_pcm16k
 
 import aiohttp
 from dotenv import load_dotenv
