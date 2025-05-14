@@ -39,8 +39,8 @@ class Client:
             "target_lang": None,
             "processing_strategy": "silence_at_end_of_chunk",
             "processing_args": {
-                "chunk_length_seconds": 1,
-                "chunk_offset_seconds": 0.2,
+                "chunk_length_seconds": 3,
+                "chunk_offset_seconds": 0.1,
             },
         }
         self.file_counter = 0
@@ -84,7 +84,7 @@ class Client:
     def get_file_name(self):
         return f"{self.client_id}_{self.file_counter}.wav"
 
-    def process_audio(self, endpoint, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline):
+    def process_audio(self, endpoint, asr, vad, eou, llm, tts):
         self.buffering_strategy.process_audio(
-            endpoint, self.use_webrtc, vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline
+            endpoint, self.use_webrtc, asr, vad, eou, llm, tts
         )

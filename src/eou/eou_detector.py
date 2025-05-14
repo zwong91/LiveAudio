@@ -11,6 +11,7 @@ import numpy as np
 from pathlib import Path
 import time
 import logging
+from .eou_interface import EOUInterface
 
 # Constants
 HG_MODEL = "livekit/turn-detector"
@@ -20,7 +21,7 @@ MAX_HISTORY = 4
 MAX_HISTORY_TOKENS = 512
 UNLIKELY_THRESHOLD = 0.15
 
-class EOUDetector:
+class EOUDetector(EOUInterface):
     def __init__(self, model_path=None):
         """
         Initialize the ONNX model and tokenizer.
@@ -125,7 +126,7 @@ class EOUDetector:
 
         return float(probs[self.eou_index])
 
-    def is_turn_complete(self, chat_context, threshold=UNLIKELY_THRESHOLD):
+    def turn_taking(self, chat_context, threshold=UNLIKELY_THRESHOLD):
         """
         Check if the current turn is complete.
 
@@ -138,3 +139,6 @@ class EOUDetector:
         """
         prob = self.predict_end_of_turn(chat_context[-MAX_HISTORY:])
         return prob >= threshold
+
+    async def detect(self, chat_context, threshold=UNLIKELY_THRESHOLD):
+        return self.turn_taking(chat_context, threshold)

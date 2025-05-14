@@ -4,6 +4,7 @@ import argparse
 
 from src.asr.asr_factory import ASRFactory
 from src.vad.vad_factory import VADFactory
+from src.eou.eou_factory import EOUFactory
 from src.llm.llm_factory import LLMFactory
 from src.tts.tts_factory import TTSFactory
 
@@ -20,6 +21,7 @@ def parse_args():
     parser.add_argument("--vad-args", type=str, default='{"auth_token": "huggingface_token"}', help="VAD args (JSON string)")
     parser.add_argument("--asr-type", type=str, default="sensevoice", help="ASR pipeline type")
     parser.add_argument("--asr-args", type=str, default='{"model_size": "distil-large-v3"}', help="ASR args (JSON string)")
+    parser.add_argument("--eou-type", type=str, default="livekit", help="turn taking type")
     parser.add_argument("--llm-type", type=str, default="openai", help="OPENAI pipeline type")
     parser.add_argument("--tts-type", type=str, default="edge", help="TTS pipeline type")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host for the WebSocket server")
@@ -45,13 +47,14 @@ def main():
         return
 
     # Create VAD and ASR and LLM and TTS pipelines
-    vad_pipeline = VADFactory.create_vad_pipeline(args.vad_type, **vad_args)
-    asr_pipeline = ASRFactory.create_asr_pipeline(args.asr_type, **asr_args)
-    llm_pipeline = LLMFactory.create_llm_pipeline(args.llm_type)
-    tts_pipeline = TTSFactory.create_tts_pipeline(args.tts_type)
+    asr = ASRFactory.create_asr(args.asr_type, **asr_args)
+    vad = VADFactory.create_vad(args.vad_type, **vad_args)
+    eou = EOUFactory.create_eou(args.eou_type)
+    llm = LLMFactory.create_llm(args.llm_type)
+    tts = TTSFactory.create_tts(args.tts_type)
 
     # Create and start server
-    server = Server(vad_pipeline, asr_pipeline, llm_pipeline, tts_pipeline, host=args.host, port=args.port, certfile=args.certfile, keyfile=args.keyfile)
+    server = Server(asr, vad, eou, llm, tts, host=args.host, port=args.port, certfile=args.certfile, keyfile=args.keyfile)
     asyncio.run(server.start())
 
 if __name__ == "__main__":

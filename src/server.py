@@ -47,10 +47,10 @@ class TTSRequestV1(BaseModel):
     speed:  Optional[float]
 
 class TTSManager:
-    def __init__(self, tts_pipeline):
+    def __init__(self, tts):
         self.task_queue = asyncio.Queue()  # 用于存储任务
         self.processing_tasks = {}  # 用于跟踪任务状态
-        self.tts_pipeline = tts_pipeline
+        self.tts = tts
         self.lock = asyncio.Lock()  # 用于保护并发
 
     async def _process_task(self, task_id, text, vc_uid, speed):
@@ -58,7 +58,7 @@ class TTSManager:
         处理队列中的每个 TTS 任务。
         """
         try:
-            audio_path = await self.tts_pipeline.text_to_speech(text, vc_uid, speed)
+            audio_path = await self.tts.text_to_speech(text, vc_uid, speed)
             # 将生成的文件返回给调用者
             self.processing_tasks[task_id] = {'status': 'completed', 'file_path': audio_path, 'media_type': 'audio/wav'}
         except Exception as e:
@@ -126,10 +126,11 @@ class Server:
 
     def __init__(
         self,
-        vad_pipeline,
-        asr_pipeline,
-        llm_pipeline,
-        tts_pipeline,
+        asr,
+        vad,
+        eou,
+        llm,
+        tts,
         host="localhost",
         port=8765,
         sampling_rate=16000,
@@ -138,10 +139,11 @@ class Server:
         keyfile=None,
         whip_url=None,
     ):
-        self.vad_pipeline = vad_pipeline
-        self.asr_pipeline = asr_pipeline
-        self.llm_pipeline = llm_pipeline
-        self.tts_pipeline = tts_pipeline
+        self.asr = asr
+        self.vad = vad
+        self.eou = eou
+        self.llm = llm
+        self.tts = tts
         self.host = host
         self.port = port
         self.sampling_rate = sampling_rate
@@ -174,7 +176,7 @@ class Server:
             allow_headers=["*"],
         )
 
-        self.tts_manager = TTSManager(tts_pipeline)
+        self.tts_manager = TTSManager(tts)
         self.templates = Jinja2Templates(directory="templates")
 
         self.app.add_event_handler("startup", self.startup)
@@ -267,10 +269,10 @@ class Server:
                     ),
                     "audio",
                     client,
-                    self.vad_pipeline,
-                    self.asr_pipeline,
-                    self.llm_pipeline,
-                    self.tts_pipeline,
+                    self.vad,
+                    self.asr,
+                    self.llm,
+                    self.tts,
                     pc,
                     s2s_response,
                 )
@@ -494,14 +496,12 @@ class Server:
                 json_msg = json.loads(text)
                 msg_type = json_msg.get('type')
                 if msg_type == "config":
-                    # 处理配置消息
                     is_simultaneous = json_msg["data"].get("is_simultaneous")
                     target_lang = json_msg["data"].get("target_lang")
                     logging.debug(f"Configuration received - Simultaneous: {is_simultaneous}, Target: {target_lang}")
                     client.update_config(json_msg["data"])
                     logging.debug(f"Updated config: {client.config}")
                 elif msg_type == "ping":
-                    # 处理 ping 消息
                     logging.debug("Ping received. Sending pong...")
                     await websocket.send(json.dumps({"type": "pong"}))
                 elif msg_type == 'session':
@@ -521,7 +521,6 @@ class Server:
                     prosody = request_data.get('prosody', {})
                     vc_uid = request_data.get('vc_uid')
 
-                    # Print or process the extracted data
                     logging.debug(f"Audio Data: {audio_data}, Latency: {latency}, Format: {format}")
                     logging.debug(f"Audio Data: {audio_data}, Latency: {latency}, Format: {format}")
                     logging.debug(f"Prosody: {prosody}, VC UID: {vc_uid}")
@@ -547,7 +546,7 @@ class Server:
     def _process_audio(self, client, websocket):
         try:
             client.process_audio(
-                websocket, self.vad_pipeline, self.asr_pipeline, self.llm_pipeline, self.tts_pipeline
+                websocket, self.asr, self.vad, self.eou, self.llm, self.tts
             )
         except RuntimeError as e:
             logging.error(f"Processing error for {client.client_id}: {e}")
