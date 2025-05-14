@@ -75,7 +75,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """处理音频数据，管理任务状态"""
         # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
         # Interrupt handling/AI preemption 清除 流缓冲区并发送 truncate
-        has_speech = asyncio.run(self._handle_vad_detection(vad, 1))
+        loop = asyncio.get_event_loop()
+        has_speech = loop.run_until_complete(self._handle_vad_detection(vad, 1))
 
         # 如果正在处理且检测到新语音，执行中断
         if (self.allow_interruption and
