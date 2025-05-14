@@ -64,21 +64,21 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # 语音处理状态
         self.interrupt_flag = False
         self.processing_task = None
-        self.llm_task = None
+        self.processing_task = None
 
         # 语音数据队列
         self.input_queue = asyncio.Queue()
         self.interrupt_queue = asyncio.Queue()
 
-    async def stop_llm_task(self):
+    async def stop_processing_task(self):
         """停止 LLM 生成任务"""
-        if self.llm_task and not self.llm_task.done():
-            self.llm_task.cancel()
+        if self.processing_task and not self.processing_task.done():
+            self.processing_task.cancel()
             try:
-                await self.llm_task
+                await self.processing_task
             except asyncio.CancelledError:
                 logging.info("LLM task cancelled")
-            self.llm_task = None
+            self.processing_task = None
 
     def process_audio(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
         """处理音频数据，管理任务状态"""
@@ -135,14 +135,14 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.processing_task = None
 
         # 清理 LLM 任务
-        if self.llm_task:
+        if self.processing_task:
             try:
-                self.llm_task.cancel()
-                await self.llm_task
+                self.processing_task.cancel()
+                await self.processing_task
             except asyncio.CancelledError:
                 pass
             finally:
-                self.llm_task = None
+                self.processing_task = None
 
         # 重置状态
         self._clear_buffers()
@@ -298,7 +298,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             logger.error(f"Error generating response: {e}")
             raise
         finally:
-            self.llm_task = None
+            self.processing_task = None
 
     async def _stream_tts(
         self,
@@ -395,7 +395,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         # 清理任务
         self.processing_task = None
-        self.llm_task = None
+        self.processing_task = None
 
     def _partial_clear(self):
         """部分清理,保留 scratch_buffer"""
