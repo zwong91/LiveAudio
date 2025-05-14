@@ -167,6 +167,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             logging.debug("User hasn't finished speaking")
             return False
 
+        print(f"Speech detected [len={len(text)}]: {text}")
         return True
 
     async def _generate_and_play_response(
