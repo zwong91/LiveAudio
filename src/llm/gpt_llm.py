@@ -37,7 +37,7 @@ class OpenAILLM(LLMInterface):
         if history is None:
             history = []
 
-        query = query + "\n\n" + f"always use {target_lang} answer" if target_lang else query
+        # 获取相关知识库内容
         history.append({"role": "user", "content": query})
 
         template = translation_prompt if simultaneous else chat_prompt
