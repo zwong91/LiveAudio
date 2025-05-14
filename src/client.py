@@ -32,8 +32,8 @@ class Client:
         self.client_id = client_id
         self.history = []
         self.speaker = None
-        self.buffer = bytearray()
-        self.scratch_buffer = bytearray()
+        self.buffer = bytearray()        # Stores incoming audio data
+        self.scratch_buffer = bytearray() # Used for processing chunks
         self.config = {
             "is_simultaneous": False,
             "target_lang": None,
