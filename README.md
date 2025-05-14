@@ -116,9 +116,8 @@ Keep in mind that each time you run the `ngrok http` command, a new URL will be 
 
 ``` sh
 # runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
-HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --certfile cert.pem --keyfile private.key --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}' --llm-type ollama
+HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}' --llm-type ollama
 ```
- python3 -m src.main --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}' --llm-type ollama
 ***test***
 
 ```bash
