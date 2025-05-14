@@ -174,7 +174,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 return
 
             # 3. EOU 检测
-            if not await self._check_conversation_complete(transcription["text"]):
+            if not await self._check_conversation_complete(eou, transcription["text"]):
                 return
 
             # 4. 生成和播放响应
@@ -212,11 +212,11 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             return None
         return transcription
 
-    async def _check_conversation_complete(self, text):
+    async def _check_conversation_complete(self, eou, text):
         """检查对话是否完成"""
         # 检查对话完成状态
         messages = self._prepare_messages(text)
-        if not self.eou_detector.detect(messages):
+        if not eou.detect(messages):
             logging.debug("User hasn't finished speaking")
             self._partial_clear()
             return False

@@ -23,6 +23,10 @@ apt install curl ffmpeg libopenblas-dev vim git-lfs \
     build-essential cmake libasound-dev portaudio19-dev \
     libportaudio2 -y
 
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.local/bin/env
+
 # Create directory
 mkdir -p /asset
 chmod 777 /asset/
@@ -32,9 +36,6 @@ chmod 777 /asset/
 ### Environment Setup
 
 ```sh
-# Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
 # Create and activate Python 3.10 virtual environment named 'va'
 uv venv --python=python3.10 va
 source va/bin/activate
@@ -51,7 +52,7 @@ When developing & testing locally, you'll need to open a tunnel to forward reque
 
 Open a Terminal and run:
 ```
-ngrok http 5050
+ngrok http 8765
 ```
 Once the tunnel has been opened, copy the `Forwarding` URL. It will look something like: `https://[your-ngrok-subdomain].ngrok.app`. You will need this when configuring your Twilio number setup.
 
@@ -114,9 +115,10 @@ Keep in mind that each time you run the `ngrok http` command, a new URL will be 
 [pem file](generate_ssl.sh) microphone need ssl/tls
 
 ``` sh
-HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile cert.pem --keyfile private.key --tts-type gtts --vad-type pyannote --vad-args '{"auth_token": "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"}' --llm-type ollama
+# runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
+HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --certfile cert.pem --keyfile private.key --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}' --llm-type ollama
 ```
-
+ python3 -m src.main --tts-type xtts-v2 --vad-type pyannote --vad-args '{"auth_token": "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"}' --llm-type ollama
 ***test***
 
 ```bash
