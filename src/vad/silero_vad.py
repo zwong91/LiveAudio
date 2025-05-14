@@ -27,6 +27,8 @@ class SileroVAD(VADInterface):
         :return: 语音段落的时间戳列表
         """
         buffer = client.scratch_buffer if buffer_type == 0 else client.buffer
+        if not buffer:
+            return []
         frames = np.frombuffer(buffer, dtype=np.int16)
         # normalization see https://discuss.pytorch.org/t/torchaudio-load-normalization-question/71470
         frames = frames / (1 << 15)

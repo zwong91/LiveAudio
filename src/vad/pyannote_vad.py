@@ -53,6 +53,8 @@ class PyannoteVAD(VADInterface):
     async def detect_activity(self, client, buffer_type = 0):
 
         buffer = client.scratch_buffer if buffer_type == 0 else client.buffer
+        if not buffer:
+            return []
         audio_file_path = await save_audio_to_file(
             buffer, client.get_file_name()
         )
