@@ -66,8 +66,11 @@ class Client:
             )
         )
 
-    def updat_datachannel(self, endpoint):
-        self.endpoint = endpoint
+    def set_stream_sid(self, sid):
+        self.sid = sid
+
+    def stream_sid(self):
+        return self.sid
 
     def append_audio_data(self, audio_data, vc_uid):
         self.buffer.extend(audio_data)

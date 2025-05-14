@@ -12,7 +12,7 @@ from typing import Optional, List
 import shutil
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, Form, Request, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
@@ -25,14 +25,25 @@ from aiortc.rtcrtpsender import RTCRtpSender
 from aiortc import MediaStreamTrack, VideoStreamTrack
 
 
+from twilio.rest import Client
+from twilio.twiml.voice_response import VoiceResponse, Connect
+
 import aiohttp
 from dotenv import load_dotenv
 # 加载环境变量
 load_dotenv(override=True)
 
-#CF_TURN_KEY = os.getenv('CF_TURN_KEY')
 USERNAME = os.getenv('USERNAME')
 CREDENTIAL = os.getenv('CREDENTIAL')
+
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
+
+NGROK_URL = os.getenv('NGROK_URL')
+
+if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN or not TWILIO_PHONE_NUMBER:
+    raise ValueError('Missing Twilio configuration. Please set it in the .env file.')
 
 from src.client import Client
 from src.stream_track import ClientStreamTrack
@@ -188,11 +199,25 @@ class Server:
         self.app.get("/v1/get_task_result/{task_id}")(self.get_task_result)
         self.app.get("/v1/health")(self.health)
 
-        self.app.websocket("/stream")(self.websocket_endpoint)
-
         self.app.post("/offer")(self.offer_endpoint)
+        self.app.post("/live")(self.live)
 
-        self.app.post("/cf-calls")(self.whip)
+        self.app.websocket("/media-stream")(self.websocket_endpoint)
+
+        self.app.add_api_route(
+            "/incoming-call",
+            self.handle_incoming_call,
+            methods=["GET", "POST"]
+        )
+
+        self.app.add_api_route(
+            "/outgoing-call",
+            self.handle_outgoing_call,
+            methods=["GET", "POST"]
+        )
+
+        self.app.post("/make_call")(self.make_call)
+
 
     async def startup(self):
         """Called on startup to set up additional services."""
@@ -363,7 +388,7 @@ class Server:
         await pc.setLocalDescription(answer)
 
         # push to cloudflare calls
-        # await self.push('https://whip.xyz666.org/publish/my-live')
+        # await self.push('https://live.xyz666.org/publish/my-live')
 
         return JSONResponse(content={"sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "sessionid": sessionid})
 
@@ -401,7 +426,7 @@ class Server:
         try:
             async with aiohttp.ClientSession() as session:
                 ## test url
-                url = "https://whip.xyz666.org/publish/my-live"
+                url = "https://live.xyz666.org/publish/my-live"
                 async with session.post(url, json=data) as response:
                     # 检查响应状态码
                     if response.status == 201:
@@ -426,8 +451,8 @@ class Server:
             logging.debug(f'Error: {e}')
             return None
 
-    async def whip(self, whip_url, session_id):
-        #create a new RTCPeerConnection, whip to cloudflare webrtc calls livestream
+    async def live(self, whip_url, session_id):
+        #create a new RTCPeerConnection, live to cloudflare webrtc calls livestream
         pc = RTCPeerConnection()
         self.pcs.add(pc)
 
@@ -466,14 +491,14 @@ class Server:
 
         pc.addTrack(MediaPlayer("assets/liuyifei.wav", format="wav", loop=True).audio)
         await pc.setLocalDescription(await pc.createOffer())
-        # whip-whep protocol to cloudflare calls 201
+        # live-whep protocol to cloudflare calls 201
         result = await self.post(whip_url, {"sdp": pc.localDescription.sdp})
         await pc.setRemoteDescription(RTCSessionDescription(sdp=result["sdp_data"], type='answer'))
 
 
     async def websocket_endpoint(self, websocket: WebSocket):
         await websocket.accept()
-
+        print("Handshake complete with Twilio 🎉")
         logging.debug(f"Client {websocket.client} accepted, waiting for messages.")
         client_id = str(uuid.uuid4())
         use_webrtc = False
@@ -488,55 +513,79 @@ class Server:
             logging.debug(f"Client {client_id} disconnected")
             #await websocket.close()
 
+    """
+    Twilio Voice API endpoint to handle incoming calls.
+    """
+    async def handle_incoming_call(request: Request):
+        """Handle incoming call and return TwiML response to connect to Media Stream."""
+        response = VoiceResponse()
+        # <Say> punctuation to improve text-to-speech flow
+        response = VoiceResponse()
+        response.say("Ahoy,稍等一下哦，转接中, 转接中……")
+        response.pause(length=1)
+        response.say("好了，它上线啦！想说啥尽管说吧~")
+        connect = Connect()
+        connect.stream(url=f'wss://{request.url.hostname}/media-stream')
+        response.append(connect)
+        return HTMLResponse(content=str(response), media_type="application/xml")
+
+    async def make_call(request: Request):
+        """Make an outgoing call to the specified phone number."""
+        data = await request.json()
+        to_phone_number = data.get("to")
+        if not to_phone_number:
+            return {"error": "Phone number is required"}
+
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        call = client.calls.create(
+            url=f"{NGROK_URL}/outgoing-call",
+            to=to_phone_number,
+            from_=TWILIO_PHONE_NUMBER
+        )
+        print(f"Call started with SID: {call.sid}")
+        return {"call_sid": call.sid}
+
+    async def handle_outgoing_call(request: Request):
+        """Handle outgoing call and return TwiML response to connect to Media Stream."""
+        response = VoiceResponse()
+        response.say("稍等一下哦，正在召唤全宇宙最聪明的AI语音助理……")
+        response.pause(length=1)
+        response.say("好了，它上线啦！想说啥尽管说吧~")
+
+        connect = Connect()
+        connect.stream(url=f'wss://{request.url.hostname}/media-stream')
+        response.append(connect)
+        return HTMLResponse(content=str(response), media_type="application/xml")
+
     async def handle_audio(self, client, websocket):
         sessionid = None  # To store the sessionid
+        stream_sid = None
+        latest_media_timestamp = 0
+        mark_queue = []
         while True:
             try:
                 text = await websocket.receive_text()
-                json_msg = json.loads(text)
-                msg_type = json_msg.get('type')
-                if msg_type == "config":
-                    is_simultaneous = json_msg["data"].get("is_simultaneous")
-                    target_lang = json_msg["data"].get("target_lang")
-                    logging.debug(f"Configuration received - Simultaneous: {is_simultaneous}, Target: {target_lang}")
-                    client.update_config(json_msg["data"])
-                    logging.debug(f"Updated config: {client.config}")
-                elif msg_type == "ping":
-                    logging.debug("Ping received. Sending pong...")
-                    await websocket.send(json.dumps({"type": "pong"}))
-                elif msg_type == 'session':
-                    sessionid = json_msg.get("sessionid")
-                    if sessionid is not None:
-                        # Optionally, send confirmation back to the client
-                        await websocket.send_json({"type": "session_ack", "sessionid": sessionid})
-                    else:
-                        await websocket.send_json({"type": "error", "message": "No rtc sessionid provided."})
-
-                elif msg_type == 'start':
-                    request_data = json_msg.get('request', {})
-                    chunk = request_data.get('audio')
-                    audio_data = base64.b64decode(chunk)
-                    latency = request_data.get('latency')
-                    format = request_data.get('format')
-                    prosody = request_data.get('prosody', {})
-                    vc_uid = request_data.get('vc_uid')
-
-                    logging.debug(f"Audio Data: {audio_data}, Latency: {latency}, Format: {format}")
-                    logging.debug(f"Audio Data: {audio_data}, Latency: {latency}, Format: {format}")
-                    logging.debug(f"Prosody: {prosody}, VC UID: {vc_uid}")
-
-                    #TODO: Pass the message to your processing function
-                    client.append_audio_data(audio_data, vc_uid)
+                data = json.loads(text)
+                if data['event'] == 'media':
+                    latest_media_timestamp = int(data['media']['timestamp'])
+                    chunk = data['media']['payload']
+                    #TODO: g711_ulaw format
+                    client.append_audio_data(chunk, 0)
                     # 异步task处理音频
                     await client.process_audio(
                         websocket, self.asr, self.vad, self.eou, self.llm, self.tts
                     )
 
-                elif msg_type == 'stop':
-                    if sessionid is not None:
-                        logging.debug(f"Session {sessionid} ended.")
+                elif data['event'] == 'start':
+                    stream_sid = data['start']['streamSid']
+                    print(f"Incoming stream has started {stream_sid}")
+                    client.set_stream_sid(stream_sid)
+                    latest_media_timestamp = 0
+                elif data['event'] == 'mark':
+                    if mark_queue:
+                        mark_queue.pop(0)
                 else:
-                    await websocket.send_json({"type": "error", "message": f"Unknown message type: {msg_type}"})
+                    await websocket.send_json({"type": "error", "message": f"Unknown message type: {data['event']}"})
 
             except WebSocketDisconnect as e:
                 logging.error(f"Connection with {client.client_id} closed: {e}")
@@ -709,7 +758,7 @@ class Server:
         tasks = []
         for k in range(max_sessions):
             url = whip_url if k == 0 else f"{whip_url}{k}"
-            tasks.append(self.whip(url, k))
+            tasks.append(self.live(url, k))
 
         await asyncio.gather(*tasks)
 

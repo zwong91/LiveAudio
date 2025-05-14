@@ -6,7 +6,7 @@ import logging
 from .buffering_strategy_interface import BufferingStrategyInterface
 from collections import deque
 from ..utils.misc import smart_split
-import numpy as np
+import base64
 
 logger = logging.getLogger(__name__)
 
@@ -278,11 +278,21 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             use_webrtc: 是否使用 WebRTC
             chunk: 音频数据块
         """
+        audio_payload = base64.b64encode(chunk).decode('utf-8')
+        audio_delta = {
+            "event": "media",
+            "streamSid": self.client.stream_sid(),
+            "media": {
+                "payload": audio_payload
+            }
+        }
+        await endpoint.send_json(audio_delta)
+
         try:
             if use_webrtc:
                 endpoint.send(chunk)
             else:
-                await endpoint.send_bytes(chunk)
+                await endpoint.send_bytes(audio_delta)
         except Exception as e:
             logger.error(f"发送失败: {e}")
             raise

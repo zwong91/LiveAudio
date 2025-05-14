@@ -50,3 +50,4 @@ streamlit
 streamlit-webrtc
 gdown
 requests
+twilio==9.3.2
