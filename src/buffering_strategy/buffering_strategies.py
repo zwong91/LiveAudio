@@ -71,19 +71,30 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             self.processing_task.cancel()
             self.processing_task = None
 
+    def _should_process_new_chunk(self):
+        """判断是否需要处理新的音频块"""
+        chunk_length_in_bytes = (
+            self.chunk_length_seconds
+            * self.client.sampling_rate
+            * self.client.samples_width
+        )
+        return len(self.client.buffer) > chunk_length_in_bytes
+
     async def process_audio(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
         """处理音频数据，管理任务状态"""
         # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
         # Interrupt handling/AI preemption 清除 流缓冲区并发送 truncate
 
-        # 如果正在处理且检测到新语音，执行中断
-        if (self.allow_interruption and
-            self.processing_task and
-            not self.processing_task.done()):
-            # 停止当前任务
-            self.stop_processing_task()
-            # 清理旧数据
-            self._clear_buffers()
+        # # 如果正在处理且检测到新语音，执行中断
+        # if (self.allow_interruption and
+        #     not self.processing_task.done()):
+        #     # 停止当前任务
+        #     self.stop_processing_task()
+        #     # 清理旧数据
+        #     self._clear_buffers()
+        #     return
+
+        if not self._should_process_new_chunk():
             return
 
         # 检查是否有新的音频数据, process it
