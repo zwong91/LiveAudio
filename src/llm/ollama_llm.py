@@ -19,7 +19,7 @@ from ollama import AsyncClient
 
 
 class OllamaLLM(LLMInterface):
-    def __init__(self, model: str = "qwen3:0.6b", base_url: str = "http://localhost:11434"):
+    def __init__(self, model: str = "gemma3:27b", base_url: str = "http://localhost:11434"):
         self.model = model
         self.base_url = base_url
         self._request_id = None

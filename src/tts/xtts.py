@@ -35,8 +35,6 @@ class XTTS_v2(TTSInterface):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         # 使用 os.path 确保路径正确拼接
         target_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "liuyifei.wav")
-        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "talking.wav")
-        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "silence.wav")
 
         self.ov = TTS("voice_conversion_models/multilingual/multi-dataset/openvoice_v2").to(device)
         model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
@@ -263,13 +261,6 @@ class XTTS_v2(TTSInterface):
             speed=1.0,
             enable_text_splitting=True,
         )
-
-        if not simultaneous:
-            audio = AudioSegment.from_wav(self.talking_wav)
-            # 重采样为 16kHz，单声道，16-bit
-            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            pcm_data_16K = audio_resampled.raw_data
-            yield pcm_data_16K
 
         #stream synthesize audio
         for i, chunk in enumerate(chunks):
