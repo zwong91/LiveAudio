@@ -316,14 +316,14 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             text: 要转换的文本块
         """
         try:
-            async for audio_chunk in tts.text_to_speech_stream(
+            async for chunk in tts.text_to_speech_stream(
                 text,
                 self.client.vc_uid,
                 self.client.config["is_simultaneous"]
             ):
                 if self.interrupt_flag:
                     break
-                await self._send(endpoint, use_webrtc, audio_chunk)
+                await self._send(endpoint, use_webrtc, chunk)
         except Exception as e:
             logger.error(f"Error in TTS streaming: {e}")
             # 继续处理，不中断整个流程

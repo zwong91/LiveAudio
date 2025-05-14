@@ -9,7 +9,7 @@ ctranslate2==4.4.0
 nltk==3.9.1
 #quickly converts streamed text into sentences for real-time synthesis
 stream2sentence==0.3.0
-
+pypinyin
 huggingface
 huggingface_hub>=0.19.4
 funasr
