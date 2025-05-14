@@ -133,18 +133,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """处理 VAD 检测结果"""
 
         buffer = self.client.scratch_buffer if buffer_type == 0 else self.client.buffer
-
-        # 检查 buffer 是否有效
-        if not buffer or len(buffer) == 0:
-            logger.debug("Buffer is empty, skipping VAD detection")
-            return False
-
-        # 检查 buffer 大小是否足够处理
-        min_samples = int(0.1 * self.client.sampling_rate)  # 至少0.1秒的音频
-        if len(buffer) < min_samples:
-            logger.debug("Buffer too small for VAD detection")
-            return False
-
         vad_results = await vad.detect_activity(self.client, buffer_type)
         if not vad_results:
             return False
