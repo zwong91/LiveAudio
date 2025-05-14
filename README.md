@@ -46,6 +46,20 @@ uv pip install -r requirements.txt
 HTTPS_PROXY=http://192.168.31.219:10792 curl -fsSL https://ollama.com/install.sh | sh
 ```
 
+### Open an ngrok tunnel
+When developing & testing locally, you'll need to open a tunnel to forward requests to your local development server. These instructions use ngrok.
+
+Open a Terminal and run:
+```
+ngrok http 5050
+```
+Once the tunnel has been opened, copy the `Forwarding` URL. It will look something like: `https://[your-ngrok-subdomain].ngrok.app`. You will need this when configuring your Twilio number setup.
+
+Note that the `ngrok` command above forwards to a development server running on port `5050`, which is the default port configured in this application. If you override the `PORT` defined in `main.py`, you will need to update the `ngrok` command accordingly.
+
+Keep in mind that each time you run the `ngrok http` command, a new URL will be created, and you'll need to update it everywhere it is referenced below.
+
+
 ## Docker Setup
 
 1. Install NVIDIA Container Toolkit:
@@ -90,6 +104,7 @@ HTTPS_PROXY=http://192.168.31.219:10792 curl -fsSL https://ollama.com/install.sh
     sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' VoiceAgent
     ```
 
+
 ## Usage
 
 **prepare**
@@ -107,6 +122,8 @@ HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --port 20000 --certfile ce
 ```bash
 export PYANNOTE_AUTH_TOKEN=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
 ASR_TYPE=sensevoice python -m unittest test.server.test_server
+
+
 ```
 
 ## FAQ

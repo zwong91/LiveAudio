@@ -47,11 +47,11 @@ def main():
         return
 
     # Create VAD and ASR and LLM and TTS pipelines
-    asr = ASRFactory.create_asr(args.asr_type, **asr_args)
-    vad = VADFactory.create_vad(args.vad_type, **vad_args)
-    eou = EOUFactory.create_eou(args.eou_type)
-    llm = LLMFactory.create_llm(args.llm_type)
-    tts = TTSFactory.create_tts(args.tts_type)
+    asr = ASRFactory.create_asr_pipeline(args.asr_type, **asr_args)
+    vad = VADFactory.create_vad_pipeline(args.vad_type, **vad_args)
+    eou = EOUFactory.create_eou_pipeline(args.eou_type)
+    llm = LLMFactory.create_llm_pipeline(args.llm_type)
+    tts = TTSFactory.create_tts_pipeline(args.tts_type)
 
     # Create and start server
     server = Server(asr, vad, eou, llm, tts, host=args.host, port=args.port, certfile=args.certfile, keyfile=args.keyfile)

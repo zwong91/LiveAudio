@@ -1,5 +1,7 @@
+from typing import List, Dict
+
 class EOUInterface:
-    async def detect(self, context: List[Dict[str, Any]], threshold: float = 0.15) -> bool:
+    async def detect(self, context: List[Dict[str, str]], threshold: float = 0.15) -> bool:
         """
         Detect if the current turn is complete.
 

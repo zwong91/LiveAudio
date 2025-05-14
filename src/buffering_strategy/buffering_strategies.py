@@ -5,7 +5,7 @@ import time
 import logging
 from .buffering_strategy_interface import BufferingStrategyInterface
 from collections import deque
-from utils.utils import smart_split
+from ..utils.misc import smart_split
 
 logger = logging.getLogger(__name__)
 
