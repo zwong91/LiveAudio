@@ -147,7 +147,7 @@ class XTTS_v2(TTSInterface):
             target_wav_files.extend(glob.glob(target_wav_pattern))
 
         if not target_wav_files:
-            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "dayang.wav")
+            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "liuyifei.wav")
             target_wav_files = glob.glob(target_wav_pattern)
             print(f"No WAV files found matching pattern, use default: {target_wav_files}")
         else:
@@ -220,7 +220,7 @@ class XTTS_v2(TTSInterface):
         target_wav_files = glob.glob(target_wav_pattern)  # 使用 glob 扩展通配符
 
         if not target_wav_files:
-            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "dayang.wav")
+            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "liuyifei.wav")
             target_wav_files = glob.glob(target_wav_pattern)
             print(f"No WAV files found matching pattern, use default: {target_wav_files}")
         else:

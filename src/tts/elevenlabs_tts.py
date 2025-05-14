@@ -24,9 +24,6 @@ class ElevenlabTTS(TTSInterface):
             api_key = os.getenv("ELEVENLABS_API_KEY")
         self.api_key = api_key
 
-        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "talking.wav")
-        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "silence.wav")
-
 
     def get_stream_info(self) -> dict:
         return {
@@ -44,14 +41,6 @@ class ElevenlabTTS(TTSInterface):
         language = langid.classify(text)[0].strip()
         if language == 'zh':
             language = 'zh-CN'
-
-        #1. send talking audio
-        if not simultaneous:
-            audio = AudioSegment.from_wav(self.talking_wav)
-            # 重采样为 16kHz，单声道，16-bit
-            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            pcm_data_16K = audio_resampled.raw_data
-            yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
         temp_file_path = tempfile.gettempdir()
         file_path = os.path.join(temp_file_path, f"audio_{uuid4().hex[:8]}.wav")
@@ -83,11 +72,3 @@ class ElevenlabTTS(TTSInterface):
         )
         pcm_data_16K = audio_resampled.raw_data
         yield pcm_data_16K
-
-        #3. send silent audio
-        if not simultaneous:
-            audio = AudioSegment.from_wav(self.silence_wav)
-            # 重采样为 16kHz，单声道，16-bit
-            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            pcm_data_16K = audio_resampled.raw_data
-            yield pcm_data_16K

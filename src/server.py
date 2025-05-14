@@ -28,6 +28,8 @@ from aiortc import MediaStreamTrack, VideoStreamTrack
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse, Connect
 
+from utils.audio_utils import ulaw_to_pcm16k
+
 import aiohttp
 from dotenv import load_dotenv
 # 加载环境变量
@@ -570,7 +572,8 @@ class Server:
                     latest_media_timestamp = int(data['media']['timestamp'])
                     chunk = data['media']['payload']
                     #TODO: g711_ulaw format
-                    client.append_audio_data(chunk, 0)
+                    pcm_chunk = ulaw_to_pcm16k(chunk)
+                    client.append_audio_data(pcm_chunk, 0)
                     # 异步task处理音频
                     await client.process_audio(
                         websocket, self.asr, self.vad, self.eou, self.llm, self.tts

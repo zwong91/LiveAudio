@@ -1,5 +1,6 @@
 import os
 import wave
+import audioop
 from scipy import signal
 import aiofiles
 
@@ -62,7 +63,7 @@ async def save_audio_to_file(
     :param audio_format: Format of the audio file.
     :return: Path to the saved audio file.
     """
-    
+
     # Ensure directory exists
     os.makedirs(audio_dir, exist_ok=True)
 
@@ -77,7 +78,7 @@ async def save_audio_to_file(
             wave_file.setsampwidth(sample_width)
             wave_file.setframerate(sample_rate)
             wave_file.writeframes(audio_data)
-    
+
     return file_path
 
 async def read_audio_file(file_path):
@@ -216,7 +217,7 @@ def convert_sampling_rate_to_16k(input_file, output_file):
     down = original_rate
     resampled_data = signal.resample_poly(data, up, down)
     write(output_file, 16000, resampled_data.astype(np.int16))
-    
+
 
 # from https://huggingface.co/spaces/coqui/voice-chat-with-mistral/blob/main/app.py
 def wave_header_chunk(frame_input=b"", channels=1, sample_width=2, sample_rate=32000):
@@ -232,3 +233,33 @@ def wave_header_chunk(frame_input=b"", channels=1, sample_width=2, sample_rate=3
 
     wav_buf.seek(0)
     return wav_buf.read()
+
+
+def ulaw_to_pcm16k(audio_bytes_ulaw, input_rate=8000, output_rate=16000):
+    # μ-law → PCM 16-bit (8kHz)
+    pcm_8k = audioop.ulaw2lin(audio_bytes_ulaw, 2)  # 2 bytes = 16-bit
+
+    # 转成 numpy array
+    audio_np = np.frombuffer(pcm_8k, dtype=np.int16)
+
+    # 升采样到 16kHz
+    num_samples = int(len(audio_np) * output_rate / input_rate)
+    audio_resampled = signal.resample(audio_np, num_samples).astype(np.int16)
+
+    return audio_resampled.tobytes()
+
+def pcm16k_to_ulaw(pcm_data_16k: bytes, input_rate=16000, target_rate=8000) -> bytes:
+    # Step 1: 转换为 numpy array，int16
+    pcm_array = np.frombuffer(pcm_data_16k, dtype=np.int16)
+
+    # Step 2: 降采样到 8000 Hz
+    resample_len = int(len(pcm_array) * target_rate / input_rate)
+    resampled = signal.resample(pcm_array, resample_len).astype(np.int16)
+
+    # Step 3: 转换为 bytes
+    resampled_bytes = resampled.tobytes()
+
+    # Step 4: PCM -> μ-law
+    ulaw_data = audioop.lin2ulaw(resampled_bytes, 2)  # 2 bytes per sample (16-bit)
+
+    return ulaw_data

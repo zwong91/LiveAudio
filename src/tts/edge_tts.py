@@ -43,8 +43,6 @@ language_list = [
 class EdgeTTS(TTSInterface):
     def __init__(self, voice: str = 'zh-CN-XiaoxiaoNeural'):
         self.voice = voice
-        self.talking_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "talking.wav")
-        self.silence_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "silence.wav")
 
     async def get_voices(self, **kwargs):
         from edge_tts import VoicesManager
@@ -151,13 +149,6 @@ class EdgeTTS(TTSInterface):
         #     pcm_data_16K = audio_resampled.raw_data
         #     yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
 
-        if not simultaneous:
-            audio = AudioSegment.from_wav(self.talking_wav)
-            # 重采样为 16kHz，单声道，16-bit
-            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            pcm_data_16K = audio_resampled.raw_data
-            yield pcm_data_16K
-
         # FIXME: ms-edge 浏览器也是有时候就是没有语音数据返回, ask microsoft.
         # 还有就是mp3 contain artifacts introduced chunk边界间隙伪影依赖上一个chunk, 最终的方式应该是直接yield chunk["data"]， 前端用mpv实时流播放器
         CHUNK_SIZE = 20 * 1024  # 假设每个块大约1024字节（根据实际格式调整）
@@ -202,12 +193,4 @@ class EdgeTTS(TTSInterface):
                     .set_sample_width(2)  # 16bit sample_width (16/8=2)
             )
             pcm_data_16K = audio_resampled.raw_data
-            yield pcm_data_16K
-
-        if not simultaneous:
-            audio = AudioSegment.from_wav(self.silence_wav)
-            # 重采样为 16kHz，单声道，16-bit
-            audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-            pcm_data_16K = audio_resampled.raw_data
-            #yield wave_header_chunk(pcm_data_16K, 1, 2, 16000)
             yield pcm_data_16K
