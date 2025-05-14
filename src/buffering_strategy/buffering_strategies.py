@@ -102,32 +102,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         2. 语音能量是否超过阈值
         3. 确保不是背景噪音
         """
-        # 基本长度检查
-        min_chunk_bytes = int(0.2 * self.client.sampling_rate * self.client.samples_width)  # 200ms最小长度
-        if len(self.client.buffer) < min_chunk_bytes:
-            return False
-
-        # 计算音频能量
-        audio_data = np.frombuffer(bytes(self.client.buffer), dtype=np.int16)
-        energy = np.mean(np.abs(audio_data))
-
-        # 检测是否有语音活动（基于能量阈值）
-        ENERGY_THRESHOLD = 300  # 可调整的能量阈值
-        is_speech = energy > ENERGY_THRESHOLD
-
-        # 防抖动：确保持续时间足够
-        MIN_SPEECH_MS = 100  # 最小语音持续时间(ms)
-        current_time = time.time()
-
-        if is_speech:
-            if self.last_speech_start == 0:
-                self.last_speech_start = current_time
-            elif (current_time - self.last_speech_start) * 1000 > MIN_SPEECH_MS:
-                return True
-        else:
-            self.last_speech_start = 0
-
-        return False
+        return True
 
     async def _handle_interrupt(self):
         """处理中断请求
@@ -150,15 +125,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         logger.info("User interruption detected")
         self.interrupt_flag = True
         await self.interrupt_queue.put("interrupt")
-
-        # 等待当前任务结束
-        if self.processing_task:
-            try:
-                await asyncio.wait_for(self.processing_task, timeout=1.0)
-            except asyncio.TimeoutError:
-                logger.warning("Processing task interrupt timeout")
-            finally:
-                self.processing_task = None
 
         # 清理 LLM 任务
         await self.stop_processing_task()
