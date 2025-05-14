@@ -75,11 +75,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """处理音频数据，管理任务状态"""
         # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
         # Interrupt handling/AI preemption 清除 流缓冲区并发送 truncate
-        has_speech = await self._handle_vad_detection(vad, 1)
 
         # 如果正在处理且检测到新语音，执行中断
         if (self.allow_interruption and
-            has_speech and
             self.processing_task and
             not self.processing_task.done()):
             # 停止当前任务
@@ -129,16 +127,14 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             #print(f"Total processing time: {end - start:.2f}s")
             self._clear_buffers()
 
-    async def _handle_vad_detection(self, vad, buffer_type = 0):
+    async def _handle_vad_detection(self, vad):
         """处理 VAD 检测结果"""
-
-        buffer = self.client.scratch_buffer if buffer_type == 0 else self.client.buffer
-        vad_results = await vad.detect_activity(self.client, buffer_type)
+        vad_results = await vad.detect_activity(self.client)
         if not vad_results:
             return False
 
         last_segment_should_end_before = (
-            len(buffer)
+            len(self.client.scratch_buffer)
             / (self.client.sampling_rate * self.client.samples_width)
         ) - self.chunk_offset_seconds
 

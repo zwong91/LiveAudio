@@ -20,16 +20,13 @@ class SileroVAD(VADInterface):
 
         self.sampling_rate = sampling_rate = 16000 # 采样率
 
-    async def detect_activity(self, client, buffer_type = 0):
+    async def detect_activity(self, client):
         """
         使用Silero VAD模型进行语音活动检测。
         :param client: 传入的客户端对象，应该包含音频数据
         :return: 语音段落的时间戳列表
         """
-        buffer = client.scratch_buffer if buffer_type == 0 else client.buffer
-        if not buffer:
-            return []
-        frames = np.frombuffer(buffer, dtype=np.int16)
+        frames = np.frombuffer(client.scratch_buffer, dtype=np.int16)
         # normalization see https://discuss.pytorch.org/t/torchaudio-load-normalization-question/71470
         frames = frames / (1 << 15)
         audio_tensor = torch.tensor(frames.astype(np.float32))
