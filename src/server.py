@@ -514,7 +514,7 @@ class Server:
     """
     Twilio Voice API endpoint to handle incoming calls.
     """
-    async def handle_incoming_call(request: Request):
+    async def handle_incoming_call(self, request: Request):
         """Handle incoming call and return TwiML response to connect to Media Stream."""
         response = VoiceResponse()
         # <Say> punctuation to improve text-to-speech flow
@@ -527,7 +527,7 @@ class Server:
         response.append(connect)
         return HTMLResponse(content=str(response), media_type="application/xml")
 
-    async def make_call(request: Request):
+    async def make_call(self, request: Request):
         """Make an outgoing call to the specified phone number."""
         data = await request.json()
         to_phone_number = data.get("to")
@@ -543,7 +543,7 @@ class Server:
         print(f"Call started with SID: {call.sid}")
         return {"call_sid": call.sid}
 
-    async def handle_outgoing_call(request: Request):
+    async def handle_outgoing_call(self, request: Request):
         """Handle outgoing call and return TwiML response to connect to Media Stream."""
         response = VoiceResponse()
         response.say("稍等一下哦，正在召唤全宇宙最聪明的AI语音助理……")
