@@ -31,7 +31,9 @@ class SenseVoiceASR(ASRInterface):
 
         os.remove(file_path)
 
+        # Post-process the transcription
         trans_text = rich_transcription_postprocess(text)
+        print("Detected text '%s' " % (trans_text))
         to_return = {
             "target_lang": client.config["target_lang"],
             "language_probability": None,
