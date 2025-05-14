@@ -65,7 +65,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # 语音处理状态
         self.interrupt_flag = False
         self.processing_task = None
-        self.processing_task = None
 
         # 语音数据队列
         self.input_queue = asyncio.Queue()
@@ -162,14 +161,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.processing_task = None
 
         # 清理 LLM 任务
-        if self.processing_task:
-            try:
-                self.processing_task.cancel()
-                await self.processing_task
-            except asyncio.CancelledError:
-                pass
-            finally:
-                self.processing_task = None
+        await self.stop_processing_task()
 
         # 重置状态
         self._clear_buffers()
