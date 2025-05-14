@@ -15,22 +15,21 @@ class BufferingStrategyInterface:
                        by subclasses.
     """
 
-    def process_audio(self, websocket, vad_pipeline, asr_pipeline):
+    async def process_audio(self, websocket, asr, vad, eou, llm, tts):
         """
-        Process audio data using the given WebSocket connection, VAD pipeline,
-        and ASR pipeline.
+        Process audio data using the provided WebSocket connection and various processing pipelines.
 
-        This method is intended to be overridden in subclasses to provide
-        specific logic for handling and processing audio data in different
-        buffering strategies.
+        This method is designed to be overridden in subclasses to implement specific
+        buffering strategies for handling and processing audio data.
 
-        Args:
-            websocket (Websocket): The WebSocket connection for communication
-                                   with clients.
-            vad_pipeline: The Voice Activity Detection (VAD) pipeline used for
-                          detecting speech in the audio.
-            asr_pipeline: The Automatic Speech Recognition (ASR) pipeline used
-                          for transcribing speech in the audio.
+            websocket (WebSocket): The WebSocket connection for communication with clients.
+            asr: The Automatic Speech Recognition (ASR) pipeline for transcribing speech.
+            vad: The Voice Activity Detection (VAD) pipeline for detecting speech activity.
+            eou: End-of-Utterance (EOU) detection mechanism for identifying the end of speech.
+            llm: The Large Language Model (LLM) for processing or generating text based on transcriptions.
+            tts: The Text-to-Speech (TTS) system for converting text to audio responses.
+
+            NotImplementedError: If the method is not implemented in a subclass.
 
         Raises:
             NotImplementedError: If the method is not implemented in the

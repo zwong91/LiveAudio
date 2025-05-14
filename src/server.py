@@ -528,7 +528,9 @@ class Server:
                     #TODO: Pass the message to your processing function
                     client.append_audio_data(audio_data, vc_uid)
                     # 异步task处理音频
-                    self._process_audio(client, websocket)
+                    await client.process_audio(
+                        websocket, self.asr, self.vad, self.eou, self.llm, self.tts
+                    )
 
                 elif msg_type == 'stop':
                     if sessionid is not None:
@@ -542,14 +544,6 @@ class Server:
             except Exception as e:
                 logging.error(f"Error handling audio for {client.client_id}: {e}")
                 break
-
-    def _process_audio(self, client, websocket):
-        try:
-            client.process_audio(
-                websocket, self.asr, self.vad, self.eou, self.llm, self.tts
-            )
-        except RuntimeError as e:
-            logging.error(f"Processing error for {client.client_id}: {e}")
 
     async def get_asset_file(self, filename: str):
         file_path = os.path.join('/asset', filename)

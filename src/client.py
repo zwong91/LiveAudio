@@ -84,7 +84,12 @@ class Client:
     def get_file_name(self):
         return f"{self.client_id}_{self.file_counter}.wav"
 
-    def process_audio(self, endpoint, asr, vad, eou, llm, tts):
-        self.buffering_strategy.process_audio(
+    async def process_audio(self, endpoint, asr, vad, eou, llm, tts):
+        """
+        Process the audio data in the buffer using the provided ASR, VAD, EOU,
+        LLM, and TTS pipelines.
+        This method is responsible for handling the audio data
+        """
+        await self.buffering_strategy.process_audio(
             endpoint, self.use_webrtc, asr, vad, eou, llm, tts
         )

@@ -71,12 +71,12 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             self.processing_task.cancel()
             self.processing_task = None
 
-    def process_audio(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
+    async def process_audio(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
         """处理音频数据，管理任务状态"""
         # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
         # Interrupt handling/AI preemption 清除 流缓冲区并发送 truncate
         vad_task = asyncio.create_task(self._handle_vad_detection(vad, 1))
-        has_speech = asyncio.get_event_loop().run_until_complete(vad_task)
+        has_speech = await vad_task
 
         # 如果正在处理且检测到新语音，执行中断
         if (self.allow_interruption and
