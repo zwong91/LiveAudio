@@ -50,9 +50,11 @@ class PyannoteVAD(VADInterface):
         self.vad_pipeline = VoiceActivityDetection(segmentation=self.model)
         self.vad_pipeline.instantiate(pyannote_args)
 
-    async def detect_activity(self, client):
+    async def detect_activity(self, client, buffer_type = 0):
+
+        buffer = client.scratch_buffer if buffer_type == 0 else client.buffer
         audio_file_path = await save_audio_to_file(
-            client.scratch_buffer, client.get_file_name()
+            buffer, client.get_file_name()
         )
         vad_results = self.vad_pipeline(audio_file_path)
         remove(audio_file_path)
