@@ -519,9 +519,7 @@ class Server:
         response = VoiceResponse()
         # <Say> punctuation to improve text-to-speech flow
         response = VoiceResponse()
-        response.say("Ahoy,稍等一下哦，转接中, 转接中……")
-        response.pause(length=1)
-        response.say("好了，它上线啦！想说啥尽管说吧~")
+        response.say("Ahoy,稍等一下哦，正在为你接通你的AI girlfriends", voice='Google.cmn-TW-Wavenet-A', language='cmn-TW')
         connect = Connect()
         connect.stream(url=f'wss://{request.url.hostname}/media-stream')
         response.append(connect)
