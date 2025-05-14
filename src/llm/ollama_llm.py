@@ -56,12 +56,12 @@ class OllamaLLM(LLMInterface):
         if history is None:
             history = []
 
-        # 获取相关知识库内容
-        relevant_context = self.get_relevant_context(query, self.vault_embeddings)
-        if relevant_context:
-            query = "\n".join(relevant_context) + "\n\n" + query
+        # # 获取相关知识库内容
+        # relevant_context = self.get_relevant_context(query, self.vault_embeddings)
+        # if relevant_context:
+        #     query = "\n".join(relevant_context) + "\n\n" + query
 
-        query = query + "\n\n" + f"always use {target_lang} answer" if target_lang else query
+        #query = query + "\n\n" + f"always use {target_lang} answer" if target_lang else query
         history.append({"role": "user", "content": query})
 
         template = translation_prompt if simultaneous else chat_prompt
