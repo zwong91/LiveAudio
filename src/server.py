@@ -206,14 +206,10 @@ class Server:
 
         self.app.websocket("/media-stream")(self.websocket_endpoint)
 
-        self.app.add_api_route(
-            "/incoming-call",
-            self.handle_incoming_call,
-            methods=["GET", "POST"]
-        )
+        self.app.post("/twilio/inbound_call")(self.handle_incoming_call)
 
         self.app.add_api_route(
-            "/outgoing-call",
+            "/twilio/outbound_call",
             self.handle_outgoing_call,
             methods=["GET", "POST"]
         )
@@ -572,7 +568,7 @@ class Server:
                     latest_media_timestamp = int(data['media']['timestamp'])
                     chunk = data['media']['payload']
                     #TODO: g711_ulaw format
-                    pcm_chunk = ulaw_to_pcm16k(chunk)
+                    pcm_chunk = ulaw_to_pcm16k(base64.b64decode(chunk))
                     client.append_audio_data(pcm_chunk, 0)
                     # 异步task处理音频
                     await client.process_audio(
