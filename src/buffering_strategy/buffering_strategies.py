@@ -94,15 +94,14 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # 开始处理新的音频块
         self._start_new_processing(endpoint, use_webrtc, asr, vad, eou, llm, tts)
 
-    def _should_process_new_chunk(self) -> bool:
-        """
-        判断是否需要处理新的音频块
-        检查:
-        1. 是否存在新的语音活动
-        2. 语音能量是否超过阈值
-        3. 确保不是背景噪音
-        """
-        return True
+    def _should_process_new_chunk(self):
+        """判断是否需要处理新的音频块"""
+        chunk_length_in_bytes = (
+            self.chunk_length_seconds
+            * self.client.sampling_rate
+            * self.client.samples_width
+        )
+        return len(self.client.buffer) > chunk_length_in_bytes
 
     async def _handle_interrupt(self):
         """处理中断请求
