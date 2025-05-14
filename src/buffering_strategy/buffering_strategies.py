@@ -6,6 +6,7 @@ import logging
 from .buffering_strategy_interface import BufferingStrategyInterface
 from collections import deque
 from ..utils.misc import smart_split
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -94,14 +95,40 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # 开始处理新的音频块
         self._start_new_processing(endpoint, use_webrtc, asr, vad, eou, llm, tts)
 
-    def _should_process_new_chunk(self):
-        """判断是否需要处理新的音频块"""
-        chunk_length_in_bytes = (
-            self.chunk_length_seconds
-            * self.client.sampling_rate
-            * self.client.samples_width
-        )
-        return len(self.client.buffer) > chunk_length_in_bytes
+    def _should_process_new_chunk(self) -> bool:
+        """
+        判断是否需要处理新的音频块
+        检查:
+        1. 是否存在新的语音活动
+        2. 语音能量是否超过阈值
+        3. 确保不是背景噪音
+        """
+        # 基本长度检查
+        min_chunk_bytes = int(0.2 * self.client.sampling_rate * self.client.samples_width)  # 200ms最小长度
+        if len(self.client.buffer) < min_chunk_bytes:
+            return False
+
+        # 计算音频能量
+        audio_data = np.frombuffer(bytes(self.client.buffer), dtype=np.int16)
+        energy = np.mean(np.abs(audio_data))
+
+        # 检测是否有语音活动（基于能量阈值）
+        ENERGY_THRESHOLD = 300  # 可调整的能量阈值
+        is_speech = energy > ENERGY_THRESHOLD
+
+        # 防抖动：确保持续时间足够
+        MIN_SPEECH_MS = 100  # 最小语音持续时间(ms)
+        current_time = time.time()
+
+        if is_speech:
+            if self.last_speech_start == 0:
+                self.last_speech_start = current_time
+            elif (current_time - self.last_speech_start) * 1000 > MIN_SPEECH_MS:
+                return True
+        else:
+            self.last_speech_start = 0
+
+        return False
 
     async def _handle_interrupt(self):
         """处理中断请求
