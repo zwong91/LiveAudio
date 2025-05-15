@@ -16,8 +16,8 @@ from .turn_interface import TurnInterface
 
 # Constants
 HG_MODEL = "livekit/turn-detector"
-ONNX_FILENAME = "model.onnx"
-MODEL_REVISION = "multlingual"
+ONNX_FILENAME = "model_q8.onnx"
+MODEL_REVISION = "v1.2.0"
 MAX_HISTORY = 4
 MAX_HISTORY_TOKENS = 512
 UNLIKELY_THRESHOLD = 0.15
@@ -119,12 +119,13 @@ class LKTurn(TurnInterface):
         )
 
         input_dict = {"input_ids": np.array(inputs["input_ids"], dtype=np.int64)}
-
         # Run inference
-        output = self.session.run(["prob"], input_dict)
+        output = self.session.run(["logits"], input_dict)
 
-        # Get probabilities directly from model output
-        probs = output[0]  # Shape: [1, vocab_size]
+        # Process output
+        logits = output[0]
+        last_token_logits = logits[0, -1]
+        probs = self.softmax(last_token_logits)
         completion_prob = float(probs[self.eou_index])
 
         logging.debug(f"End of turn probability: {completion_prob:.4f}")
