@@ -120,6 +120,9 @@ class LKTurn(TurnInterface):
 
         input_dict = {"input_ids": np.array(inputs["input_ids"], dtype=np.int64)}
 
+        for output in self.session.get_outputs():
+            print(f"Output name: {output.name}, type: {output.type}, shape: {output.shape}")
+
         # Run inference
         output = self.session.run(["logits"], input_dict)
 
