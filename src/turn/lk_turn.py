@@ -131,7 +131,10 @@ class LKTurn(TurnInterface):
         # completion_prob = float(probs[self.eou_index])
 
         output = self.session.run(["prob"], input_dict)
+
         probs = output[0]  # shape: (vocab_size,)
+        print("probs shape:", probs.shape)
+        print("probs:", probs)
         completion_prob = float(probs[self.eou_index])
 
         logging.debug(f"End of turn probability: {completion_prob:.4f}")
