@@ -16,8 +16,8 @@ from .turn_interface import TurnInterface
 
 # Constants
 HG_MODEL = "livekit/turn-detector"
-ONNX_FILENAME = "model_q8.onnx"
-MODEL_REVISION = "v1.2.0"
+ONNX_FILENAME = "model.onnx"
+MODEL_REVISION = "v1.2.1"
 MAX_HISTORY = 4
 MAX_HISTORY_TOKENS = 512
 UNLIKELY_THRESHOLD = 0.15
@@ -87,15 +87,10 @@ class LKTurn(TurnInterface):
             tokenize=False
         )
 
-        # Handle end of utterance token
+        # Remove the EOU token from current utterance
         eou_token = "<|im_end|>"
-        last_eou_index = convo_text.rfind(eou_token)
-        return convo_text[:last_eou_index] if last_eou_index >= 0 else convo_text
-
-    def softmax(self, logits):
-        """Compute softmax probabilities for logits."""
-        exp_logits = np.exp(logits - np.max(logits))
-        return exp_logits / exp_logits.sum()
+        ix = convo_text.rfind(eou_token)
+        return convo_text[:ix] if ix != -1 else convo_text
 
     async def predict_endpoint(self, context: Optional[List[Dict[str, str]]], audio: Optional[bytearray])-> Dict[str, Any]:
         """
@@ -121,14 +116,17 @@ class LKTurn(TurnInterface):
         )
 
         input_dict = {"input_ids": np.array(inputs["input_ids"], dtype=np.int64)}
-        # Run inference
-        output = self.session.run(["logits"], input_dict)
+        # # Run inference
+        # output = self.session.run(["logits"], input_dict)
 
-        # Process output
-        logits = output[0]
-        last_token_logits = logits[0, -1]
-        probs = self.softmax(last_token_logits)
-        completion_prob = float(probs[self.eou_index])
+        # # Process output
+        # logits = output[0]
+        # last_token_logits = logits[0, -1]
+        # probs = self.softmax(last_token_logits)
+        # completion_prob = float(probs[self.eou_index])
+
+        outputs = session.run(None, {"input_ids": inputs["input_ids"]})
+        completion_prob = outputs[0][0]  # Extract probability
 
         print(f"End of turn probability: {completion_prob:.4f}")
         prediction = 1 if completion_prob >= UNLIKELY_THRESHOLD else 0
