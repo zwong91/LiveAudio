@@ -42,7 +42,11 @@ class SmartTurn(TurnInterface):
         self._turn_model.eval()
         logging.debug("Loaded Local Smart Turn")
 
-    async def predict_endpoint(self, buffer: bytes) -> Dict[str, Any]:
+    async def predict_endpoint(self, buffer) -> Dict[str, Any]:
+
+        # Check input type
+        if not isinstance(buffer, bytes):
+            raise ValueError("Input buffer must be of type bytes")
 
         audio_int16 = np.frombuffer(buffer, np.int16)
         # Float32 numpy array of audio samples at 16kHz.
