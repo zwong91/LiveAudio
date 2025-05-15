@@ -47,6 +47,16 @@ When developing & testing locally, you'll need to open a tunnel to forward reque
 
 Open a Terminal and run:
 ```
+
+curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
+  | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
+  && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
+  | tee /etc/apt/sources.list.d/ngrok.list \
+  && apt update \
+  && apt install ngrok
+
+ngrok config add-authtoken 2q0o5XSi73aG9m4KyMxHB0pmEXi_2mUYW4R1wDsanPzWgCWrW
+
 ngrok http 8765
 ```
 Once the tunnel has been opened, copy the `Forwarding` URL. It will look something like: `https://[your-ngrok-subdomain].ngrok.app`. You will need this when configuring your Twilio number setup.
