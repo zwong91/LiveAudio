@@ -51,6 +51,8 @@ class LKTurn(TurnInterface):
             )
 
             self.eou_index = self.tokenizer.encode("<|im_end|>")[0]
+            for output in self.session.get_outputs():
+                print("Output name:", output.name)
             logging.info(f"LKTurn initialization took: {time.time() - start_time:.2f} seconds")
 
         except Exception as e:
