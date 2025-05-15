@@ -87,6 +87,28 @@ class Client:
     def get_file_name(self):
         return f"{self.client_id}_{self.file_counter}.wav"
 
+    async def send_initial_conversation(self, endpoint, text, llm, tts):
+        """
+        Sends the initial conversation data to the specified endpoint.
+
+        This method processes the provided text using the given LLM (Language Model)
+        and TTS (Text-to-Speech) pipelines, and sends the data to the endpoint using
+        the buffering strategy.
+
+        Args:
+            endpoint (str): The target endpoint to send the conversation data to.
+            text (str): The initial text of the conversation to be processed.
+            llm (Callable): The Language Model pipeline to process the text.
+            tts (Callable): The Text-to-Speech pipeline to generate audio output.
+
+        Returns:
+            None
+
+        """
+        await self.buffering_strategy.send_initial_conversation(
+            endpoint, self.use_webrtc, text, llm, tts
+        )
+
     async def process_audio(self, endpoint, asr, vad, eou, llm, tts):
         """
         Process the audio data in the buffer using the provided ASR, VAD, EOU,

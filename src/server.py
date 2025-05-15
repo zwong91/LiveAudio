@@ -577,13 +577,10 @@ class Server:
                     stream_sid = data['start']['streamSid']
                     print(f"Incoming stream has started {stream_sid}")
                     client.set_stream_sid(stream_sid)
-                    # 读取音频文件
-                    first_audio = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "Ahoy.wav")
-                    pcm_chunk = await read_audio_file(first_audio)
-                    client.append_audio_data(pcm_chunk, 0)
-                    # 异步task处理音频
-                    await client.process_audio(
-                        websocket, self.asr, self.vad, self.eou, self.llm, self.tts
+
+                    first_messgae = "您好！我是小赖,受聘於「大赖市調研究中心」進行房地产市場調查。請問您最近有空嗎？我想了解一下您具體的购房想法和需求，看看我能如何進一步協助您。"
+                    await client.send_initial_conversation(
+                        websocket, first_messgae, self.llm, self.tts
                     )
                     latest_media_timestamp = 0
                 elif data['event'] == 'mark':
