@@ -4,6 +4,7 @@ Original source: LiveKit Agents Project
 License: Apache License 2.0
 """
 
+from typing import Any, Dict
 from transformers import AutoTokenizer
 from huggingface_hub import hf_hub_download, snapshot_download
 import onnxruntime as ort
@@ -11,7 +12,7 @@ import numpy as np
 from pathlib import Path
 import time
 import logging
-from .eou_interface import EOUInterface
+from .turn_interface import TurnInterface
 
 # Constants
 HG_MODEL = "livekit/turn-detector"
@@ -21,7 +22,7 @@ MAX_HISTORY = 4
 MAX_HISTORY_TOKENS = 512
 UNLIKELY_THRESHOLD = 0.15
 
-class EOUDetector(EOUInterface):
+class LKTurn(TurnInterface):
     def __init__(self, model_path=None):
         """
         Initialize the ONNX model and tokenizer.
@@ -50,10 +51,10 @@ class EOUDetector(EOUInterface):
             )
 
             self.eou_index = self.tokenizer.encode("<|im_end|>")[0]
-            logging.info(f"EOUDetector initialization took: {time.time() - start_time:.2f} seconds")
+            logging.info(f"LKTurn initialization took: {time.time() - start_time:.2f} seconds")
 
         except Exception as e:
-            logging.error(f"EOUDetector initialization error: {e}")
+            logging.error(f"LKTurn initialization error: {e}")
             raise
 
     def normalize(self, text):
@@ -94,7 +95,7 @@ class EOUDetector(EOUInterface):
         exp_logits = np.exp(logits - np.max(logits))
         return exp_logits / exp_logits.sum()
 
-    def predict_end_of_turn(self, chat_context):
+    async def predict_endpoint(self, chat_context)-> Dict[str, Any]:
         """
         Predict whether the current turn is complete.
 
@@ -104,7 +105,8 @@ class EOUDetector(EOUInterface):
         Returns:
             float: Probability of end of turn
         """
-        formatted_text = self.format_chat_context(chat_context)
+
+        formatted_text = self.format_chat_context(chat_context[-MAX_HISTORY:])
 
         inputs = self.tokenizer(
             formatted_text,
@@ -124,21 +126,11 @@ class EOUDetector(EOUInterface):
         last_token_logits = logits[0, -1]
         probs = self.softmax(last_token_logits)
 
-        return float(probs[self.eou_index])
+        completion_prob = float(probs[self.eou_index])
 
-    def turn_taking(self, chat_context, threshold=UNLIKELY_THRESHOLD):
-        """
-        Check if the current turn is complete.
-
-        Args:
-            chat_context (list): List of chat messages
-            threshold (float): Probability threshold for end of turn
-
-        Returns:
-            bool: True if turn is complete, False otherwise
-        """
-        prob = self.predict_end_of_turn(chat_context[-MAX_HISTORY:])
-        return prob >= threshold
-
-    async def detect(self, chat_context, threshold=UNLIKELY_THRESHOLD):
-        return self.turn_taking(chat_context, threshold)
+        logging.debug(f"End of turn probability: {completion_prob:.4f}")
+        prediction = 1 if completion_prob >= UNLIKELY_THRESHOLD else 0
+        return {
+            "prediction": prediction,
+            "probability": completion_prob,
+        }

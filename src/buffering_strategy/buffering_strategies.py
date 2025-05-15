@@ -76,9 +76,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         )
         # 更新对话历史
         self.client.history.append({
-            "role": "assistant",
+            "role": "user",
             "content": text
         })
+
     def stop_processing_task(self):
         """停止 LLM 生成任务"""
         if self.processing_task and not self.processing_task.done():
@@ -135,7 +136,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             if not transcription:
                 return
 
-            # 3. EOU 检测
+            # 3. Turn taking 检测
             if not await self._check_conversation_complete(eou, transcription["text"]):
                 return
 
@@ -176,7 +177,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """检查对话是否完成"""
         # 检查对话完成状态
         messages = self._prepare_messages(text)
-        if not eou.detect(messages):
+        if not eou.predict_endpoint(messages):
             logging.debug("User hasn't finished speaking")
             return False
 

@@ -4,7 +4,7 @@ import argparse
 
 from src.asr.asr_factory import ASRFactory
 from src.vad.vad_factory import VADFactory
-from src.eou.eou_factory import EOUFactory
+from src.turn.turn_factory import EOUFactory
 from src.llm.llm_factory import LLMFactory
 from src.tts.tts_factory import TTSFactory
 

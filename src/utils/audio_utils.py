@@ -14,6 +14,11 @@ import pyloudnorm as pyln
 # 2^(16-1)
 INT16_MAX_ABS_VALUE = 32768.0
 
+def normalize_value(value, min_value, max_value):
+    normalized = (value - min_value) / (max_value - min_value)
+    normalized_clamped = max(0, min(1, normalized))
+    return normalized_clamped
+
 def calculate_audio_volume(audio: bytes, sample_rate: int) -> float:
     audio_np = np.frombuffer(audio, dtype=np.int16)
     audio_float = audio_np.astype(np.float64)
@@ -27,12 +32,6 @@ def calculate_audio_volume(audio: bytes, sample_rate: int) -> float:
     loudness = normalize_value(loudness, -20, 80)
 
     return loudness
-
-
-def normalize_value(value, min_value, max_value):
-    normalized = (value - min_value) / (max_value - min_value)
-    normalized_clamped = max(0, min(1, normalized))
-    return normalized_clamped
 
 
 def next_power_of_2(x):
