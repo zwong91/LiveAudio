@@ -118,6 +118,7 @@ class LKTurn(TurnInterface):
         input_dict = {"input_ids": np.array(inputs["input_ids"], dtype=np.int64)}
 
         outputs = self.session.run(None, input_dict)
+        print(f"Model outputs: {outputs}")
         completion_prob = outputs[0][0]  # Extract probability
 
         print(f"End of turn probability: {completion_prob:.4f}")
