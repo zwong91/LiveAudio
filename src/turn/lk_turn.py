@@ -125,7 +125,7 @@ class LKTurn(TurnInterface):
 
         # Process output
         logits = output[0]
-        last_token_logits = logits[0, -1]
+        last_token_logits = logits[-1]
         probs = self.softmax(last_token_logits)
 
         completion_prob = float(probs[self.eou_index])
