@@ -72,7 +72,7 @@ class SmartTurn(TurnInterface):
             completion_prob = probabilities[0, 1].item()  # Probability of class 1 (Complete)
             prediction = 1 if completion_prob > 0.5 else 0
 
-        logging.debug(f"End of turn probability: {completion_prob:.4f}")
+        print(f"End of turn probability: {completion_prob:.4f}")
         return {
             "prediction": prediction,
             "probability": completion_prob,
