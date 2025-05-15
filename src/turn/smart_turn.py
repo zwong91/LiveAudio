@@ -5,7 +5,7 @@
 #
 
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import logging
@@ -42,10 +42,10 @@ class SmartTurn(TurnInterface):
         self._turn_model.eval()
         logging.debug("Loaded Local Smart Turn")
 
-    async def predict_endpoint(self, buffer) -> Dict[str, Any]:
+    async def predict_endpoint(self, context: Optional[List[Dict[str, str]]], buffer: Optional[bytes]) -> Dict[str, Any]:
 
         # Check input type
-        if not isinstance(buffer, bytes):
+        if buffer is not None and not isinstance(buffer, bytes):
             raise ValueError("Input buffer must be of type bytes")
 
         audio_int16 = np.frombuffer(buffer, np.int16)

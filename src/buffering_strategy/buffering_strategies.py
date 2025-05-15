@@ -176,7 +176,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
     async def _check_conversation_complete(self, eou, text):
         """检查对话是否完成"""
         messages = self._prepare_messages(text)
-        result = await eou.predict_endpoint(messages)
+        result = await eou.predict_endpoint(messages, self.client.scratch_buffer)
 
         if not result["prediction"]:
             logger.debug(f"User hasn't finished speaking (prob: {result['probability']:.3f})")

@@ -4,7 +4,7 @@ Original source: LiveKit Agents Project
 License: Apache License 2.0
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 from transformers import AutoTokenizer
 from huggingface_hub import hf_hub_download, snapshot_download
 import onnxruntime as ort
@@ -95,7 +95,7 @@ class LKTurn(TurnInterface):
         exp_logits = np.exp(logits - np.max(logits))
         return exp_logits / exp_logits.sum()
 
-    async def predict_endpoint(self, chat_context)-> Dict[str, Any]:
+    async def predict_endpoint(self, context: Optional[List[Dict[str, str]]], audio: Optional[bytes])-> Dict[str, Any]:
         """
         Predict whether the current turn is complete.
 
@@ -105,10 +105,10 @@ class LKTurn(TurnInterface):
         Returns:
             float: Probability of end of turn
         """
-        if not isinstance(chat_context, list):
-            raise ValueError("chat_context must be a list of messages")
+        if context is not None and not isinstance(context, list):
+            raise ValueError("context must be a list of messages")
 
-        formatted_text = self.format_chat_context(chat_context[-MAX_HISTORY:])
+        formatted_text = self.format_chat_context(context[-MAX_HISTORY:])
 
         inputs = self.tokenizer(
             formatted_text,
