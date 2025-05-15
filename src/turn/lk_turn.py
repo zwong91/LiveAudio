@@ -116,16 +116,8 @@ class LKTurn(TurnInterface):
         )
 
         input_dict = {"input_ids": np.array(inputs["input_ids"], dtype=np.int64)}
-        # # Run inference
-        # output = self.session.run(["logits"], input_dict)
 
-        # # Process output
-        # logits = output[0]
-        # last_token_logits = logits[0, -1]
-        # probs = self.softmax(last_token_logits)
-        # completion_prob = float(probs[self.eou_index])
-
-        outputs = session.run(None, {"input_ids": inputs["input_ids"]})
+        outputs = self.session.run(None, {"input_ids": inputs["input_ids"]})
         completion_prob = outputs[0][0]  # Extract probability
 
         print(f"End of turn probability: {completion_prob:.4f}")
