@@ -28,7 +28,7 @@ from aiortc import MediaStreamTrack, VideoStreamTrack
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse, Connect
 
-from .utils.audio_utils import ulaw_to_pcm16k
+from .utils.audio_utils import read_audio_file, ulaw_to_pcm16k
 
 import aiohttp
 from dotenv import load_dotenv
@@ -577,6 +577,10 @@ class Server:
                     stream_sid = data['start']['streamSid']
                     print(f"Incoming stream has started {stream_sid}")
                     client.set_stream_sid(stream_sid)
+                    # 读取音频文件
+                    first_audio = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "hello.mp3")
+                    pcm_chunk = await read_audio_file(first_audio)
+                    client.append_audio_data(pcm_chunk, 0)
                     latest_media_timestamp = 0
                 elif data['event'] == 'mark':
                     if mark_queue:

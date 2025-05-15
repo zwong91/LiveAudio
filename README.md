@@ -12,11 +12,6 @@ Welcome to the VoiceAgent repository! This project hosts exciting applications l
 git clone https://github.com/zwong91/VoiceAgent.git
 cd VoiceAgent
 
-docker run -it --platform linux/amd64 \
-  -v "$(pwd)":/mnt/ \
-  ubuntu:24.04 \
-  bash
-
 # System dependencies (Ubuntu/Debian)
 apt update
 apt install curl ffmpeg libopenblas-dev vim git-lfs \
@@ -44,7 +39,7 @@ source va/bin/activate
 uv pip install -r requirements.txt
 
 # Install ollama https://github.com/ollama/ollama/releases
-HTTPS_PROXY=http://192.168.31.219:10792 curl -fsSL https://ollama.com/install.sh | sh
+curl -fsSL https://ollama.com/install.sh | sh
 ```
 
 ### Open an ngrok tunnel
