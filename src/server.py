@@ -581,6 +581,10 @@ class Server:
                     first_audio = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "hello.mp3")
                     pcm_chunk = await read_audio_file(first_audio)
                     client.append_audio_data(pcm_chunk, 0)
+                    # 异步task处理音频
+                    await client.process_audio(
+                        websocket, self.asr, self.vad, self.eou, self.llm, self.tts
+                    )
                     latest_media_timestamp = 0
                 elif data['event'] == 'mark':
                     if mark_queue:
