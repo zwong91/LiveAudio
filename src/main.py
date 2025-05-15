@@ -4,7 +4,7 @@ import argparse
 
 from src.asr.asr_factory import ASRFactory
 from src.vad.vad_factory import VADFactory
-from src.turn.turn_factory import EOUFactory
+from src.turn.turn_factory import TurnFactory
 from src.llm.llm_factory import LLMFactory
 from src.tts.tts_factory import TTSFactory
 
@@ -19,9 +19,10 @@ def parse_args():
     )
     parser.add_argument("--vad-type", type=str, default="silero", help="VAD pipeline type")
     parser.add_argument("--vad-args", type=str, default='{"auth_token": "huggingface_token"}', help="VAD args (JSON string)")
+    parser.add_argument("--turn-type", type=str, default="livekit", help="turn taking type")
+
     parser.add_argument("--asr-type", type=str, default="whisper", help="ASR pipeline type")
     parser.add_argument("--asr-args", type=str, default='{"model_size": "distil-large-v3"}', help="ASR args (JSON string)")
-    parser.add_argument("--eou-type", type=str, default="livekit", help="turn taking type")
     parser.add_argument("--llm-type", type=str, default="openai", help="OPENAI pipeline type")
     parser.add_argument("--tts-type", type=str, default="edge", help="TTS pipeline type")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host for the WebSocket server")
@@ -49,7 +50,7 @@ def main():
     # Create VAD and ASR and LLM and TTS pipelines
     asr = ASRFactory.create_asr_pipeline(args.asr_type, **asr_args)
     vad = VADFactory.create_vad_pipeline(args.vad_type, **vad_args)
-    eou = EOUFactory.create_eou_pipeline(args.eou_type)
+    eou = TurnFactory.create_turn_pipeline(args.turn_type)
     llm = LLMFactory.create_llm_pipeline(args.llm_type)
     tts = TTSFactory.create_tts_pipeline(args.tts_type)
 

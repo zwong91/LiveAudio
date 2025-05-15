@@ -1,5 +1,5 @@
 from .lk_turn import LKTurn
-from .pipecat_turn import PIPETurn
+from .smart_turn import SmartTurn
 
 class TurnFactory:
     @staticmethod
@@ -7,6 +7,6 @@ class TurnFactory:
         if turn_type == "livekit":
             return LKTurn(**kwargs)
         elif turn_type == "pipecat":
-            return PIPETurn(**kwargs)
+            return SmartTurn(**kwargs)
         else:
             raise ValueError(f"Unknown Turn pipeline type: {turn_type}")

@@ -20,7 +20,7 @@ except ModuleNotFoundError as e:
     raise Exception(f"Missing module: {e}")
 
 
-class PIPETurn(TurnInterface):
+class SmartTurn(TurnInterface):
     def __init__(self, *, smart_turn_model_path: str, **kwargs):
         super().__init__(**kwargs)
 
