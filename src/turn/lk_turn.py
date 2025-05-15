@@ -135,7 +135,7 @@ class LKTurn(TurnInterface):
         probs = output[0]  # shape: (vocab_size,)
         print("probs shape:", probs.shape)
         print("probs:", probs)
-        completion_prob = float(probs[self.eou_index])
+        completion_prob = float(probs[0])
 
         logging.debug(f"End of turn probability: {completion_prob:.4f}")
         prediction = 1 if completion_prob >= UNLIKELY_THRESHOLD else 0
