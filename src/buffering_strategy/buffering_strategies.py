@@ -68,11 +68,17 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
 
     async def send_initial_conversation(self, endpoint, use_webrtc, text, llm, tts):
-        # 生成和播放响应
-        await self._generate_and_play_response(
-            endpoint, use_webrtc, llm, tts, text
+        await self._stream_tts(
+            endpoint,
+            use_webrtc,
+            tts,
+            text
         )
-
+        # 更新对话历史
+        self.client.history.append({
+            "role": "assistant",
+            "content": text
+        })
     def stop_processing_task(self):
         """停止 LLM 生成任务"""
         if self.processing_task and not self.processing_task.done():
