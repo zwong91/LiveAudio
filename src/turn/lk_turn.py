@@ -118,7 +118,7 @@ class LKTurn(TurnInterface):
         input_dict = {"input_ids": np.array(inputs["input_ids"], dtype=np.int64)}
 
         outputs = self.session.run(None, input_dict)
-        completion_prob = outputs[0][1]  # Extract probability
+        completion_prob = outputs[0][0]  # Extract probability
 
         print(f"End of turn probability: {completion_prob:.4f}")
         prediction = 1 if completion_prob >= UNLIKELY_THRESHOLD else 0
