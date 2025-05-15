@@ -21,7 +21,7 @@ except ModuleNotFoundError as e:
 
 
 class SmartTurn(TurnInterface):
-    def __init__(self, *, smart_turn_model_path: str, **kwargs):
+    def __init__(self, *, smart_turn_model_path: Optional[str] = None, **kwargs):
         super().__init__(**kwargs)
 
         if not smart_turn_model_path:

@@ -19,7 +19,7 @@ def parse_args():
     )
     parser.add_argument("--vad-type", type=str, default="silero", help="VAD pipeline type")
     parser.add_argument("--vad-args", type=str, default='{"auth_token": "huggingface_token"}', help="VAD args (JSON string)")
-    parser.add_argument("--turn-type", type=str, default="livekit", help="turn taking type")
+    parser.add_argument("--turn-type", type=str, default="pipecat", help="turn taking type")
 
     parser.add_argument("--asr-type", type=str, default="whisper", help="ASR pipeline type")
     parser.add_argument("--asr-args", type=str, default='{"model_size": "distil-large-v3"}', help="ASR args (JSON string)")
