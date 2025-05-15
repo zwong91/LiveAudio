@@ -578,7 +578,7 @@ class Server:
                     print(f"Incoming stream has started {stream_sid}")
                     client.set_stream_sid(stream_sid)
                     # 读取音频文件
-                    first_audio = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "hello.mp3")
+                    first_audio = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "Ahoy.wav")
                     pcm_chunk = await read_audio_file(first_audio)
                     client.append_audio_data(pcm_chunk, 0)
                     # 异步task处理音频
@@ -589,6 +589,10 @@ class Server:
                 elif data['event'] == 'mark':
                     if mark_queue:
                         mark_queue.pop(0)
+                elif data['event'] == 'stop':
+                    print(f"Incoming stream has stopped {stream_sid}")
+                    client.set_stream_sid(None)
+                    client.clear_buffer()
                 else:
                     await websocket.send_json({"type": "error", "message": f"Unknown message type: {data['event']}"})
 
