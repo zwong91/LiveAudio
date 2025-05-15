@@ -97,7 +97,7 @@ class LKTurn(TurnInterface):
         exp_logits = np.exp(logits - np.max(logits))
         return exp_logits / exp_logits.sum()
 
-    async def predict_endpoint(self, context: Optional[List[Dict[str, str]]], audio: Optional[bytes])-> Dict[str, Any]:
+    async def predict_endpoint(self, context: Optional[List[Dict[str, str]]], audio: Optional[bytearray])-> Dict[str, Any]:
         """
         Predict whether the current turn is complete.
 
