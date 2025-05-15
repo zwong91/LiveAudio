@@ -70,7 +70,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
     async def send_initial_conversation(self, endpoint, use_webrtc, text, llm, tts):
         # 生成和播放响应
         await self._generate_and_play_response(
-            endpoint, use_webrtc, text, llm, tts
+            endpoint, use_webrtc, llm, tts, text
         )
 
     def stop_processing_task(self):
