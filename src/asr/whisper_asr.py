@@ -1,35 +1,33 @@
 import os
 import torch
+import numpy as np
 from transformers import pipeline
-
-from src.utils.audio_utils import save_audio_to_file
-
 from .asr_interface import ASRInterface
-
 
 class WhisperASR(ASRInterface):
     def __init__(self, **kwargs):
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        model_name = kwargs.get("model_name", "openai/whisper-large-v3")
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+        model_name = kwargs.get("model_name", "openai/whisper-large-v3-turbo")
         self.asr_pipeline = pipeline(
             "automatic-speech-recognition",
             model=model_name,
+            torch_dtype=torch_dtype,
             device=device,
         )
 
     async def transcribe(self, client):
-        file_path = await save_audio_to_file(
-            client.scratch_buffer, client.get_file_name()
-        )
+        # 转换音频格式
+        samples = np.frombuffer(client.scratch_buffer, dtype=np.int16)
+        float_samples = samples.astype(np.float32) / 32768.0
 
-        to_return = self.asr_pipeline(file_path)["text"]
+        result = self.asr_pipeline(float_samples, return_timestamps=True)
 
-        os.remove(file_path)
-
+        print(f"ASR Result: {result['text']}")
         to_return = {
             "target_lang": "UNSUPPORTED_BY_HUGGINGFACE_WHISPER",
             "language_probability": None,
-            "text": to_return.strip(),
+            "text": result["text"].strip(),
             "words": "UNSUPPORTED_BY_HUGGINGFACE_WHISPER",
         }
         return to_return
