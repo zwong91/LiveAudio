@@ -17,7 +17,7 @@ from .turn_interface import TurnInterface
 # Constants
 HG_MODEL = "livekit/turn-detector"
 ONNX_FILENAME = "model.onnx"
-MODEL_REVISION = "v1.2.1"
+MODEL_REVISION = "multlingual"
 MAX_HISTORY = 4
 MAX_HISTORY_TOKENS = 512
 UNLIKELY_THRESHOLD = 0.15
@@ -120,11 +120,8 @@ class LKTurn(TurnInterface):
 
         input_dict = {"input_ids": np.array(inputs["input_ids"], dtype=np.int64)}
 
-        for output in self.session.get_outputs():
-            print(f"Output name: {output.name}, type: {output.type}, shape: {output.shape}")
-
         # Run inference
-        output = self.session.run(["logits"], input_dict)
+        output = self.session.run(["prob"], input_dict)
 
         # Process output
         logits = output[0]
