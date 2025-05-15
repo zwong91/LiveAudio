@@ -131,9 +131,8 @@ class LKTurn(TurnInterface):
         # completion_prob = float(probs[self.eou_index])
 
         output = self.session.run(["prob"], input_dict)
-        probs = output[0]                      # already softmaxed
-        last_token_probs = probs[0, -1]        # pick last token
-        completion_prob = float(last_token_probs[self.eou_index])  # eou_index 是你关心的 token
+        probs = output[0]  # shape: (vocab_size,)
+        completion_prob = float(probs[self.eou_index])
 
         logging.debug(f"End of turn probability: {completion_prob:.4f}")
         prediction = 1 if completion_prob >= UNLIKELY_THRESHOLD else 0
