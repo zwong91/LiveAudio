@@ -135,12 +135,13 @@ class LKTurn(TurnInterface):
             raise ValueError("context must be a list of messages")
 
         if not self.supports_language(last_language):
-            logging.debug("Turn detector does not support language %s", last_language)
+            print("Turn detector does not support language %s", last_language)
 
         unlikely_threshold = self.unlikely_threshold(last_language)
         if unlikely_threshold is None:
+            print("Turn detector does not support language %s", last_language)
             return {
-                "prediction": 0,
+                "prediction": 1,
                 "probability": 0.0,
             }
         start_time = time.perf_counter()
