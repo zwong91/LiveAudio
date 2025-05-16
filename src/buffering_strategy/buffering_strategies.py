@@ -85,14 +85,15 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
     async def stop_processing_task(self):
         """停止 LLM 生成任务"""
-        if self.processing_task and not self.processing_task.done():
+        if self.processing_task:
             self.processing_task.cancel()
-            logging.info("Stopping processing task...")
-            self.interruption = True  # 设置中断状态
             try:
                 await self.processing_task
+                logging.info("Stopping processing task...")
+                self.interruption = True  # 设置中断状态
             except asyncio.CancelledError:
-                logging.info("Processing task was cancelled successfully.")
+                pass
+            self.processing_task = None
 
     def _should_process_new_chunk(self):
         """判断是否需要处理新的音频块"""
