@@ -111,21 +111,27 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         #     return
 
         if not self._should_process_new_chunk():
+            print("Buffer not full enough to process new chunk")
             return
 
         # 1. VAD 检测
         if not await self._handle_vad_detection(vad):
+            # 如果 VAD 检测到语音开始，更新最后一次语音开始时间
+            print("VAD detected no speech")
             return
 
         # 2. 语音转文字
         transcription = await self._transcribe_audio(asr)
         if not transcription:
+            print("Transcription failed or empty")
             return
 
         text = transcription["text"]
 
         # 3. Turn taking 检测
         if not await self._check_conversation_complete(eou, text):
+            # 如果没有检测到完整的对话，继续等待
+            print("Turn not complete")
             return
 
         # 开始处理新的音频块
