@@ -21,7 +21,7 @@ class SenseVoiceASR(ASRInterface):
 
     async def transcribe(self, client):
         file_path = await save_audio_to_file(
-            client.scratch_buffer, client.get_file_name()
+            client.buffer, client.get_file_name()
         )
         text = self.asr_pipeline.generate(
             input=file_path, cache={},

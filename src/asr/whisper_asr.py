@@ -18,7 +18,7 @@ class WhisperASR(ASRInterface):
 
     async def transcribe(self, client):
         # 转换音频格式
-        samples = np.frombuffer(client.scratch_buffer, dtype=np.int16)
+        samples = np.frombuffer(client.buffer, dtype=np.int16)
         float_samples = samples.astype(np.float32) / 32768.0
 
         result = self.asr_pipeline(float_samples, return_timestamps=True)

@@ -123,7 +123,7 @@ class FasterWhisperASR(ASRInterface):
 
     async def transcribe(self, client):
         file_path = await save_audio_to_file(
-            client.scratch_buffer, client.get_file_name()
+            client.buffer, client.get_file_name()
         )
 
         segments, info = self.asr_pipeline.transcribe(
