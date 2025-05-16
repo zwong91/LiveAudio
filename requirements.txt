@@ -38,14 +38,14 @@ transformers>=4.48.0
 deepspeed==0.16.7
 langid
 PyPDF2
-
+deepfilternet
 fastapi
 uvicorn[standard]
 aiortc
 av
 aiohttp
 resampy
-
+noisereduce
 streamlit
 streamlit-webrtc
 gdown
