@@ -95,7 +95,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             * self.client.sampling_rate
             * self.client.samples_width
         )
-        return len(self.client.scratch_buffer) > chunk_length_in_bytes
+        return len(self.client.buffer) > chunk_length_in_bytes
 
     async def process_audio(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
         """处理音频数据，管理任务状态"""
@@ -109,6 +109,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         #     # 清理旧数据
         #     self._clear_buffers()
         #     return
+
+        if not self._should_process_new_chunk():
+            return
 
         # 开始处理新的音频块
         self.client.scratch_buffer.extend(self.client.buffer)
@@ -129,9 +132,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if not await self._check_conversation_complete(eou, text):
             # 如果没有检测到完整的对话，继续等待
             print("Turn not complete")
-            # 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
-            # if not self._should_process_new_chunk():
-            #     # 如果没有新的音频块，继续等待
+            #FIXME: 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
             return
 
         if self.processing_task is None or self.processing_task.done():
