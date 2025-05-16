@@ -161,7 +161,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             return False
 
         last_segment_should_end_before = (
-            len(self.client.scratch_buffer)
+            len(self.client.buffer)
             / (self.client.sampling_rate * self.client.samples_width)
         ) - self.chunk_offset_seconds
 
