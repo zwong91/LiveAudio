@@ -42,7 +42,7 @@ class SmartTurn(TurnInterface):
         self._turn_model.eval()
         logging.debug("Loaded Local Smart Turn")
 
-    async def predict_endpoint(self, context: Optional[List[Dict[str, str]]], buffer: Optional[bytearray]) -> Dict[str, Any]:
+    async def predict_endpoint(self, context: Optional[List[Dict[str, str]]], last_language: str, buffer: Optional[bytearray]) -> Dict[str, Any]:
 
         # Check input type
         if buffer is not None and not isinstance(buffer, bytearray):

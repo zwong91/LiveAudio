@@ -9,6 +9,8 @@ from ..utils.misc import smart_split
 from ..utils.audio_utils import pcm16k_to_ulaw
 import base64
 
+import langid
+
 logger = logging.getLogger(__name__)
 
 class SilenceAtEndOfChunk(BufferingStrategyInterface):
@@ -76,7 +78,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         )
         # 更新对话历史
         self.client.history.append({
-            "role": "user",
+            "role": "assistant",
             "content": text
         })
 
@@ -109,7 +111,20 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         #     self._clear_buffers()
         #     return
 
-        if not self._should_process_new_chunk():
+        # if not self._should_process_new_chunk():
+        #     return
+
+        # 1. VAD 检测
+        if not await self._handle_vad_detection(vad):
+            return
+
+        # 2. 语音转文字
+        transcription = await self._transcribe_audio(asr)
+        if not transcription:
+            return
+
+        # 3. Turn taking 检测
+        if not await self._check_conversation_complete(eou, transcription["text"]):
             return
 
         # 检查是否有新的音频数据, process it
@@ -127,20 +142,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """异步处理音频并生成响应"""
         start = time.time()
         try:
-            # 1. VAD 检测
-            if not await self._handle_vad_detection(vad):
-                return
-
-            # 2. 语音转文字
-            transcription = await self._transcribe_audio(asr)
-            if not transcription:
-                return
-
-            # 3. Turn taking 检测
-            if not await self._check_conversation_complete(eou, transcription["text"]):
-                return
-
-            # 4. 生成和播放响应
+            # 生成和播放响应
             await self._generate_and_play_response(
                 endpoint, use_webrtc, llm, tts, transcription["text"]
             )
@@ -176,7 +178,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
     async def _check_conversation_complete(self, eou, text):
         """检查对话是否完成"""
         messages = self._prepare_messages(text)
-        result = await eou.predict_endpoint(messages, self.client.scratch_buffer)
+        last_language, _ = langid.classify(text)
+        result = await eou.predict_endpoint(messages, last_language, self.client.scratch_buffer)
 
         if not result["prediction"]:
             logger.debug(f"User hasn't finished speaking (prob: {result['probability']:.3f})")

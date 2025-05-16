@@ -5,6 +5,7 @@ class TurnInterface:
     async def predict_endpoint(
         self,
         context: Optional[List[Dict[str, str]]] = None,
+        last_language: str = "zh",
         audio: Optional[bytearray] = None
     ) -> Dict[str, Any]:
         """检测当前轮次是否完成
@@ -12,6 +13,8 @@ class TurnInterface:
         Args:
             context: 对话消息历史
                 List of messages with "role" and "content" keys
+            last_language: 上一轮的语言
+                str: 语言代码, e.g., "zh", "en"
             audio: 音频数据
                 bytearray: Raw PCM 16kHz audio data
 
