@@ -25,7 +25,6 @@ MAX_HISTORY_TOKENS = 256
 class LKTurn(TurnInterface):
     def __init__(
         self,
-        model_path=None,
         # if set, overrides the per-language threshold tuned for accuracy.
         # not recommended unless you're confident in the impact.
         unlikely_threshold: float | None = None,
@@ -49,7 +48,7 @@ class LKTurn(TurnInterface):
             with open(config_fname) as f:
                 self.languages = json.load(f)
 
-            self.unlikely_threshold = unlikely_threshold
+            self._unlikely_threshold = unlikely_threshold
             # Initialize session and tokenizer
             self.session = ort.InferenceSession(local_path, providers=["CPUExecutionProvider"])
             self.tokenizer = AutoTokenizer.from_pretrained(
@@ -112,8 +111,8 @@ class LKTurn(TurnInterface):
             logging.warning(f"Language {language} not supported by EOU model")
             return None
         # if a custom threshold is provided, use it
-        if self.unlikely_threshold is not None:
-            return self.unlikely_threshold
+        if self._unlikely_threshold is not None:
+            return self._unlikely_threshold
         else:
             return lang_data["threshold"]
 
