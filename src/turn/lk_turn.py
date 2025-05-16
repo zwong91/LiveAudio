@@ -38,12 +38,14 @@ class LKTurn(TurnInterface):
                 filename=ONNX_FILENAME,
                 subfolder="onnx",
                 revision=MODEL_REVISION,
+                local_files_only=True,
             )
 
             config_fname = hf_hub_download(
                 repo_id=HG_MODEL,
                 filename="languages.json",
                 revision=MODEL_REVISION,
+                local_files_only=True,
             )
             with open(config_fname) as f:
                 self.languages = json.load(f)
@@ -159,7 +161,7 @@ class LKTurn(TurnInterface):
         eou_probability = outputs[0][0]
         end_time = time.perf_counter()
 
-        print(f"End of turn probability: {float(eou_probability):.4f}, duration: {end_time - start_time:.4f} seconds")
+        print(f"End of turn probability: {float(eou_probability):.4f}, unlikely_threshold: {unlikely_threshold} ,duration: {end_time - start_time:.4f} seconds")
 
         prediction = 1 if float(eou_probability) >= unlikely_threshold else 0
         return {
