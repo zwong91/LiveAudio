@@ -332,7 +332,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # 系统提示词
         messages = [{
             "role": "system",
-            "content": chat_prompt if self.client.config["is_simultaneous"] else translation_prompt
+            "content": chat_prompt if not self.client.config["is_simultaneous"] else translation_prompt
         }]
 
         # 获取历史消息
