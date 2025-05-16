@@ -99,17 +99,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
     async def process_audio(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
         """处理音频数据，管理任务状态"""
-        # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
-        # Interrupt handling/AI preemption 清除流缓冲区并发送 truncate
-        # # 如果AI正在说话且检测到新语音，执行中断
-        # if (not self.processing_task.done() and
-        #     await self._handle_vad_detection(vad)):
-        #     # 停止当前任务
-        #     self.stop_processing_task()
-        #     # 清理旧数据
-        #     self._clear_buffers()
-        #     return
-
         if not self._should_process_new_chunk():
             return
 
@@ -125,6 +114,11 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         transcription = await self._transcribe_audio(asr)
         if not transcription:
             return
+
+        # 如果AI正在说话且检测到新语音，执行中断
+        # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
+        # Interrupt handling/AI preemption 清除流缓冲区并发送 truncate
+        self.stop_processing_task()
 
         text = transcription["text"]
         print(f"Transcription result: {text}")
