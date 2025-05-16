@@ -24,7 +24,7 @@ class WorkflowLLM(LLMInterface):
         }
         self.url = req_host + req_url + workflow_id
 
-    async def generate_stream(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
+    async def generate_stream(self, messages: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
         """流式生成回复，支持中断"""
         try:
             start_time = time.time()

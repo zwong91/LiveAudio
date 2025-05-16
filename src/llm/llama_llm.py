@@ -12,7 +12,7 @@ import torch
 import asyncio
 from sentence_transformers import SentenceTransformer, util
 from llama_cpp import Llama
-from .prompt import translation_prompt, chat_prompt
+from ..prompts.sys_prompt import translation_prompt, chat_prompt
 
 class LlamaLLM(LLMInterface):
     def __init__(
@@ -56,31 +56,9 @@ class LlamaLLM(LLMInterface):
         relevant_context = [self.vault_content[idx].strip() for idx in top_indices]
         return relevant_context
 
-    def _prepare_messages(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str):
-        """准备消息上下文"""
-        if history is None:
-            history = []
-
-        # 获取相关知识库内容
-        relevant_context = self.get_relevant_context(query, self.vault_embeddings)
-        if relevant_context:
-            query = "\n".join(relevant_context) + "\n\n" + query
-
-        query = query + "\n\n" + f"always use {target_lang} answer" if target_lang else query
-        history.append({"role": "user", "content": query})
-
-        template = translation_prompt if simultaneous else chat_prompt
-        system_prompt = template.replace("{{target_lang}}", target_lang or "")
-
-        messages = [{"role": "system", "content": system_prompt}]
-        messages.extend(history)
-        return messages, history
-
-    async def generate_stream(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
+    async def generate_stream(self, messages: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
         """流式生成回复，支持中断"""
         try:
-            messages, updated_history = self._prepare_messages(history, query, simultaneous, target_lang)
-
             start_time = time.time()
             stream = self.model.create_chat_completion(
                 messages,

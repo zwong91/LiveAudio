@@ -13,7 +13,7 @@ import torch
 import asyncio
 
 from sentence_transformers import SentenceTransformer, util
-from .prompt import translation_prompt, chat_prompt
+from ..prompts.sys_prompt import translation_prompt, chat_prompt
 
 from ollama import AsyncClient
 

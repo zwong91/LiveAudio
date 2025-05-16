@@ -6,7 +6,6 @@ import asyncio
 from openai._types import NOT_GIVEN
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
-from .prompt import translation_prompt, chat_prompt
 
 # Load environment variables
 load_dotenv(override=True)
@@ -32,26 +31,9 @@ class OpenAILLM(LLMInterface):
         self.tool_choice = tool_choice
         self.functions = functions
 
-    def _prepare_messages(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str):
-        """准备消息上下文"""
-        if history is None:
-            history = []
-
-        # 获取相关知识库内容
-        history.append({"role": "user", "content": query})
-
-        template = translation_prompt if simultaneous else chat_prompt
-        system_prompt = template.replace("{{target_lang}}", target_lang or "")
-
-        messages = [{"role": "system", "content": system_prompt}]
-        messages.extend(history)
-        return messages, history
-
-    async def generate_stream(self, history: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
+    async def generate_stream(self, messages: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
         """流式生成回复，支持中断"""
         try:
-            messages, updated_history = self._prepare_messages(history, query, simultaneous, target_lang)
-
             start_time = time.time()
             stream = await self.aclient.chat.completions.create(
                 model=self.model,

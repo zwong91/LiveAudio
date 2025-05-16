@@ -10,6 +10,7 @@ from ..utils.audio_utils import pcm16k_to_ulaw
 import base64
 
 import langid
+from ..prompts.sys_prompt import translation_prompt, chat_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -208,8 +209,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         response_buffer = []
         try:
             # 创建并开始 LLM 生成流
+            messages = self._prepare_messages(text)
             stream = llm.generate_stream(
-                self.client.history,
+                messages,
                 text,
                 self.client.config["is_simultaneous"],
                 self.client.config["target_lang"]
@@ -247,21 +249,19 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     buffer
                 )
 
-            # 更新对话历史
-            self.client.history.append({
-                "role": "assistant",
-                "content": "".join(response_buffer)
-            })
-            # 更新客户端状态
-            self._update_client_state(self.client.history)
-
         except asyncio.CancelledError:
             logger.info("Response generation interrupted")
         except Exception as e:
             logger.error(f"Error generating response: {e}")
             raise
         finally:
-            return
+            # Always update history with what we got
+            if response_buffer:
+                self.client.history.append({
+                    "role": "assistant",
+                    "content": "".join(response_buffer)
+                })
+                self._update_client_state(self.client.history)
 
     async def _stream_tts(
         self,
@@ -278,6 +278,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             tts: TTS 管道
             text: 要转换的文本块
         """
+        if not text.strip():
+            return
+
         try:
             async for chunk in tts.text_to_speech_stream(
                 text,
@@ -285,10 +288,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.client.config["is_simultaneous"]
             ):
                 await self._send(endpoint, use_webrtc, chunk)
+        except asyncio.CancelledError:
+            logger.info(f"TTS stream cancelled: {text[:30]}...")
         except Exception as e:
-            logger.error(f"Error in TTS streaming: {e}")
-            # 继续处理，不中断整个流程
-            pass
+            logger.error(f"TTS error: {e}")
 
     async def _send(self, endpoint, use_webrtc: bool, chunk: bytes):
         """发送音频数据
@@ -321,24 +324,32 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.client.scratch_buffer.clear()
         self.client.increment_file_counter()
 
-    def _prepare_messages(self, transcription_text: str) -> tuple[str, bool]:
-        """准备要发送给 LLM 的消息
-
-        Args:
-            transcription_text: 转录文本
-
-        Returns:
-            tuple: (处理后的文本, 是否完整对话)
-        """
+    def _prepare_messages(self, transcription_text: str) -> list:
+        """准备要发送给 LLM 的消息并更新历史"""
         if not transcription_text:
-            return False
+            return []
 
+        # 系统提示词
+        messages = [{
+            "role": "system",
+            "content": chat_prompt if self.client.config["is_simultaneous"] else translation_prompt
+        }]
+
+        # 获取历史消息
+        history = getattr(self.client, 'history', []).copy()
+
+        # 添加用户新消息
         user_message = {
             "role": "user",
             "content": transcription_text
         }
-        messages = getattr(self.client, 'history', []).copy()  # 复制现有历史
-        messages.append(user_message)  # 添加新消息
+
+        # 合并所有消息
+        messages.extend(history)
+        messages.append(user_message)
+
+        # 更新客户端历史 (不包含系统提示词)
+        self.client.history = history + [user_message]
 
         return messages
 
