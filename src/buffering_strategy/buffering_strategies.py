@@ -122,8 +122,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if not transcription:
             return
 
+        text = transcription["text"]
+
         # 3. Turn taking 检测
-        if not await self._check_conversation_complete(eou, transcription["text"]):
+        if not await self._check_conversation_complete(eou, text):
             return
 
         # 开始处理新的音频块
@@ -131,17 +133,17 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.client.buffer.clear()
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
-                self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
+                self.process_audio_async(endpoint, use_webrtc, text, llm, tts)
             )
 
 
-    async def process_audio_async(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
+    async def process_audio_async(self, endpoint, use_webrtc, text, llm, tts):
         """异步处理音频并生成响应"""
         start = time.time()
         try:
             # 生成和播放响应
             await self._generate_and_play_response(
-                endpoint, use_webrtc, llm, tts, transcription["text"]
+                endpoint, use_webrtc, llm, tts, text
             )
 
         except Exception as e:
