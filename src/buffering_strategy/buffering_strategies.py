@@ -97,6 +97,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
     def _should_process_new_chunk(self):
         """判断是否需要处理新的音频块"""
+        # TODO: 打断AI发言的逻辑
+
         chunk_length_in_bytes = (
             self.chunk_length_seconds
             * self.client.sampling_rate
@@ -323,6 +325,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             use_webrtc: 是否使用 WebRTC
             chunk: 音频数据块
         """
+        if self.interruption:
+            logger.info("Playback was interrupted. Skipping audio send.")
+            return
+
         audio_payload = base64.b64encode(pcm16k_to_ulaw(chunk)).decode('utf-8')
         audio_delta = {
             "event": "media",
@@ -339,6 +345,11 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         except Exception as e:
             logger.error(f"发送失败: {e}")
             raise
+
+        # 控制播放节奏（按chunk的时长休眠）
+        chunk_duration_seconds = len(chunk) / (16000 * 2)  # 16kHz, 16-bit = 2 bytes/sample
+        await asyncio.sleep(chunk_duration_seconds)
+
 
     def _update_client_state(self, updated_history):
         """Update client state after TTS process ends."""
