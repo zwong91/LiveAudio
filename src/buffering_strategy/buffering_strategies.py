@@ -88,6 +88,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if self.processing_task and not self.processing_task.done():
             self.processing_task.cancel()
             self.processing_task = None
+        logging.info("Previous task canceled")
 
     def _should_process_new_chunk(self):
         """判断是否需要处理新的音频块"""
@@ -111,7 +112,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if not await self._handle_vad_detection(vad):
             return
 
-        # Interrupt handling/AI preemption 如果AI正在说话且检测到新语音，执行中断
+        # Interrupt handling/AI preemption 如果AI正在说话且检测到用户插话（新语音），执行中断
         # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
         #FIXME: 清除流缓冲区并发送 truncate like openai？
         self.stop_processing_task()
