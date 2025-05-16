@@ -17,8 +17,8 @@ from .turn_interface import TurnInterface
 
 # Constants
 HG_MODEL = "livekit/turn-detector"
-ONNX_FILENAME = "model_q8.onnx"
-MODEL_REVISION = "v0.1.1-intl"
+ONNX_FILENAME = "model.onnx"
+MODEL_REVISION = "v0.1.0-intl"
 MAX_HISTORY_TURNS = 6
 MAX_HISTORY_TOKENS = 256
 
