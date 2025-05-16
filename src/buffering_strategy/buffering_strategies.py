@@ -229,6 +229,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             async for delta in stream:
                 if self.interruption:
                     logger.info("Interruption detected, stopping llm response generation")
+                    self._clear_buffers()
                     break
                 response_buffer.append(delta)
                 buffer += delta
@@ -239,6 +240,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 for sentence in complete:
                     if self.interruption:
                         logger.info("Interruption detected, stopping tts response generation")
+                        self._clear_buffers()
                         break
                     logging.info(f"seg {seg_idx}: {sentence}\n")
                     await self._stream_tts(
@@ -301,6 +303,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             ):
                 if self.interruption:
                     logger.info("Interruption detected, stopping TTS stream")
+                    self._clear_buffers()
                     break
                 await self._send(endpoint, use_webrtc, chunk)
         except asyncio.CancelledError:
@@ -372,5 +375,5 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """清理所有缓冲区和状态"""
         # 清理音频缓冲
         self.client.scratch_buffer.clear()
-
+        self.processing_task = None
         self.interruption = False  # 重置中断状态
