@@ -581,7 +581,7 @@ class Server:
                     print(f"Incoming stream has started {stream_sid}")
                     client.set_stream_sid(stream_sid)
 
-                    first_messgae = "您好！請問您最近有空嗎？我想了解一下您具體的数字女优想法和需求，看看我能如何進一步協助您。"
+                    first_messgae = "您好！請問您最近还好吗？你想要老婆不要?"
                     await client.send_initial_conversation(
                         websocket, first_messgae, self.llm, self.tts
                     )
