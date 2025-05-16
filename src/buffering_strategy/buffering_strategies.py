@@ -103,7 +103,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # Interrupt handling/AI preemption 清除流缓冲区并发送 truncate
         # # 如果AI正在说话且检测到新语音，执行中断
         # if (not self.processing_task.done() and
-        #     self._should_process_new_chunk()):
+        #     await self._handle_vad_detection(vad)):
         #     # 停止当前任务
         #     self.stop_processing_task()
         #     # 清理旧数据
@@ -111,7 +111,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         #     return
 
         if not self._should_process_new_chunk():
-            print("Buffer not full enough to process new chunk")
             return
 
         # 开始处理新的音频块
@@ -120,14 +119,11 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         # 1. VAD 检测
         if not await self._handle_vad_detection(vad):
-            # 如果 VAD 检测到语音开始，更新最后一次语音开始时间
-            print("VAD detected no speech")
             return
 
         # 2. 语音转文字
         transcription = await self._transcribe_audio(asr)
         if not transcription:
-            print("Transcription failed or empty")
             return
 
         text = transcription["text"]
