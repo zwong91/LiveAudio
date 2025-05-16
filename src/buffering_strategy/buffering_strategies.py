@@ -50,7 +50,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.interruption = kwargs.get("interruption", False)
         self.interrupt_on_speech_start = kwargs.get("interrupt_on_speech_start", True)
         self.interrupt_min_duration = kwargs.get("interrupt_min_duration", 3)
-        self.last_speech_start = 0
+        self.last_speech_end = 0
 
         self.chunk_length_seconds = os.environ.get(
             "BUFFERING_CHUNK_LENGTH_SECONDS"
@@ -134,12 +134,11 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             # 如果没有检测到完整的对话，继续等待
             print("Turn not complete")
             #FIXME: 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
-            elapsed = time.time() - self.last_speech_start
+            elapsed = time.time() - self.last_speech_end
             if elapsed <= self.interrupt_min_duration:
                 logger.debug(f"Skipping full processing: only {elapsed:.2f}s since speech started (min {self.interrupt_min_duration}s)")
                 return
 
-        self.last_speech_start = time.time()
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
                 self.process_audio_async(endpoint, use_webrtc, text, llm, tts)
@@ -346,6 +345,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.client.history = updated_history
         self.client.scratch_buffer.clear()
         self.client.increment_file_counter()
+
+        self.last_speech_end = time.time()
 
     def _prepare_messages(self, transcription_text: str) -> list:
         """准备要发送给 LLM 的消息并更新历史"""
