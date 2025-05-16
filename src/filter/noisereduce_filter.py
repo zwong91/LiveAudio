@@ -16,10 +16,11 @@ except ModuleNotFoundError as e:
     raise Exception(f"Missing module: {e}")
 
 
+# Uses statistical noise reduction techniques
 class NoisereduceFilter(FilterInterface):
     def __init__(self) -> None:
         self._filtering = True
-        self._sample_rate = 0
+        self._sample_rate = 16000
 
 
     async def filter(self, audio: bytes) -> bytes:

@@ -2,6 +2,7 @@ import logging
 import json
 import argparse
 
+from src.filter.filter_factory import FilterFactory
 from src.asr.asr_factory import ASRFactory
 from src.vad.vad_factory import VADFactory
 from src.turn.turn_factory import TurnFactory
@@ -20,7 +21,7 @@ def parse_args():
     parser.add_argument("--vad-type", type=str, default="silero", help="VAD pipeline type")
     parser.add_argument("--vad-args", type=str, default='{"auth_token": "huggingface_token"}', help="VAD args (JSON string)")
     parser.add_argument("--turn-type", type=str, default="livekit", help="turn taking type")
-
+    parser.add_argument("--filter-type", type=str, default='noisereduce', help="Filter type for audio processing")
     parser.add_argument("--asr-type", type=str, default="whisper", help="ASR pipeline type")
     parser.add_argument("--asr-args", type=str, default='{"model_size": "large-v3-turbo"}', help="ASR args (JSON string)")
     parser.add_argument("--llm-type", type=str, default="openai", help="OPENAI pipeline type")
@@ -48,6 +49,11 @@ def main():
         return
 
     # Create VAD and ASR and LLM and TTS pipelines
+    filter = FilterFactory.create_filter_pipeline(args.filter_type)
+    if filter:
+        logging.info(f"Using filter pipeline: {args.filter_type}")
+    else:
+        logging.warning(f"No filter pipeline found for type: {args.filter_type}")
     asr = ASRFactory.create_asr_pipeline(args.asr_type, **asr_args)
     vad = VADFactory.create_vad_pipeline(args.vad_type, **vad_args)
     eou = TurnFactory.create_turn_pipeline(args.turn_type)
@@ -55,7 +61,7 @@ def main():
     tts = TTSFactory.create_tts_pipeline(args.tts_type)
 
     # Create and start server
-    server = Server(asr, vad, eou, llm, tts, host=args.host, port=args.port, certfile=args.certfile, keyfile=args.keyfile)
+    server = Server(filter, asr, vad, eou, llm, tts, host=args.host, port=args.port, certfile=args.certfile, keyfile=args.keyfile)
     asyncio.run(server.start())
 
 if __name__ == "__main__":

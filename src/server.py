@@ -139,6 +139,7 @@ class Server:
 
     def __init__(
         self,
+        filter,
         asr,
         vad,
         eou,
@@ -152,6 +153,7 @@ class Server:
         keyfile=None,
         whip_url=None,
     ):
+        self.filter = filter
         self.asr = asr
         self.vad = vad
         self.eou = eou
@@ -567,7 +569,8 @@ class Server:
                     chunk = data['media']['payload']
                     #TODO: g711_ulaw format
                     pcm_chunk = ulaw_to_pcm16k(base64.b64decode(chunk))
-                    client.append_audio_data(pcm_chunk, 0)
+                    filtered_chunk = await self.filter.filter(pcm_chunk)
+                    client.append_audio_data(filtered_chunk, 0)
                     # 异步task处理音频
                     await client.process_audio(
                         websocket, self.asr, self.vad, self.eou, self.llm, self.tts
