@@ -49,7 +49,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # 中断控制参数
         self.interruption = kwargs.get("interruption", False)
         self.interrupt_on_speech_start = kwargs.get("interrupt_on_speech_start", True)
-        self.interrupt_min_duration = kwargs.get("interrupt_min_duration", 0.3)
+        self.interrupt_min_duration = kwargs.get("interrupt_min_duration", 3)
         self.last_speech_start = 0
 
         self.chunk_length_seconds = os.environ.get(
@@ -134,8 +134,12 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             # 如果没有检测到完整的对话，继续等待
             print("Turn not complete")
             #FIXME: 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
-            return
+            elapsed = time.time() - self.last_speech_start
+            if elapsed <= self.interrupt_min_duration:
+                logger.debug(f"Skipping full processing: only {elapsed:.2f}s since speech started (min {self.interrupt_min_duration}s)")
+                return
 
+        self.last_speech_start = time.time()
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
                 self.process_audio_async(endpoint, use_webrtc, text, llm, tts)

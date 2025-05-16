@@ -243,42 +243,48 @@ class XTTS_v2(TTSInterface):
         t0 = time.time()
         generated_seconds = 0.0
         wav_chunks = []
-        chunks = self.model.inference_stream(
-            text,
-            language,
-            gpt_cond_latent,
-            speaker_embedding,
-            # Streaming reduce it to get faster response, but degrade quality
-            stream_chunk_size=40,
-            overlap_wav_len=1024,
-            # GPT inference
-            temperature=0.01,
-            length_penalty=1.0,
-            repetition_penalty=10.0,
-            top_k=3,
-            top_p=0.97,
-            do_sample=True,
-            speed=1.0,
-            enable_text_splitting=True,
-        )
-
-        #stream synthesize audio
-        for i, chunk in enumerate(chunks):
-            if i == 0:
-                print(f"Time to first chunck: {time.time() - t0} s")
-            wav_chunks.append(chunk)
-            processed_bytes = postprocess_tts_wave_int16(chunk)
-            chunk_duration = len(processed_bytes) / (
-                4 * 24000
-            )  # 4 bytes per sample, 24000 Hz
-            generated_seconds += chunk_duration
-            print(f"Received chunk {i} of audio length {chunk.shape[-1]}, chunk duration: {chunk_duration}")
-            pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
-            # such as chunk size 9600, (a.k.a 24K*20ms*2)
-            print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
-            yield pcm_data_16K
-
-        wav = torch.cat(wav_chunks, dim=0)
-        #real_time_factor= (time.time() - t0) / generated_seconds
-        real_time_factor= (time.time() - t0) / wav.shape[0] * 24000 ## 4 bytes per sample, 24000 Hz
-        print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
+        try:
+            # Start inference stream with specified parameters
+            chunks = self.model.inference_stream(
+                text,
+                language,
+                gpt_cond_latent,
+                speaker_embedding,
+                # Streaming reduce it to get faster response, but degrade quality
+                stream_chunk_size=30,
+                overlap_wav_len=1024,
+                # GPT inference
+                temperature=0.01,
+                length_penalty=1.0,
+                repetition_penalty=10.0,
+                top_k=3,
+                top_p=0.97,
+                do_sample=True,
+                speed=1.0,
+                enable_text_splitting=True,
+            )
+            # Stream synthesize audio
+            for i, chunk in enumerate(chunks):
+                if i == 0:
+                    print(f"Time to first chunck: {time.time() - t0} s")
+                wav_chunks.append(chunk)
+                processed_bytes = postprocess_tts_wave_int16(chunk)
+                chunk_duration = len(processed_bytes) / (4 * 24000)  # 4 bytes per sample, 24000 Hz
+                generated_seconds += chunk_duration
+                print(f"Received chunk {i} of audio length {chunk.shape[-1]}, chunk duration: {chunk_duration}")
+                pcm_data_16K = convertSampleRateTo16khz(processed_bytes, self.config.audio.output_sample_rate)
+                # such as chunk size 9600, (a.k.a 24K*20ms*2)
+                print(f"XTTS-v2 audio chunk size: {len(pcm_data_16K)} 字节")
+                yield pcm_data_16K
+            wav = torch.cat(wav_chunks, dim=0)
+            real_time_factor = (time.time() - t0) / wav.shape[0] * 24000  # 4 bytes per sample, 24000 Hz
+            print(f"wav.shape {wav.shape}, Real-time factor (RTF): {real_time_factor}")
+        except asyncio.CancelledError:
+            print("XTTS_v2 generation cancelled")
+            raise
+        except Exception as e:
+            print(f"Error in XTTS_v2 generation: {str(e)}")
+            raise
+        finally:
+            end_time = time.time()
+            print(f"XTTS_v2 total time: {end_time - t0:.4f} seconds")
