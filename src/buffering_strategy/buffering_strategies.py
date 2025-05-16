@@ -103,7 +103,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # Interrupt handling/AI preemption 清除流缓冲区并发送 truncate
         # # 如果AI正在说话且检测到新语音，执行中断
         # if (not self.processing_task.done() and
-        #     self._should_process_new_chunk() and
         #     await self._handle_vad_detection(vad)):
         #     # 停止当前任务
         #     self.stop_processing_task()
@@ -131,9 +130,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             # 如果没有检测到完整的对话，继续等待
             print("Turn not complete")
             # 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
-            if not self._should_process_new_chunk():
-                # 如果没有新的音频块，继续等待
-                return
+            # if not self._should_process_new_chunk():
+            #     # 如果没有新的音频块，继续等待
+            return
 
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
