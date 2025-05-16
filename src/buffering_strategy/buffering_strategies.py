@@ -47,7 +47,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.client = client
 
         # 中断控制参数
-        self.allow_interruption = kwargs.get("allow_interruption", True)
+        self.interruption = kwargs.get("interruption", False)
         self.interrupt_on_speech_start = kwargs.get("interrupt_on_speech_start", True)
         self.interrupt_min_duration = kwargs.get("interrupt_min_duration", 0.3)
         self.last_speech_start = 0
@@ -83,12 +83,16 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             "content": text
         })
 
-    def stop_processing_task(self):
+    async def stop_processing_task(self):
         """停止 LLM 生成任务"""
         if self.processing_task and not self.processing_task.done():
             self.processing_task.cancel()
-            self.processing_task = None
-        logging.info("Previous task canceled")
+            logging.info("Stopping processing task...")
+            self.interruption = True  # 设置中断状态
+            try:
+                await self.processing_task
+            except asyncio.CancelledError:
+                logging.info("Processing task was cancelled successfully.")
 
     def _should_process_new_chunk(self):
         """判断是否需要处理新的音频块"""
@@ -120,7 +124,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # Interrupt handling/AI preemption 如果AI正在说话且检测到用户插话（新语音），执行中断
         # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
         #FIXME: 清除流缓冲区并发送 truncate like openai？
-        self.stop_processing_task()
+        await self.stop_processing_task()
 
         text = transcription["text"]
         print(f"Transcription result: {text}")
@@ -222,6 +226,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             seg_idx = 1  # 句子序号从 1 开始
             # 实时处理 LLM 输出
             async for delta in stream:
+                if self.interruption:
+                    logger.info("Interruption detected, stopping llm response generation")
+                    break
                 response_buffer.append(delta)
                 buffer += delta
                 sentences = smart_split(buffer)
@@ -229,6 +236,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 # 只处理完整的句子，保留最后一段 incomplete 的
                 complete = sentences[:-1]
                 for sentence in complete:
+                    if self.interruption:
+                        logger.info("Interruption detected, stopping tts response generation")
+                        break
                     logging.info(f"seg {seg_idx}: {sentence}\n")
                     await self._stream_tts(
                         endpoint,
@@ -288,6 +298,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.client.vc_uid,
                 self.client.config["is_simultaneous"]
             ):
+                if self.interruption:
+                    logger.info("Interruption detected, stopping TTS stream")
+                    break
                 await self._send(endpoint, use_webrtc, chunk)
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")
@@ -358,3 +371,5 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """清理所有缓冲区和状态"""
         # 清理音频缓冲
         self.client.scratch_buffer.clear()
+
+        self.interruption = False  # 重置中断状态
