@@ -131,7 +131,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             return
 
         text = transcription["text"]
-
+        print(f"Transcription result: {text}")
         # 3. Turn taking 检测
         if not await self._check_conversation_complete(eou, text):
             # 如果没有检测到完整的对话，继续等待
