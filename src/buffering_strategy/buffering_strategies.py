@@ -114,6 +114,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             print("Buffer not full enough to process new chunk")
             return
 
+        # 开始处理新的音频块
+        self.client.scratch_buffer.extend(self.client.buffer)
+        self.client.buffer.clear()
+
         # 1. VAD 检测
         if not await self._handle_vad_detection(vad):
             # 如果 VAD 检测到语音开始，更新最后一次语音开始时间
@@ -134,9 +138,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             print("Turn not complete")
             return
 
-        # 开始处理新的音频块
-        self.client.scratch_buffer.extend(self.client.buffer)
-        self.client.buffer.clear()
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
                 self.process_audio_async(endpoint, use_webrtc, text, llm, tts)
@@ -167,7 +168,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             return False
 
         last_segment_should_end_before = (
-            len(self.client.buffer)
+            len(self.client.scratch_buffer)
             / (self.client.sampling_rate * self.client.samples_width)
         ) - self.chunk_offset_seconds
 
