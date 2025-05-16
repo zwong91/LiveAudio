@@ -85,14 +85,14 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
     async def stop_processing_task(self):
         """停止 LLM 生成任务"""
-        if self.processing_task:
-            self.processing_task.cancel()
-            try:
-                await self.processing_task
-                logging.info("Stopping processing task...")
-                self.interruption = True  # 设置中断状态
-            except asyncio.CancelledError:
-                pass
+        try:
+            if self.processing_task and not self.processing_task.done():
+                self.interruption = True  # Set flag first
+                self.processing_task.cancel()  # Cancel main task
+                await asyncio.wait_for(self.processing_task, timeout=0.5)  # Wait with timeout
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            logger.info("Processing task cancelled")
+        finally:
             self.processing_task = None
 
     def _should_process_new_chunk(self):
@@ -231,10 +231,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             seg_idx = 1  # 句子序号从 1 开始
             # 实时处理 LLM 输出
             async for delta in stream:
-                if self.interruption:
-                    logger.info("Interruption detected, stopping llm response generation")
-                    self._clear_buffers()
-                    return
+                # Check task cancellation
+                if asyncio.current_task().cancelled():
+                    logger.info("LLM generation cancelled via task cancellation")
+                    raise asyncio.CancelledError
                 response_buffer.append(delta)
                 buffer += delta
                 sentences = smart_split(buffer)
@@ -242,10 +242,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 # 只处理完整的句子，保留最后一段 incomplete 的
                 complete = sentences[:-1]
                 for sentence in complete:
-                    if self.interruption:
-                        logger.info("Interruption detected, stopping tts response generation")
-                        self._clear_buffers()
-                        return
+                    # Check cancellation before TTS
+                    if asyncio.current_task().cancelled():
+                        raise asyncio.CancelledError
                     logging.info(f"seg {seg_idx}: {sentence}\n")
                     await self._stream_tts(
                         endpoint,
@@ -259,7 +258,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 buffer = sentences[-1] if sentences else buffer
 
             # 处理剩余文本
-            if buffer:
+            if buffer and not asyncio.current_task().cancelled():
                 await self._stream_tts(
                     endpoint,
                     use_webrtc,
