@@ -107,23 +107,23 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.client.scratch_buffer.extend(self.client.buffer)
         self.client.buffer.clear()
 
-        # 1. VAD 检测
+        # VAD 检测
         if not await self._handle_vad_detection(vad):
             return
 
-        # 2. 语音转文字
+        # Interrupt handling/AI preemption 如果AI正在说话且检测到新语音，执行中断
+        # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
+        #FIXME: 清除流缓冲区并发送 truncate like openai？
+        self.stop_processing_task()
+
+        # 语音转文字
         transcription = await self._transcribe_audio(asr)
         if not transcription:
             return
 
-        # 如果AI正在说话且检测到新语音，执行中断
-        # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
-        # Interrupt handling/AI preemption 清除流缓冲区并发送 truncate
-        self.stop_processing_task()
-
         text = transcription["text"]
         print(f"Transcription result: {text}")
-        # 3. Turn taking 检测
+        # Turn taking 检测
         if not await self._check_conversation_complete(eou, text):
             # 如果没有检测到完整的对话，继续等待
             print("Turn not complete")
