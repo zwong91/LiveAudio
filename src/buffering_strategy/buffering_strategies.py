@@ -230,7 +230,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 if self.interruption:
                     logger.info("Interruption detected, stopping llm response generation")
                     self._clear_buffers()
-                    break
+                    return
                 response_buffer.append(delta)
                 buffer += delta
                 sentences = smart_split(buffer)
@@ -241,7 +241,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     if self.interruption:
                         logger.info("Interruption detected, stopping tts response generation")
                         self._clear_buffers()
-                        break
+                        return
                     logging.info(f"seg {seg_idx}: {sentence}\n")
                     await self._stream_tts(
                         endpoint,
@@ -304,7 +304,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 if self.interruption:
                     logger.info("Interruption detected, stopping TTS stream")
                     self._clear_buffers()
-                    break
+                    return
                 await self._send(endpoint, use_webrtc, chunk)
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")
