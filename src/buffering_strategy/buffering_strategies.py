@@ -267,7 +267,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 )
 
         except asyncio.CancelledError:
-            logger.info("Response generation interrupted")
+            logger.info("Response generation cancelled")
+            raise
         except Exception as e:
             logger.error(f"Error generating response: {e}")
             raise
@@ -311,6 +312,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 await self._send(endpoint, use_webrtc, chunk)
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")
+            raise
         except Exception as e:
             logger.error(f"TTS error: {e}")
 
