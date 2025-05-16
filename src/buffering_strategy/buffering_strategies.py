@@ -185,6 +185,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """检查对话是否完成"""
         messages = self._prepare_messages(text)
         last_language, _ = langid.classify(text)
+        print(f"Detected language: {last_language}")
         result = await eou.predict_endpoint(messages, last_language, self.client.scratch_buffer)
 
         if not result["prediction"]:

@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument("--turn-type", type=str, default="livekit", help="turn taking type")
 
     parser.add_argument("--asr-type", type=str, default="whisper", help="ASR pipeline type")
-    parser.add_argument("--asr-args", type=str, default='{"model_size": "distil-large-v3"}', help="ASR args (JSON string)")
+    parser.add_argument("--asr-args", type=str, default='{"model_size": "large-v3-turbo"}', help="ASR args (JSON string)")
     parser.add_argument("--llm-type", type=str, default="openai", help="OPENAI pipeline type")
     parser.add_argument("--tts-type", type=str, default="edge", help="TTS pipeline type")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host for the WebSocket server")
