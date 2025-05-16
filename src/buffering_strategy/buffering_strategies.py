@@ -133,11 +133,11 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if not await self._check_conversation_complete(eou, text):
             # 如果没有检测到完整的对话，继续等待
             print("Turn not complete")
-            #FIXME: 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
-            elapsed = time.time() - self.last_speech_end
-            if elapsed <= self.interrupt_min_duration:
-                logger.debug(f"Skipping full processing: only {elapsed:.2f}s since speech started (min {self.interrupt_min_duration}s)")
-                return
+            # #FIXME: 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
+            # elapsed = time.time() - self.last_speech_end
+            # if elapsed <= self.interrupt_min_duration:
+            #     logger.debug(f"Skipping full processing: only {elapsed:.2f}s since speech started (min {self.interrupt_min_duration}s)")
+            #     return
 
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
