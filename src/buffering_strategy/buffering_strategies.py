@@ -311,6 +311,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     self._clear_buffers()
                     return
                 await self._send(endpoint, use_webrtc, chunk)
+                # 控制播放节奏（按chunk的时长休眠）
+                chunk_duration_seconds = len(chunk) / (16000 * 2)  # 16kHz, 16-bit = 2 bytes/sample
+                await asyncio.sleep(chunk_duration_seconds * 0.9)
+
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")
             raise
@@ -345,11 +349,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         except Exception as e:
             logger.error(f"发送失败: {e}")
             raise
-
-        # 控制播放节奏（按chunk的时长休眠）
-        chunk_duration_seconds = len(chunk) / (16000 * 2)  # 16kHz, 16-bit = 2 bytes/sample
-        await asyncio.sleep(chunk_duration_seconds)
-
 
     def _update_client_state(self, updated_history):
         """Update client state after TTS process ends."""
