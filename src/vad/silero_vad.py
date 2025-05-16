@@ -37,9 +37,9 @@ class SileroVAD(VADInterface):
             return_seconds=True,
             sampling_rate=self.sampling_rate,
             threshold=0.5,
-            min_speech_duration_ms=500,
+            min_speech_duration_ms=300,
             max_speech_duration_s=float('inf'),
-            min_silence_duration_ms=500,
+            min_silence_duration_ms=100,
             speech_pad_ms=30
         )
 

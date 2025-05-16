@@ -40,8 +40,8 @@ class PyannoteVAD(VADInterface):
             {
                 "onset": 0.7,
                 "offset": 0.7,
-                "min_duration_on": 0.5,
-                "min_duration_off": 0.5,
+                "min_duration_on": 0.3,# 最短语音段时长(秒)
+                "min_duration_off": 0.1,# 最短静音段时长(秒)
             },
         )
         self.model = Model.from_pretrained(
