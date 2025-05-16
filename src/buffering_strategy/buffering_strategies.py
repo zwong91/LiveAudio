@@ -101,9 +101,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """处理音频数据，管理任务状态"""
         # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
         # Interrupt handling/AI preemption 清除流缓冲区并发送 truncate
-        # # 如果正在处理且检测到新语音，执行中断
-        # if (self.allow_interruption and
-        #     not self.processing_task.done()):
+        # # 如果AI正在说话且检测到新语音，执行中断
+        # if (not self.processing_task.done() and
+        #     self._should_process_new_chunk()):
         #     # 停止当前任务
         #     self.stop_processing_task()
         #     # 清理旧数据
@@ -345,5 +345,3 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """清理所有缓冲区和状态"""
         # 清理音频缓冲
         self.client.scratch_buffer.clear()
-        # 清理任务
-        self.processing_task = None
