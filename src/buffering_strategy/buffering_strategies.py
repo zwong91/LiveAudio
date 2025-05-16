@@ -138,10 +138,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             print("Turn not complete")
             return
 
-        if self.processing_task is None or self.processing_task.done():
-            self.processing_task = asyncio.create_task(
-                self.process_audio_async(endpoint, use_webrtc, text, llm, tts)
-            )
+        # if self.processing_task is None or self.processing_task.done():
+        #     self.processing_task = asyncio.create_task(
+        #         self.process_audio_async(endpoint, use_webrtc, text, llm, tts)
+        #     )
 
 
     async def process_audio_async(self, endpoint, use_webrtc, text, llm, tts):
