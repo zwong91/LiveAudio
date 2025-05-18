@@ -5,7 +5,7 @@ ollama
 #llama-cpp-python
 faster-whisper
 ctranslate2==4.4.0
-
+vllm==0.8.5.post1; sys_platform == "linux"
 nltk==3.9.1
 #quickly converts streamed text into sentences for real-time synthesis
 stream2sentence==0.3.0
