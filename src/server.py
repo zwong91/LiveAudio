@@ -727,7 +727,7 @@ class Server:
     async def start_server(self):
         """Start the Uvicorn server as a coroutine."""
         # Open Ngrok tunnel
-        listener = ngrok.forward(f"http://localhost:{self.port}")
+        listener = await ngrok.forward(f"http://localhost:{self.port}")
         print(f"Ngrok tunnel opened at {listener.url()} for port {self.port}")
         NGROK_URL = listener.url()
         INCOMING_CALL_ROUTE = "/twilio/inbound_call"
