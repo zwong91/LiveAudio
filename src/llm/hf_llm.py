@@ -32,43 +32,52 @@ class HFLLM(LLMInterface):
         ]
 
     async def generate_stream(self, messages: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
-        text = ""
+        full_response_text = ""
         request_id = uuid.uuid4().hex
+        previously_yielded_text_len = 0
         try:
             start_time = time.time()
 
             sampling_param = SamplingParams(max_tokens=MAX_NEW_TOKENS)
+
+            # Construct the prompt using the current conversation history
+            # self.messages already contains system prompt and previous turns
+            conversation_history = self.messages + [dict(role="user", content=query)]
+
             prompt = self.tokenizer.apply_chat_template(
-                self.messages + [dict(role="user", content=query)],
+                conversation_history,
                 tokenize=False,
                 add_generation_prompt=True,
             )
 
-            self.engine.add_request(request_id, prompt, sampling_param)
-            async for chunk in self._get_streaming_results(request_id):
-                yield chunk
-                text += chunk
+            # Use engine.generate() which returns an async generator
+            results_generator = self.engine.generate(prompt, sampling_param, request_id)
+
+            async for request_output in results_generator:
+                # RequestOutput.outputs is a list of CompletionOutput objects.
+                # For typical use cases (n=1, best_of=1), there's one output.
+                if request_output.outputs:
+                    current_cumulative_text = request_output.outputs[0].text
+
+                    # Calculate the new chunk of text
+                    new_text_chunk = current_cumulative_text[previously_yielded_text_len:]
+
+                    if new_text_chunk:
+                        yield new_text_chunk
+                        full_response_text += new_text_chunk
+                        previously_yielded_text_len = len(current_cumulative_text)
+
+                # Optional: if you need to check for finished state explicitly
+                # if request_output.finished:
+                #     break
 
         except asyncio.CancelledError:
+            # If the stream is cancelled, abort the request on the vLLM engine side.
             await self.engine.abort(request_id)
             raise
 
         finally:
+            # Update the message history with the user's query and the full assistant response
             self.messages.append(dict(role="user", content=query))
-            self.messages.append(dict(role="assistant", content=text))
-            print(f"llm time: {time.time() - start_time:.4f}s")
-
-    async def _get_streaming_results(self, request_id: str) -> AsyncGenerator[str, None]:
-        cursor = 0
-        while True:
-            result = await self.engine.get_results(request_id)
-            if result is not None:
-                output = result.outputs[0].text
-                new_output = output[cursor:]
-                if new_output:
-                    yield new_output
-                    cursor = len(output)
-                if result.finished:
-                    break
-            else:
-                await asyncio.sleep(0.01)
+            self.messages.append(dict(role="assistant", content=full_response_text))
+            print(f"huggingface llm time: {time.time() - start_time:.4f}s")
