@@ -10,6 +10,7 @@ from io import BytesIO
 from .tts_interface import TTSInterface
 from src.utils.audio_utils import wave_header_chunk
 from kokoro import KModel, KPipeline
+from huggingface_hub import list_repo_files
 from pydub import AudioSegment
 from random import choice
 
@@ -17,10 +18,24 @@ class Kokoro(TTSInterface):
     REPO_ID = 'hexgrad/Kokoro-82M-v1.1-zh'
     SAMPLE_RATE = 24000
     N_ZEROS = 5000
+    voice_files = list_repo_files(REPO_ID, repo_type="model")
+
+    # 获取所有以 'zf_' 开头的女性语音模型文件
+    female_voices = [file for file in voice_files if file.startswith("voices/zf_") and file.endswith(".pt")]
+
+    # 获取所有以 'zm_' 开头的男性语音模型文件
+    male_voices = [file for file in voice_files if file.startswith("voices/zm_") and file.endswith(".pt")]
+
+    # 提取语音模型的名称（去除路径和扩展名）
+    female_voice_names = [file.split("/")[-1].replace(".pt", "") for file in female_voices]
+    male_voice_names = [file.split("/")[-1].replace(".pt", "") for file in male_voices]
+
     VOICES = {
-        'female': [f'zf_{str(i).zfill(3)}' for i in range(1, 100)],
-        'male': [f'zm_{str(i).zfill(3)}' for i in range(9, 101)]
+        'female': female_voice_names,
+        'male': male_voice_names
     }
+
+    print(VOICES)
     ALL_VOICES = [v for voices in VOICES.values() for v in voices]
 
 
