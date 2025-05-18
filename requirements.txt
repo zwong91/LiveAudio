@@ -1,10 +1,7 @@
-torch==2.2.0
-torchaudio==2.2.0
+torch==2.6.0
+torchaudio==2.6.0
 openai
 ollama
-#llama-cpp-python
-faster-whisper
-ctranslate2==4.4.0
 vllm==0.8.5.post1; sys_platform == "linux"
 nltk==3.9.1
 #quickly converts streamed text into sentences for real-time synthesis
@@ -51,6 +48,6 @@ streamlit-webrtc
 gdown
 requests
 twilio==9.3.2
-ngrok>=1.5.0
+ngrok>=1.0.0
 kokoro>=0.9.4
 misaki[zh]>=0.9.4
