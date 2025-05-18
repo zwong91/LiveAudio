@@ -36,6 +36,9 @@ chmod 777 /asset/
 uv venv --python=python3.10 va
 source va/bin/activate
 
+curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+python get-pip.py
+
 # Install dependencies using uv
 uv pip install -r requirements.txt
 
