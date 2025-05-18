@@ -32,6 +32,7 @@ class HFLLM(LLMInterface):
         ]
 
     async def generate_stream(self, messages: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
+        text = ""
         try:
             start_time = time.time()
 
