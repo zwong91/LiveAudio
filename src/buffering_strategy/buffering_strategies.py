@@ -141,7 +141,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         extra_sleep = last_speaking_time + endpointing_delay - time.time()
         timeout = max(extra_sleep, 0)
         if timeout > 0:
-            await asyncio.sleep(timeout)
+            #await asyncio.sleep(timeout)
+            return
 
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
