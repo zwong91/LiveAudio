@@ -735,7 +735,7 @@ class Server:
         # Set ngrok URL to ne the webhook for the appropriate Twilio number
         twilio_numbers = twilio_client.incoming_phone_numbers.list()
         twilio_number_sid = [num.sid for num in twilio_numbers if num.phone_number == TWILIO_PHONE_NUMBER][0]
-        client.incoming_phone_numbers(twilio_number_sid).update(account_sid, voice_url=f"{NGROK_URL}{INCOMING_CALL_ROUTE}")
+        twilio_client.incoming_phone_numbers(twilio_number_sid).update(TWILIO_ACCOUNT_SID, voice_url=f"{NGROK_URL}{INCOMING_CALL_ROUTE}")
 
         uvicorn_config = uvicorn.Config(
             self.app,
