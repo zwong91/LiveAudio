@@ -11,6 +11,7 @@ from .tts_interface import TTSInterface
 from src.utils.audio_utils import wave_header_chunk
 from kokoro import KModel, KPipeline
 from pydub import AudioSegment
+from random import choice
 
 class Kokoro(TTSInterface):
     REPO_ID = 'hexgrad/Kokoro-82M-v1.1-zh'
