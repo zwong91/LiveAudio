@@ -16,10 +16,16 @@ class Kokoro(TTSInterface):
     REPO_ID = 'hexgrad/Kokoro-82M-v1.1-zh'
     SAMPLE_RATE = 24000
     N_ZEROS = 5000
-    VOICE = 'zf_002'
+    VOICES = {
+        'female': [f'zf_{str(i).zfill(3)}' for i in range(1, 100)],
+        'male': [f'zm_{str(i).zfill(3)}' for i in range(9, 101)]
+    }
+    ALL_VOICES = [v for voices in VOICES.values() for v in voices]
 
-    def __init__(self, voice: str = 'zf_002'):
-        self.voice = voice
+
+    def __init__(self, voice: str = None):
+        self.voice = voice if voice else choice(self.ALL_VOICES)
+        print(f"Using voice: {self.voice}")
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self._init_pipeline()
 

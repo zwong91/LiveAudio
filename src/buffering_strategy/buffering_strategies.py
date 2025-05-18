@@ -41,16 +41,15 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 - chunk_length_seconds (float): Length of each audio chunk
                 - chunk_offset_seconds (float): Offset time for processing
                 - allow_interruption (bool): 是否允许用户打断 AI 的发言
-                - interrupt_on_speech_start (bool): 是否在检测到语音开始时就中断
-                - interrupt_min_duration (float): 最小中断持续时间(秒)，防止误触发
+                - min_endpointing_delay (bool): 最小中断持续时间(秒)，防止误触发
+                - max_endpointing_delay (float): 最大中断持续时间(秒)，防止误触发
         """
         self.client = client
 
         # 中断控制参数
-        self.interruption = kwargs.get("interruption", False)
-        self.interrupt_on_speech_start = kwargs.get("interrupt_on_speech_start", True)
-        self.interrupt_min_duration = kwargs.get("interrupt_min_duration", 3)
-        self.last_speech_end = 0
+        self.min_endpointing_delay = kwargs.get("min_endpointing_delay", 0.5)
+        self.max_endpointing_delay = kwargs.get("max_endpointing_delay", 6)
+        self.last_speaking_time = 0
 
         self.chunk_length_seconds = os.environ.get(
             "BUFFERING_CHUNK_LENGTH_SECONDS"
@@ -132,14 +131,17 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         text = transcription["text"]
         print(f"Transcription result: {text}")
         # Turn taking 检测
+        endpointing_delay = self.min_endpointing_delay
         if not await self._check_conversation_complete(eou, text):
             # 如果没有检测到完整的对话，继续等待
             print("Turn not complete")
-            # #FIXME: 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
-            # elapsed = time.time() - self.last_speech_end
-            # if elapsed <= self.interrupt_min_duration:
-            #     logger.debug(f"Skipping full processing: only {elapsed:.2f}s since speech started (min {self.interrupt_min_duration}s)")
-            #     return
+            #FIXME: 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
+            endpointing_delay = self._max_endpointing_delay
+
+        extra_sleep = last_speaking_time + endpointing_delay - time.time()
+        timeout = max(extra_sleep, 0)
+        if timeout > 0:
+            await asyncio.sleep(timeout)
 
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
@@ -360,7 +362,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.client.scratch_buffer.clear()
         self.client.increment_file_counter()
 
-        self.last_speech_end = time.time()
+        self.last_speaking_time = time.time()
 
     def _prepare_messages(self, transcription_text: str) -> list:
         """准备要发送给 LLM 的消息并更新历史"""
