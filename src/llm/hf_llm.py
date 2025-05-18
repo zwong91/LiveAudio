@@ -6,6 +6,7 @@ import asyncio
 import uuid
 from transformers import AutoTokenizer
 from vllm import AsyncEngineArgs, AsyncLLMEngine, SamplingParams
+from vllm.utils import RequestOutput
 
 MAX_TOKENS = 8192
 MAX_NEW_TOKENS = 2048
@@ -33,6 +34,7 @@ class HFLLM(LLMInterface):
 
     async def generate_stream(self, messages: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
         text = ""
+        request_id = uuid.uuid4().hex
         try:
             start_time = time.time()
 
@@ -42,16 +44,11 @@ class HFLLM(LLMInterface):
                 tokenize=False,
                 add_generation_prompt=True,
             )
-            request_id = uuid.uuid4().hex
 
-            stream = await self.engine.add_request(request_id, prompt, sampling_param)
-            cursor = 0
-
-            async for request_output in stream:
-                text = request_output.outputs[0].text
-                out = text[cursor:]
-                yield out
-                cursor = len(text)
+            self.engine.add_request(request_id, prompt, sampling_param)
+            async for chunk in self._get_streaming_results(request_id):
+                yield chunk
+                text += chunk
 
         except asyncio.CancelledError:
             await self.engine.abort(request_id)
@@ -61,3 +58,18 @@ class HFLLM(LLMInterface):
             self.messages.append(dict(role="user", content=query))
             self.messages.append(dict(role="assistant", content=text))
             print(f"llm time: {time.time() - start_time:.4f}s")
+
+    async def _get_streaming_results(self, request_id: str) -> AsyncGenerator[str, None]:
+        cursor = 0
+        while True:
+            result = await self.engine.get_results(request_id)
+            if result is not None:
+                output = result.outputs[0].text
+                new_output = output[cursor:]
+                if new_output:
+                    yield new_output
+                    cursor = len(output)
+                if result.finished:
+                    break
+            else:
+                await asyncio.sleep(0.01)
