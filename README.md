@@ -44,11 +44,12 @@ curl -fsSL https://ollama.com/install.sh | sh
 ```
 
 ### Open an ngrok tunnel
+
 When developing & testing locally, you'll need to open a tunnel to forward requests to your local development server. These instructions use ngrok.
 
 Open a Terminal and run:
-```
 
+```bash
 curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
   | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
   && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
@@ -60,12 +61,12 @@ ngrok config add-authtoken 2q0o5XSi73aG9m4KyMxHB0pmEXi_2mUYW4R1wDsanPzWgCWrW
 
 ngrok http 8765
 ```
+
 Once the tunnel has been opened, copy the `Forwarding` URL. It will look something like: `https://[your-ngrok-subdomain].ngrok.app`. You will need this when configuring your Twilio number setup.
 
 Note that the `ngrok` command above forwards to a development server running on port `5050`, which is the default port configured in this application. If you override the `PORT` defined in `main.py`, you will need to update the `ngrok` command accordingly.
 
 Keep in mind that each time you run the `ngrok http` command, a new URL will be created, and you'll need to update it everywhere it is referenced below.
-
 
 ## Docker Setup
 
@@ -111,7 +112,6 @@ Keep in mind that each time you run the `ngrok http` command, a new URL will be 
     sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' VoiceAgent
     ```
 
-
 ## Usage
 
 **prepare**
@@ -122,8 +122,9 @@ Keep in mind that each time you run the `ngrok http` command, a new URL will be 
 
 ``` sh
 # runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
-HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --tts-type xtts-v2  --llm-type openai
+HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --llm-type hf
 ```
+
 ***test***
 
 ```bash
@@ -153,6 +154,8 @@ Resources
 ---------
 
 * [WebRTC docs](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API) - on <https://developer.mozilla.org>
-- [Ollama](https://ollama.com/) - A local LLM inference engine for running Llama 3, Mistral, Gemma, and other LLMs
-- [aiortc](https://aiortc.readthedocs.io/en/latest/) - A Python Library for WebRTC and ORTC communication
-- [SenseVoice](https://github.com/FunAudioLLM/SenseVoice) and [SenseVoice space](https://www.modelscope.cn/studios/iic/SenseVoice).
+
+* [Ollama](https://ollama.com/) - A local LLM inference engine for running Llama 3, Mistral, Gemma, and other LLMs
+
+* [aiortc](https://aiortc.readthedocs.io/en/latest/) - A Python Library for WebRTC and ORTC communication
+* [SenseVoice](https://github.com/FunAudioLLM/SenseVoice) and [SenseVoice space](https://www.modelscope.cn/studios/iic/SenseVoice).
