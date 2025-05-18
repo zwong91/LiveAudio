@@ -137,7 +137,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             #FIXME: 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
             endpointing_delay = self._max_endpointing_delay
 
-        extra_sleep = last_speaking_time + endpointing_delay - time.time()
+        extra_sleep = self.last_speaking_time + endpointing_delay - time.time()
         timeout = max(extra_sleep, 0)
         if timeout > 0:
             #await asyncio.sleep(timeout)
