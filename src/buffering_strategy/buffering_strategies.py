@@ -86,7 +86,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """停止 LLM 生成任务"""
         try:
             if self.processing_task and not self.processing_task.done():
-                self.interruption = True  # Set flag first
                 self.processing_task.cancel()  # Cancel main task
                 await asyncio.wait_for(self.processing_task, timeout=0.5)  # Wait with timeout
         except (asyncio.TimeoutError, asyncio.CancelledError):
@@ -312,10 +311,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.client.vc_uid,
                 self.client.config["is_simultaneous"]
             ):
-                if self.interruption:
-                    logger.info("Interruption detected, stopping TTS stream")
-                    self._clear_buffers()
-                    return
                 await self._send(endpoint, use_webrtc, chunk)
                 if not first_chunk:
                     # 控制播放节奏（按chunk的时长休眠）
@@ -336,10 +331,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             use_webrtc: 是否使用 WebRTC
             chunk: 音频数据块
         """
-        if self.interruption:
-            logger.info("Playback was interrupted. Skipping audio send.")
-            return
-
         audio_payload = base64.b64encode(pcm16k_to_ulaw(chunk)).decode('utf-8')
         audio_delta = {
             "event": "media",
@@ -399,4 +390,3 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # 清理音频缓冲
         self.client.scratch_buffer.clear()
         self.processing_task = None
-        self.interruption = False  # 重置中断状态
