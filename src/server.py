@@ -736,6 +736,14 @@ class Server:
         twilio_number_sid = [num.sid for num in twilio_numbers if num.phone_number == TWILIO_PHONE_NUMBER][0]
         twilio_client.incoming_phone_numbers(twilio_number_sid).update(TWILIO_ACCOUNT_SID, voice_url=f"{NGROK_URL}{INCOMING_CALL_ROUTE}")
 
+        # 获取所有的 SIP 域名
+        sip_domains = twilio_client.sip.domains.list()
+
+        # 遍历每个 SIP 域名并更新其 voice_url
+        for domain in sip_domains:
+            updated_domain = twilio_client.sip.domains(domain.sid).update(voice_url=f"{NGROK_URL}{INCOMING_CALL_ROUTE}")
+            print(f"SIP 域名 '{updated_domain.domain_name}' 的 voice_url 已更新为: {updated_domain.voice_url}")
+
         uvicorn_config = uvicorn.Config(
             self.app,
             host="0.0.0.0",
