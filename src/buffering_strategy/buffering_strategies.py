@@ -135,7 +135,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             # 如果没有检测到完整的对话，继续等待
             print("Turn not complete")
             #FIXME: 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
-            endpointing_delay = self._max_endpointing_delay
+            endpointing_delay = self.max_endpointing_delay
 
         extra_sleep = self.last_speaking_time + endpointing_delay - time.time()
         timeout = max(extra_sleep, 0)
