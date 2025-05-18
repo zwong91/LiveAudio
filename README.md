@@ -14,6 +14,7 @@ cd VoiceAgent
 
 # System dependencies (Ubuntu/Debian)
 apt update
+apt-get -qq -y install espeak-ng > /dev/null 2>&1
 apt install curl ffmpeg libopenblas-dev vim git-lfs \
     build-essential cmake libasound-dev portaudio19-dev \
     libportaudio2 -y

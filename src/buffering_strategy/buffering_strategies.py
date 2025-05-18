@@ -251,7 +251,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                         endpoint,
                         use_webrtc,
                         tts,
-                        sentence
+                        sentence,
+                        first_chunk=(seg_idx == 1)
                     )
                     seg_idx += 1
 
@@ -264,7 +265,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     endpoint,
                     use_webrtc,
                     tts,
-                    buffer
+                    buffer,
+                    first_chunk=(seg_idx == 1)
                 )
 
         except asyncio.CancelledError:
@@ -287,7 +289,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         endpoint,
         use_webrtc,
         tts,
-        text: str
+        text: str,
+        first_chunk: bool = True
     ):
         """流式处理文本到语音转换
 
@@ -311,9 +314,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     self._clear_buffers()
                     return
                 await self._send(endpoint, use_webrtc, chunk)
-                # 控制播放节奏（按chunk的时长休眠）
-                chunk_duration_seconds = len(chunk) / (16000 * 2)  # 16kHz, 16-bit = 2 bytes/sample
-                await asyncio.sleep(chunk_duration_seconds * 0.8)
+                if not first_chunk:
+                    # 控制播放节奏（按chunk的时长休眠）
+                    chunk_duration_seconds = len(chunk) / (16000 * 2)  # 16kHz, 16-bit = 2 bytes/sample
+                    await asyncio.sleep(chunk_duration_seconds)
 
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")

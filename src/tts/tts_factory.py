@@ -1,7 +1,7 @@
 from .edge_tts import EdgeTTS
 from .gtts import GTTS
 from .elevenlabs_tts import ElevenlabTTS
-from .xtts import XTTS_v2
+from .kokoro import Kokoro
 
 class TTSFactory:
     @staticmethod
@@ -14,5 +14,7 @@ class TTSFactory:
             return ElevenlabTTS(**kwargs)
         elif tts_type == "xtts-v2":
             return XTTS_v2(**kwargs)
+        elif tts_type == "kokoro":
+            return Kokoro(**kwargs)
         else:
             raise ValueError(f"Unknown TTS pipeline type: {tts_type}")
