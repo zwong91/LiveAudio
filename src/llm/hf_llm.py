@@ -16,7 +16,7 @@ Always answer as helpfully as possible, while being safe. Your answers should no
 If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information."""
 
 class HFLLM(LLMInterface):
-    MODEL_ID = "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4"
+    MODEL_ID = "google/gemma-3-27b-it"
 
     def __init__(self):
         engine_args = AsyncEngineArgs(
