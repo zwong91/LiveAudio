@@ -5,8 +5,7 @@ import time
 import asyncio
 import uuid
 from transformers import AutoTokenizer
-from vllm import AsyncEngineArgs, AsyncLLMEngine, SamplingParams
-from vllm.utils import RequestOutput
+from vllm import AsyncEngineArgs, AsyncLLMEngine, SamplingParams, RequestOutput
 
 MAX_TOKENS = 8192
 MAX_NEW_TOKENS = 2048
