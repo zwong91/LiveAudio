@@ -27,6 +27,7 @@ from aiortc import MediaStreamTrack, VideoStreamTrack
 
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse, Connect
+import ngrok
 
 from .utils.audio_utils import read_audio_file, ulaw_to_pcm16k
 
@@ -40,9 +41,11 @@ CREDENTIAL = os.getenv('CREDENTIAL')
 
 TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
 TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
+TWILIO_API_SECRET = os.getenv('TWILIO_API_SECRET')
 TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
+twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
-NGROK_URL = os.getenv('NGROK_URL')
+ngrok.set_auth_token(os.getenv("NGROK_AUTHTOKEN"))
 
 if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN or not TWILIO_PHONE_NUMBER:
     raise ValueError('Missing Twilio configuration. Please set it in the .env file.')
@@ -533,9 +536,7 @@ class Server:
         to_phone_number = data.get("to")
         if not to_phone_number:
             return {"error": "Phone number is required"}
-
-        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-        call = client.calls.create(
+        call = twilio_client.calls.create(
             url=f"{NGROK_URL}/outgoing-call",
             to=to_phone_number,
             from_=TWILIO_PHONE_NUMBER
@@ -725,6 +726,17 @@ class Server:
 
     async def start_server(self):
         """Start the Uvicorn server as a coroutine."""
+
+        # Open Ngrok tunnel
+        listener = ngrok.forward(f"http://localhost:{self.port}")
+        print(f"Ngrok tunnel opened at {listener.url()} for port {self.port}")
+        NGROK_URL = listener.url()
+        INCOMING_CALL_ROUTE = "/twilio/inbound_call"
+        # Set ngrok URL to ne the webhook for the appropriate Twilio number
+        twilio_numbers = twilio_client.incoming_phone_numbers.list()
+        twilio_number_sid = [num.sid for num in twilio_numbers if num.phone_number == TWILIO_PHONE_NUMBER][0]
+        client.incoming_phone_numbers(twilio_number_sid).update(account_sid, voice_url=f"{NGROK_URL}{INCOMING_CALL_ROUTE}")
+
         uvicorn_config = uvicorn.Config(
             self.app,
             host="0.0.0.0",

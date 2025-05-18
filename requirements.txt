@@ -51,4 +51,5 @@ streamlit-webrtc
 gdown
 requests
 twilio==9.3.2
+ngrok>=1.5.0
 kokoro>=0.9.4 "misaki[zh]>=0.9.4"
