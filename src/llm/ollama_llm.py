@@ -23,7 +23,7 @@ class OllamaLLM(LLMInterface):
         self.model = model
         self.base_url = base_url
         self._request_id = None
-        self._client = AsyncClient(host=base_url, headers={'x-api-key': 'ollama'})
+        self._client = AsyncClient(host=base_url, headers={'api-key': 'ollama'})
         self._max_retries = 3
         self._retry_delay = 1
 

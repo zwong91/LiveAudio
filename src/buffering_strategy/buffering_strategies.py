@@ -48,7 +48,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         # 中断控制参数
         self.min_endpointing_delay = kwargs.get("min_endpointing_delay", 0.5)
-        self.max_endpointing_delay = kwargs.get("max_endpointing_delay", 3)
+        self.max_endpointing_delay = kwargs.get("max_endpointing_delay", 6)
         self.last_speaking_time = 0
 
         self.chunk_length_seconds = os.environ.get(
@@ -137,10 +137,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             #FIXME: 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
             endpointing_delay = self.max_endpointing_delay
 
-        extra_sleep = self.last_speaking_time + endpointing_delay - time.time()
-        timeout = max(extra_sleep, 0)
-        if timeout > 0:
-            #await asyncio.sleep(timeout)
+        extra_delay = self.last_speaking_time + endpointing_delay - time.time()
+        if max(extra_delay, 0) > 0:
             return
 
         if self.processing_task is None or self.processing_task.done():
