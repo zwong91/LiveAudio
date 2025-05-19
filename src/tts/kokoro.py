@@ -39,7 +39,7 @@ class Kokoro(TTSInterface):
     ALL_VOICES = [v for voices in VOICES.values() for v in voices]
 
 
-    def __init__(self, voice: str = "zf_002"):
+    def __init__(self, voice: str = "zf_001"):
         self.VOICE = voice if voice else choice(self.ALL_VOICES)
         print(f"Using voice: {self.VOICE}")
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -68,12 +68,12 @@ class Kokoro(TTSInterface):
         return next(self.en_pipeline(text)).phonemes
 
     def _speed_callable(self, len_ps: int) -> float:
-        base_speed = 0.8
+        base_speed = 0.9
         if len_ps <= 83:
-            return 1.1
+            return 1.2
         elif len_ps < 183:
-            return (1 - (len_ps - 83) / 500) * 1.1
-        return base_speed * 1.1
+            return (1 - (len_ps - 83) / 500) * 1.2
+        return base_speed * 1.2
 
     def get_stream_info(self) -> Dict[str, int]:
         return {
