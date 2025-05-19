@@ -102,22 +102,20 @@ class Kokoro(TTSInterface):
         start_time = time.time()
 
         generator = self.zh_pipeline(text, voice=self.VOICE, speed=self._speed_callable)
-        result = next(generator)
-        wav = result.audio
+        for data in generator:
+            wav = data.audio
+            # 转WAV字节流
+            wav_io = BytesIO()
+            sf.write(wav_io, wav, self.SAMPLE_RATE, format='WAV')
+            wav_io.seek(0)
+            # 重采样处理
+            audio = AudioSegment.from_wav(wav_io)
+            audio_resampled = (
+                audio.set_frame_rate(16000)
+                    .set_channels(1)
+                    .set_sample_width(2)
+            )
 
-        # 转WAV字节流
-        wav_io = BytesIO()
-        sf.write(wav_io, wav, self.SAMPLE_RATE, format='WAV')
-        wav_io.seek(0)
+            yield audio_resampled.raw_data
 
-        # 重采样处理
-        audio = AudioSegment.from_wav(wav_io)
-        audio_resampled = (
-            audio.set_frame_rate(16000)
-                .set_channels(1)
-                .set_sample_width(2)
-        )
-
-        yield audio_resampled.raw_data
-
-        print(f"Kokoro TTS time: {time.time() - start_time:.4f}s")
+            print(f"Kokoro TTS time: {time.time() - start_time:.4f}s")
