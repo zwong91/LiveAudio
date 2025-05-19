@@ -260,7 +260,7 @@ class XTTS_v2(TTSInterface):
                 top_k=3,
                 top_p=0.97,
                 do_sample=True,
-                speed=1.0,
+                speed=0.8,
                 enable_text_splitting=True,
             )
             # Stream synthesize audio
