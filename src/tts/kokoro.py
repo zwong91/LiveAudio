@@ -68,12 +68,12 @@ class Kokoro(TTSInterface):
         return next(self.en_pipeline(text)).phonemes
 
     def _speed_callable(self, len_ps: int) -> float:
-        base_speed = 0.9
+        base_speed = 0.8
         if len_ps <= 83:
-            return 1.2
+            return 1.1
         elif len_ps < 183:
-            return (1 - (len_ps - 83) / 500) * 1.2
-        return base_speed * 1.2
+            return (1 - (len_ps - 83) / 500) * 1.1
+        return base_speed * 1.1
 
     def get_stream_info(self) -> Dict[str, int]:
         return {
