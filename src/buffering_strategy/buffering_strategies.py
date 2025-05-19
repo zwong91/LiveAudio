@@ -346,9 +346,13 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             logger.error(f"发送失败: {e}")
             raise
 
+    def _truncate_messages(self, max_history=10):
+        """保持消息历史在合理长度"""
+
+
     def _update_client_state(self, updated_history):
         """Update client state after TTS process ends."""
-        self.client.history = updated_history
+        self.client.history = updated_history[-10:]
         self.client.scratch_buffer.clear()
         self.client.increment_file_counter()
 
