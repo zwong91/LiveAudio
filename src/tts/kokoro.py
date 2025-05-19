@@ -123,7 +123,7 @@ class Kokoro(TTSInterface):
                     .set_sample_width(2)
             )
 
-        if is_first_chunk:
+        if first_chunk:
             time_to_first_chunk = time.time() - start_time
             original_sample_rate_for_rtf = self.SAMPLE_RATE
             real_time_factor_first_chunk = time_to_first_chunk / (wav.shape[0] / original_sample_rate_for_rtf)
@@ -136,7 +136,7 @@ class Kokoro(TTSInterface):
             print(f"Total elapsed time at first chunk: {time.time() - start_time:.4f}s")
             print(f"========================")
 
-            is_first_chunk = False
+            first_chunk = False
         yield audio_resampled.raw_data
 
         print(f"Kokoro TTS time: {time.time() - start_time:.4f}s")
