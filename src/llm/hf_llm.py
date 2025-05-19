@@ -5,7 +5,9 @@ import time
 import asyncio
 import uuid
 from transformers import AutoTokenizer
-from vllm import AsyncEngineArgs, AsyncLLMEngine, SamplingParams, RequestOutput
+from vllm.engine.arg_utils import AsyncEngineArgs
+from vllm.engine.async_llm_engine import AsyncLLMEngine
+from vllm.engine.sampling_params import SamplingParams
 
 MAX_TOKENS = 8192
 MAX_NEW_TOKENS = 2048
@@ -33,12 +35,11 @@ class HFLLM(LLMInterface):
 
     async def generate_stream(self, messages: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
         full_response_text = ""
-        request_id = uuid.uuid4().hex
         previously_yielded_text_len = 0
         try:
             start_time = time.time()
 
-            sampling_param = SamplingParams(max_tokens=MAX_NEW_TOKENS)
+            sampling_param = SamplingParams(max_tokens=MAX_NEW_TOKENS, skip_special_tokens=True,)
 
             # Construct the prompt using the current conversation history
             # self.messages already contains system prompt and previous turns
@@ -50,10 +51,10 @@ class HFLLM(LLMInterface):
                 add_generation_prompt=True,
             )
 
-            # Use engine.generate() which returns an async generator
-            results_generator = self.engine.generate(prompt, sampling_param, request_id)
+            # Generate response stream
+            stream = await self.engine.generate(prompt, sampling_param, uuid.uuid4().hex)
 
-            async for request_output in results_generator:
+            async for request_output in stream:
                 # RequestOutput.outputs is a list of CompletionOutput objects.
                 # For typical use cases (n=1, best_of=1), there's one output.
                 if request_output.outputs:
@@ -61,11 +62,9 @@ class HFLLM(LLMInterface):
 
                     # Calculate the new chunk of text
                     new_text_chunk = current_cumulative_text[previously_yielded_text_len:]
-
-                    if new_text_chunk:
-                        yield new_text_chunk
-                        full_response_text += new_text_chunk
-                        previously_yielded_text_len = len(current_cumulative_text)
+                    yield new_text_chunk
+                    full_response_text += new_text_chunk
+                    previously_yielded_text_len = len(current_cumulative_text)
 
                 # Optional: if you need to check for finished state explicitly
                 # if request_output.finished:
