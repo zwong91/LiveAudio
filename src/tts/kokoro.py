@@ -107,7 +107,7 @@ class Kokoro(TTSInterface):
     @torch.inference_mode()
     async def text_to_speech_stream(self, text: str, vc_uid: str, simultaneous: bool) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
-
+        first_chunk = True
         generator = self.zh_pipeline(text, voice=self.VOICE, speed=self._speed_callable)
         for data in generator:
             wav = data.audio
@@ -123,6 +123,20 @@ class Kokoro(TTSInterface):
                     .set_sample_width(2)
             )
 
-            yield audio_resampled.raw_data
+        if is_first_chunk:
+            time_to_first_chunk = time.time() - start_time
+            original_sample_rate_for_rtf = self.SAMPLE_RATE
+            real_time_factor_first_chunk = time_to_first_chunk / (wav.shape[0] / original_sample_rate_for_rtf)
 
-            print(f"Kokoro TTS time: {time.time() - start_time:.4f}s")
+            print(f"==== 首次 Chunk 信息 ====")
+            print(f"Time to get first chunk: {time_to_first_chunk:.4f}s")
+            print(f"First chunk raw wav shape: {wav.shape}, sample rate: {original_sample_rate_for_rtf} Hz")
+            print(f"First chunk length (seconds based on raw shape): {wav.shape[0] / original_sample_rate_for_rtf:.4f}s")
+            print(f"Real-time factor (RTF) for first chunk: {real_time_factor_first_chunk:.4f}")
+            print(f"Total elapsed time at first chunk: {time.time() - start_time:.4f}s")
+            print(f"========================")
+
+            is_first_chunk = False
+        yield audio_resampled.raw_data
+
+        print(f"Kokoro TTS time: {time.time() - start_time:.4f}s")
