@@ -139,6 +139,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         extra_delay = self.last_speaking_time + endpointing_delay - time.time()
         if max(extra_delay, 0) > 0:
+            print(f"Waiting for {extra_delay:.2f} seconds before processing new chunk")
             return
 
         if self.processing_task is None or self.processing_task.done():
