@@ -7,7 +7,7 @@ import uuid
 from transformers import AutoTokenizer
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
-from vllm.engine.sampling_params import SamplingParams
+from vllm.sampling_params import SamplingParams
 
 MAX_TOKENS = 8192
 MAX_NEW_TOKENS = 2048
