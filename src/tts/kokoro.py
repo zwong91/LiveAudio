@@ -39,7 +39,7 @@ class Kokoro(TTSInterface):
     ALL_VOICES = [v for voices in VOICES.values() for v in voices]
 
 
-    def __init__(self, voice: str = None):
+    def __init__(self, voice: str = "zf_002"):
         self.VOICE = voice if voice else choice(self.ALL_VOICES)
         print(f"Using voice: {self.VOICE}")
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -120,4 +120,4 @@ class Kokoro(TTSInterface):
 
         yield audio_resampled.raw_data
 
-        print(f"Stream TTS time: {time.time() - start_time:.4f}s")
+        print(f"Kokoro TTS time: {time.time() - start_time:.4f}s")
