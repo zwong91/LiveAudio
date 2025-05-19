@@ -31,10 +31,10 @@ from TTS.utils.manage import ModelManager
 from src.utils.audio_utils import postprocess_tts_wave_int16, convertSampleRateTo16khz, wave_header_chunk
 
 class XTTS_v2(TTSInterface):
-    def __init__(self, voice: str = 'liuyifei'):
+    def __init__(self, voice: str = 'dayang'):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         # 使用 os.path 确保路径正确拼接
-        target_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "liuyifei.wav")
+        target_wav = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "dayang.wav")
 
         self.ov = TTS("voice_conversion_models/multilingual/multi-dataset/openvoice_v2").to(device)
         model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
@@ -147,7 +147,7 @@ class XTTS_v2(TTSInterface):
             target_wav_files.extend(glob.glob(target_wav_pattern))
 
         if not target_wav_files:
-            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "liuyifei.wav")
+            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "dayang.wav")
             target_wav_files = glob.glob(target_wav_pattern)
             print(f"No WAV files found matching pattern, use default: {target_wav_files}")
         else:
@@ -220,7 +220,7 @@ class XTTS_v2(TTSInterface):
         target_wav_files = glob.glob(target_wav_pattern)  # 使用 glob 扩展通配符
 
         if not target_wav_files:
-            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "liuyifei.wav")
+            target_wav_pattern = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "dayang.wav")
             target_wav_files = glob.glob(target_wav_pattern)
             print(f"No WAV files found matching pattern, use default: {target_wav_files}")
         else:
