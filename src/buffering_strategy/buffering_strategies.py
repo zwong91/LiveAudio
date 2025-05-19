@@ -122,12 +122,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if not transcription:
             return
 
-        # Interrupt handling/AI preemption 如果AI正在说话且检测到用户插话（新语音），执行中断
-        # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
-        #FIXME: 清除流缓冲区并发送 truncate like openai？
-        if self.last_speaking_time > 0 and self.client.scratch_buffer:
-            await self.stop_processing_task()
-
         text = transcription["text"]
         print(f"Transcription result: {text}")
         # Turn taking 检测
@@ -142,6 +136,12 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if max(extra_delay, 0) > 0:
             print(f"Waiting for {extra_delay:.2f} seconds before processing new chunk")
             return
+
+        # Interrupt handling/AI preemption 如果AI正在说话且检测到用户插话（新语音），执行中断
+        # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
+        #FIXME: 清除流缓冲区并发送 truncate like openai？
+        if self.last_speaking_time > 0 and self.client.scratch_buffer:
+            await self.stop_processing_task()
 
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
