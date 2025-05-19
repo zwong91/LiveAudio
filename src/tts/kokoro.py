@@ -88,7 +88,7 @@ class Kokoro(TTSInterface):
         wavs = []
         path = Path("/asset")
 
-        generator = self.zh_pipeline(text, voice=self.VOICE, speed=self._speed_callable)
+        generator = self.zh_pipeline(text, voice=self.VOICE, speed=self._speed_callable, return_timestamps=True)
         for i, (gs, ps, audio) in enumerate(generator):
             print(i)  # i => index
             print(gs) # gs => graphemes/text
@@ -108,7 +108,7 @@ class Kokoro(TTSInterface):
     async def text_to_speech_stream(self, text: str, vc_uid: str, simultaneous: bool) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
         first_chunk = True
-        generator = self.zh_pipeline(text, voice=self.VOICE, speed=self._speed_callable)
+        generator = self.zh_pipeline(text, voice=self.VOICE, speed=self._speed_callable, return_timestamps=True)
         for data in generator:
             wav = data.audio
             # 转WAV字节流

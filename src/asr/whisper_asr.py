@@ -21,7 +21,7 @@ class WhisperASR(ASRInterface):
         samples = np.frombuffer(client.scratch_buffer, dtype=np.int16)
         float_samples = samples.astype(np.float32) / 32768.0
 
-        result = self.asr_pipeline(float_samples)
+        result = self.asr_pipeline(float_samples, return_timestamps=True)
 
         print(f"ASR Result: {result['text']}")
         to_return = {
