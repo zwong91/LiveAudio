@@ -125,7 +125,7 @@ Keep in mind that each time you run the `ngrok http` command, a new URL will be 
 
 ``` sh
 # runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
-HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --llm-type hf
+HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --llm-type openai
 ```
 
 ***test***
