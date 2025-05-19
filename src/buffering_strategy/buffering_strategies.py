@@ -221,7 +221,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         response_buffer = []
         try:
             # 创建并开始 LLM 生成流
-            messages = self._prepare_messages("/no_think" + text)
+            messages = self._prepare_messages(text)
             stream = llm.generate_stream(
                 messages,
                 text,
