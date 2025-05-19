@@ -333,10 +333,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.client.config["is_simultaneous"]
             ):
                 await self._send(endpoint, use_webrtc, chunk)
-                if not first_chunk:
-                    # 控制播放节奏（按chunk的时长休眠）
-                    chunk_duration_seconds = len(chunk) / (16000 * 2)  # 16kHz, 16-bit = 2 bytes/sample
-                    await asyncio.sleep(chunk_duration_seconds)
+                # 控制播放节奏（按chunk的时长休眠）
+                chunk_duration_seconds = len(chunk) / (16000 * 2)  # 16kHz, 16-bit = 2 bytes/sample
+                await asyncio.sleep(chunk_duration_seconds * 0.9)  # 90% of chunk duration
 
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")
