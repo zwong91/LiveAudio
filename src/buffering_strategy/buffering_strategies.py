@@ -335,7 +335,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 if not first_chunk:
                     # 控制播放节奏（按chunk的时长休眠）
                     chunk_duration_seconds = len(chunk) / (16000 * 2)  # 16kHz, 16-bit = 2 bytes/sample
-                    await asyncio.sleep(chunk_duration_seconds * 0.8)
+                    await asyncio.sleep(chunk_duration_seconds * 0.75)
 
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")

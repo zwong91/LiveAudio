@@ -44,6 +44,8 @@ uv pip install -r requirements.txt
 
 # Install ollama https://github.com/ollama/ollama/releases
 curl -fsSL https://ollama.com/install.sh | sh
+
+ollama run gemma3:12b --verbose
 ```
 
 ### Open an ngrok tunnel
