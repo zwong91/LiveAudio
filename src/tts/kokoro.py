@@ -120,4 +120,4 @@ class Kokoro(TTSInterface):
 
         yield audio_resampled.raw_data
 
-        print(f"Stream time: {time.time() - start_time:.4f}s")
+        print(f"Stream TTS time: {time.time() - start_time:.4f}s")
