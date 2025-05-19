@@ -33,6 +33,14 @@ class HFLLM(LLMInterface):
             {"role": "system", "content": SYSTEM_PROMPT},
         ]
 
+    def _truncate_messages(self, max_history=10):
+        """保持消息历史在合理长度"""
+        if len(self.messages) > max_history + 1:  # +1 是为了保留system消息
+            # 保留system消息和最近的对话
+            system_messages = [msg for msg in self.messages if msg["role"] == "system"]
+            recent_messages = self.messages[-(max_history-len(system_messages)):]
+            self.messages = system_messages + [msg for msg in recent_messages if msg["role"] != "system"]
+
     async def generate_stream(self, messages: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
         full_response_text = ""
         previously_yielded_text_len = 0
@@ -55,19 +63,20 @@ class HFLLM(LLMInterface):
             results_generator =  self.engine.generate(prompt, sampling_param, request_id)
 
             async for request_output in results_generator:
-                if request_output.outputs:
-                    current_cumulative_text = request_output.outputs[0].text
+                text_outputs = [output.text for output in request_output.outputs]
+                if text_outputs and len(text_outputs) > 0:
+                    # Get the first output text (assuming there's only one generation)
+                    text = text_outputs[0]
 
-                    # Calculate the new chunk of text
-                    new_text_chunk = current_cumulative_text[previously_yielded_text_len:]
-                    if new_text_chunk:  # 只在有新内容时生成
-                        yield new_text_chunk
-                        full_response_text += new_text_chunk
-                        previously_yielded_text_len = len(current_cumulative_text)
+                    # Extract the new token(s) since the last yield
+                    new_text = text[previously_yielded_text_len:]
+                    previously_yielded_text_len = len(text)
 
-                # Optional: if you need to check for finished state explicitly
-                if request_output.finished:
-                    break
+                    # Append to full response
+                    full_response_text += new_text
+
+                    # Yield the new piece of text
+                    yield new_text
 
         except asyncio.CancelledError:
             # If the stream is cancelled, abort the request on the vLLM engine side.
@@ -78,4 +87,6 @@ class HFLLM(LLMInterface):
             # Update the message history with the user's query and the full assistant response
             self.messages.append(dict(role="user", content=query))
             self.messages.append(dict(role="assistant", content=full_response_text))
+            # 添加历史记录管理，防止历史过长
+            self._truncate_messages()
             print(f"huggingface llm time: {time.time() - start_time:.4f}s")
