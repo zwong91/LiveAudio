@@ -52,24 +52,22 @@ class HFLLM(LLMInterface):
                 add_generation_prompt=True,
             )
 
-            # Generate response stream
-            stream = await self.engine.generate(prompt, sampling_param, request_id)
+            results_generator =  self.engine.generate(prompt, sampling_param, request_id)
 
-            async for request_output in stream:
-                # RequestOutput.outputs is a list of CompletionOutput objects.
-                # For typical use cases (n=1, best_of=1), there's one output.
+            async for request_output in results_generator:
                 if request_output.outputs:
                     current_cumulative_text = request_output.outputs[0].text
 
                     # Calculate the new chunk of text
                     new_text_chunk = current_cumulative_text[previously_yielded_text_len:]
-                    yield new_text_chunk
-                    full_response_text += new_text_chunk
-                    previously_yielded_text_len = len(current_cumulative_text)
+                    if new_text_chunk:  # 只在有新内容时生成
+                        yield new_text_chunk
+                        full_response_text += new_text_chunk
+                        previously_yielded_text_len = len(current_cumulative_text)
 
                 # Optional: if you need to check for finished state explicitly
-                # if request_output.finished:
-                #     break
+                if request_output.finished:
+                    break
 
         except asyncio.CancelledError:
             # If the stream is cancelled, abort the request on the vLLM engine side.
