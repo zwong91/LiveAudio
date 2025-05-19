@@ -36,6 +36,7 @@ class HFLLM(LLMInterface):
     async def generate_stream(self, messages: List[Dict[str, str]], query: str, simultaneous: bool, target_lang: str) -> AsyncGenerator[str, None]:
         full_response_text = ""
         previously_yielded_text_len = 0
+        request_id = uuid.uuid4().hex
         try:
             start_time = time.time()
 
@@ -52,7 +53,7 @@ class HFLLM(LLMInterface):
             )
 
             # Generate response stream
-            stream = await self.engine.generate(prompt, sampling_param, uuid.uuid4().hex)
+            stream = await self.engine.generate(prompt, sampling_param, request_id)
 
             async for request_output in stream:
                 # RequestOutput.outputs is a list of CompletionOutput objects.
