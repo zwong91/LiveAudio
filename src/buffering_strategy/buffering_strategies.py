@@ -48,7 +48,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         # 中断控制参数
         self.min_endpointing_delay = kwargs.get("min_endpointing_delay", 0.5)
-        self.max_endpointing_delay = kwargs.get("max_endpointing_delay", 3)
+        self.max_endpointing_delay = kwargs.get("max_endpointing_delay", 6)
         self.last_speaking_time = 0
 
         self.chunk_length_seconds = os.environ.get(
