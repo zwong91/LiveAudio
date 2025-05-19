@@ -47,11 +47,18 @@ class Kokoro(TTSInterface):
 
     def _init_pipeline(self) -> None:
         self.model = KModel(repo_id=self.REPO_ID).to(self.device).eval()
-        self.en_pipeline = KPipeline(lang_code='a', repo_id=self.REPO_ID, model=False)
+        self.en_pipeline = KPipeline(
+            lang_code='a',
+            repo_id=self.REPO_ID,
+            model=False,
+            device=self.device,
+        )
+
         self.zh_pipeline = KPipeline(
             lang_code='z',
             repo_id=self.REPO_ID,
             model=self.model,
+            device=self.device,
             en_callable=self._en_callable
         )
 
