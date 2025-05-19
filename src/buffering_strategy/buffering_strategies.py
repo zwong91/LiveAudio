@@ -231,8 +231,17 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
             buffer = ""
             seg_idx = 1  # 句子序号从 1 开始
+            time_first_delta = None # 记录收到第一个 delta 的时间
+            timing_logged = False   # 标志，确保只记录一次时间
             # 实时处理 LLM 输出
             async for delta in stream:
+                # ====== 记录第一个 delta 的时间 ======
+                if time_first_delta is None:
+                    time_first_delta = time.time()
+                    # 可以选择在此处打印一个调试信息，表明第一个 delta 已收到
+                    # logger.debug(f"First delta received at {time_first_delta:.4f}")
+                # ==================================
+
                 # Check task cancellation
                 if asyncio.current_task().cancelled():
                     logger.info("LLM generation cancelled via task cancellation")
@@ -248,6 +257,12 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     if asyncio.current_task().cancelled():
                         raise asyncio.CancelledError
                     logging.info(f"seg {seg_idx}: {sentence}\n")
+                    # ====== 在调用 _stream_tts 前，如果这是第一个句子且未记录过时间 ======
+                    if seg_idx == 1 and not timing_logged:
+                         time_to_first_tts_call = time.time() - time_first_delta
+                         logger.info(f"Time from first delta to first _stream_tts call: {time_to_first_tts_call:.4f}s")
+                         timing_logged = True # 设置标志，不再重复记录
+                    # ==================================================================
                     await self._stream_tts(
                         endpoint,
                         use_webrtc,
@@ -262,6 +277,12 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
             # 处理剩余文本
             if buffer and not asyncio.current_task().cancelled():
+                # ====== 处理循环结束后的最后一个片段，如果它是第一个发送给 TTS 的 ======
+                if seg_idx == 1 and not timing_logged:
+                     time_to_first_tts_call = time.time() - time_first_delta
+                     logger.info(f"Time from first delta to first _stream_tts call (final buffer): {time_to_first_tts_call:.4f}s")
+                     timing_logged = True # 设置标志
+                # ======================================================================
                 await self._stream_tts(
                     endpoint,
                     use_webrtc,
