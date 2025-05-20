@@ -17,7 +17,7 @@ class WhisperASR(ASRInterface):
             model=model_name,
             device=device,
             torch_dtype=torch_dtype,
-            model_kwargs={"language": language} if language else {}
+            generate_kwargs={"language": "zh"}
         )
 
     async def transcribe(self, client):

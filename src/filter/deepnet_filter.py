@@ -1,6 +1,5 @@
 import numpy as np
 import logging
-import torch
 from .filter_interface import FilterInterface
 
 logger = logging.getLogger(__name__)
