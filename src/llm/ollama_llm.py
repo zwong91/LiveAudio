@@ -28,7 +28,7 @@ class OllamaLLM(LLMInterface):
         self._retry_delay = 1
 
         # Initialize embedding model and vault content
-        self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2", cache_folder="cache")
         self.vault_content = []
         vault_path = os.path.join(os.path.abspath(os.getcwd()), "vault.txt")
         if os.path.exists(vault_path):
