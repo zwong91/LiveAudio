@@ -19,7 +19,7 @@ python-dotenv
 edge-tts
 gTTS==2.5.4
 coqui-tts==0.26.0
-elevenlabs==1.58.1
+elevenlabs==1.59
 pydub
 pyaudio
 onnx

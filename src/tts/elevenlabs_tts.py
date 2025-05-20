@@ -7,23 +7,26 @@ from typing import Optional, Tuple, AsyncGenerator
 import os
 from .tts_interface import TTSInterface
 
-from src.utils.audio_utils import wave_header_chunk
+import soundfile as sf
 import langid
 
 from pydub import AudioSegment
+from dotenv import load_dotenv
+from elevenlabs import stream
+from elevenlabs.client import AsyncElevenLabs
 
-import tempfile
-import requests
+load_dotenv()
 
 class ElevenlabTTS(TTSInterface):
-    def __init__(self, model_id="eleven_turbo_v2", voice_id="IKne3meq5aSn9XLyUdCD", api_key=""):
+    def __init__(self, model_id="eleven_flash_v2_5", voice_id="hkfHEbBvdQFNX4uWHqRF"):
         self.model_id = model_id
         self.voice_id = voice_id
-        if api_key == "":
-            load_dotenv()
-            api_key = os.getenv("ELEVENLABS_API_KEY")
-        self.api_key = api_key
 
+        api_key = os.getenv("ELEVENLABS_API_KEY")
+        self.api_key = api_key
+        self.client = AsyncElevenLabs(
+        api_key=api_key,
+        )
 
     def get_stream_info(self) -> dict:
         return {
@@ -38,37 +41,31 @@ class ElevenlabTTS(TTSInterface):
 
     async def text_to_speech_stream(self, text: str, vc_uid: str, simultaneous: bool) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
+        first_chunk = True
         language = langid.classify(text)[0].strip()
         if language == 'zh':
             language = 'zh-CN'
 
-        temp_file_path = tempfile.gettempdir()
-        file_path = os.path.join(temp_file_path, f"audio_{uuid4().hex[:8]}.wav")
+        response = await self.client.voices.get_all()
+        print(response.voices)
 
-        #2. stream synthesize audio
-        url = f"https://api.elevenlabs.io/v1/text-to-speech/{self.voice_id}?optimize_streaming_latency=4"
-        headers = {
-            "Accept": "audio/mpeg",
-            "Content-Type": "application/json",
-            "xi-api-key": f"{self.api_key}",
-        }
-
-        data = {
-            "text": text,
-            "model_id": self.model_id,
-            "voice_settings": {"stability": 0.5, "similarity_boost": 0.5},
-        }
-
-        response = requests.post(url, json=data, headers=headers)
-        audio: AudioSegment = AudioSegment.from_file(
-            io.BytesIO(response.content), format="mp3"
+        audio_stream = self.client.text_to_speech.convert_as_stream(
+            text=text,
+            voice_id=self.voice_id,
+            model_id=self.model_id,
         )
-        #samples = np.array(audio.get_array_of_samples())
-        # 处理音频，重采样到16kHz，单声道，16bit
-        audio_resampled = (
-            audio.set_frame_rate(16000)
-                .set_channels(1)
-                .set_sample_width(2)  # 16bit sample_width 16/8=2  16k-mono-mp3
-        )
-        pcm_data_16K = audio_resampled.raw_data
-        yield pcm_data_16K
+
+        for chunk in audio_stream:
+            if isinstance(chunk, bytes):
+                # Convert bytes to AudioSegment
+                audio = AudioSegment.from_file(io.BytesIO(chunk), format="wav")
+                # Convert to raw data
+                audio_resampled = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+                if first_chunk:
+                    time_to_first_chunk = time.time() - start_time
+                    print(f"Time to first chunk: {time_to_first_chunk:.4f}s")
+                    first_chunk = False
+
+                yield audio_resampled.raw_data
+
+        print(f"ElevenLabs TTS time: {time.time() - start_time:.4f}s")
