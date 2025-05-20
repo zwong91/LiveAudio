@@ -1,5 +1,33 @@
+<a href="https://livekit.io/">
+  <img src="./.github/assets/livekit-mark.png" alt="LiveKit logo" width="100" height="100">
+</a>
 
-LK Solutions:
+# Python Outbound Call Agent
+
+<p>
+  <a href="https://docs.livekit.io/agents/overview/">LiveKit Agents Docs</a>
+  •
+  <a href="https://livekit.io/cloud">LiveKit Cloud</a>
+  •
+  <a href="https://blog.livekit.io/">Blog</a>
+</p>
+
+This example demonstrates an full workflow of an AI agent that makes outbound calls. It uses LiveKit SIP and Python [Agents Framework](https://github.com/livekit/agents).
+
+It can use a pipeline of STT, LLM, and TTS models, or a realtime speech-to-speech model. (such as ones from OpenAI and Gemini).
+
+This example builds on concepts from the [Outbound Calls](https://docs.livekit.io/agents/start/telephony/#outbound-calls) section of the docs. Ensure that a SIP outbound trunk is configured before proceeding.
+
+## Features
+
+This example demonstrates the following features:
+
+- Making outbound calls
+- Detecting voicemail
+- Looking up availability via function calling
+- Transferring to a human operator
+- Detecting intent to end the call
+- Uses Krisp background voice cancellation to handle noisy environments
 
 ```bash
 # Install uv
@@ -10,14 +38,14 @@ source $HOME/.local/bin/env
 uv venv --python=python3.12 agent
 source agent/bin/activate
 which python
-
-uv sync
+python --version
 
 curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python get-pip.py
 
 # Install dependencies using uv
 uv pip install -r requirements.txt
+python3 src/inbound-agent.py download-files
 
 # Install ollama https://github.com/ollama/ollama/releases
 curl -fsSL https://ollama.com/install.sh | sh
@@ -36,7 +64,11 @@ LLM  Ollama 端点
 
 Twilio SIP
 SipTrunkID  or  BYOC Trunking ID
-
+```bash
+lk sip dispatch list
+lk sip outbound list
+lk sip inbound list
+```
 
 https://github.com/remsky/Kokoro-FastAPI
 
@@ -54,4 +86,17 @@ python src/main.py download-files
 #1. console 模式下，代理在本地运行，仅在您的终端内可用。
 #2. dev （开发/调试）或 start （生产）模式下运行您的代理，以连接到 LiveKit 并加入房间。
 python src/main.py  console/dev/start
+```
+
+Now, your worker is running, and waiting for dispatches in order to make outbound calls.
+
+### Making a call
+
+You can dispatch an agent to make a call by using the `lk` CLI:
+
+```shell
+lk dispatch create \
+  --new-room \
+  --agent-name outbound-caller \
+  --metadata '{"phone_number": "+1234567890", "transfer_to": "+9876543210}'
 ```

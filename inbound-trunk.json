@@ -1,0 +1,7 @@
+{
+  "trunk": {
+    "name": "My inbound trunk",
+    "auth_username": "lk",
+    "auth_password": "Twiliopwd123!@#"
+  }
+}

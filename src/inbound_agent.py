@@ -21,10 +21,9 @@ async def entrypoint(ctx: agents.JobContext):
     session = AgentSession(
         stt=openai.STT(detect_language=True, model="openai/whisper-large-v3-turbo", base_url="http://localhost:8000/v1"),
         llm=openai.LLM.with_ollama(
-            model="gemma3:12b",
+            model="qwen2.5:0.5b",
             base_url="http://localhost:11434/v1",
         ),
-        #https://github.com/remsky/Kokoro-FastAPI
         tts=openai.TTS(model="kokoro", voice="af_alloy", base_url="http://localhost:8880/v1"),
         vad=silero.VAD.load(),
         turn_detection=MultilingualModel(),
@@ -44,9 +43,12 @@ async def entrypoint(ctx: agents.JobContext):
     await ctx.connect()
 
     await session.generate_reply(
-        instructions="Greet the user and offer your assistance."
+        instructions="请问您现在有空吗？要老婆不要哦."
     )
 
 
 if __name__ == "__main__":
-    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint))
+    agents.cli.run_app(agents.WorkerOptions(
+        entrypoint_fnc=entrypoint,
+        agent_name="my-telephony-agent"
+    ))

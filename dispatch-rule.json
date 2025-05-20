@@ -1,0 +1,12 @@
+{
+    "rule": {
+        "dispatchRuleIndividual": {
+            "roomPrefix": "call-"
+        }
+    },
+    "roomConfig": {
+        "agents": [{
+            "agentName": "my-telephony-agent"
+        }]
+    }
+}
