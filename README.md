@@ -45,12 +45,12 @@ python get-pip.py
 
 # Install dependencies using uv
 uv pip install -r requirements.txt
-python3 src/inbound-agent.py download-files
+python src/inbound_agent.py download-files
 
 # Install ollama https://github.com/ollama/ollama/releases
 curl -fsSL https://ollama.com/install.sh | sh
 ollama serve
-ollama run gemma3:12b --verbose
+ollama run qwen2.5:0.5b --verbose
 
 ```
 ***OpenAI plugin for LiveKit Agents***
@@ -71,21 +71,38 @@ lk sip inbound list
 ```
 
 https://github.com/remsky/Kokoro-FastAPI
+```bash
+docker run -itd -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest # CPU, or:
+docker run --gpus all -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-gpu:latest  #NVIDIA GPU
+```
 
 https://speaches.ai/usage/text-to-speech/
+```bash
+curl --silent --remote-name https://raw.githubusercontent.com/speaches-ai/speaches/master/compose.yaml
+curl --silent --remote-name https://raw.githubusercontent.com/speaches-ai/speaches/master/compose.cpu.yaml
+export COMPOSE_FILE=compose.cpu.yaml
+docker compose up -d
 
+# CUDA
+curl --silent --remote-name https://raw.githubusercontent.com/speaches-ai/speaches/master/compose.yaml
+curl --silent --remote-name https://raw.githubusercontent.com/speaches-ai/speaches/master/compose.cuda.yaml
+export COMPOSE_FILE=compose.cuda.yaml
+
+```
 
 要使用 turn-detector 、 silero 或 noise-cancellation 插件，首先需要下载模型文件
 
 ```bash
-python src/main.py download-files
+python src/inbound_agent.py download-files
+# or
+python src/outbound_agent.py download-files
 ```
 
 ## 运行
 ```bash
 #1. console 模式下，代理在本地运行，仅在您的终端内可用。
 #2. dev （开发/调试）或 start （生产）模式下运行您的代理，以连接到 LiveKit 并加入房间。
-python src/main.py  console/dev/start
+python src/inbound_agent.py  console/dev/start
 ```
 
 Now, your worker is running, and waiting for dispatches in order to make outbound calls.
