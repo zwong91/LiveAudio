@@ -95,8 +95,24 @@ Now, your worker is running, and waiting for dispatches in order to make outboun
 You can dispatch an agent to make a call by using the `lk` CLI:
 
 ```shell
+# 创建一个新房间，并将您的代理分配到该房间，附带要拨打的电话号码。
 lk dispatch create \
   --new-room \
   --agent-name outbound-caller \
   --metadata '{"phone_number": "+1234567890", "transfer_to": "+9876543210}'
+```
+
+```python
+await lkapi.agent_dispatch.create_dispatch(
+    api.CreateAgentDispatchRequest(
+        # Use the agent name you set in the WorkerOptions
+        agent_name="my-telephony-agent",
+
+        # The room name to use. This should be unique for each call
+        room=f"outbound-{''.join(str(random.randint(0, 9)) for _ in range(10))}",
+
+        # Here we use JSON to pass the phone number, and could add more information if needed.
+        metadata='{"phone_number": "+15105550123"}'
+    )
+)
 ```
