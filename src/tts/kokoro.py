@@ -38,7 +38,7 @@ class Kokoro(TTSInterface):
     ALL_VOICES = [v for voices in VOICES.values() for v in voices]
 
 
-    def __init__(self, voice: str = "af_alloy"):
+    def __init__(self, voice: str = "zm_yunyang"):
         self.VOICE = voice
         print(f"Using voice: {self.VOICE}")
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
