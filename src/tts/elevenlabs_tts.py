@@ -42,14 +42,10 @@ class ElevenlabTTS(TTSInterface):
     async def text_to_speech_stream(self, text: str, vc_uid: str, simultaneous: bool) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
         first_chunk = True
-        language = langid.classify(text)[0].strip()
-        if language == 'zh':
-            language = 'zh-CN'
+        # response = await self.client.voices.get_all()
+        # print(response.voices)
 
-        response = await self.client.voices.get_all()
-        print(response.voices)
-
-        audio_stream = self.client.text_to_speech.convert_as_stream(
+        audio_stream = await self.client.text_to_speech.convert_as_stream(
             text=text,
             voice_id=self.voice_id,
             model_id=self.model_id,
@@ -66,6 +62,6 @@ class ElevenlabTTS(TTSInterface):
                     print(f"Time to first chunk: {time_to_first_chunk:.4f}s")
                     first_chunk = False
 
-                yield audio_resampled.raw_data
+                yield chunk
 
         print(f"ElevenLabs TTS time: {time.time() - start_time:.4f}s")
