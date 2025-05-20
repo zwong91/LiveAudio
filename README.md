@@ -44,7 +44,7 @@ uv pip install -r requirements.txt
 
 # Install ollama https://github.com/ollama/ollama/releases
 curl -fsSL https://ollama.com/install.sh | sh
-
+ollama serve
 ollama run gemma3:12b --verbose
 ```
 
@@ -127,7 +127,7 @@ Keep in mind that each time you run the `ngrok http` command, a new URL will be 
 
 ``` sh
 # runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
-HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --llm-type openai
+HF_ENDPOINT=https://hf-mirror.com python3 -m src.main
 ```
 
 ***test***

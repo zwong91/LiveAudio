@@ -48,7 +48,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         # 中断控制参数
         self.min_endpointing_delay = kwargs.get("min_endpointing_delay", 0.5)
-        self.max_endpointing_delay = kwargs.get("max_endpointing_delay", 4)
+        self.max_endpointing_delay = kwargs.get("max_endpointing_delay", 3)
         self.last_speaking_time = 0
 
         self.chunk_length_seconds = os.environ.get(
@@ -194,11 +194,11 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         result = await eou.predict_endpoint(messages, last_language, self.client.scratch_buffer)
 
         if not result["prediction"]:
-            logger.debug(f"User hasn't finished speaking (prob: {result['probability']:.3f})")
+            logger.info(f"User hasn't finished speaking (prob: {result['probability']:.3f})")
             return False
 
         logger.info(f"Turn complete [len={len(text)}]: {text}")
-        logger.debug(f"Turn probability: {result['probability']:.3f}")
+        logger.info(f"Turn probability: {result['probability']:.3f}")
 
         return True
 
