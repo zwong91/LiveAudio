@@ -14,7 +14,7 @@ except ModuleNotFoundError as e:
 class DeepNetFilter(FilterInterface):
     def __init__(self, **kwargs):
         self._sample_rate = 16000
-        self._model = kwargs.get("model", "DeepFilterNet2")
+        self._model = kwargs.get("df", "DeepFilterNet2")
         self._filtering = True
 
         try:
