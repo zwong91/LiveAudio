@@ -8,14 +8,13 @@ from uuid import uuid4
 from io import BytesIO
 
 from .tts_interface import TTSInterface
-from src.utils.audio_utils import wave_header_chunk
 from kokoro import KModel, KPipeline
 from huggingface_hub import list_repo_files
 from pydub import AudioSegment
 from random import choice
 
 class Kokoro(TTSInterface):
-    REPO_ID = 'hexgrad/Kokoro-82M-v1.1-zh'
+    REPO_ID = 'hexgrad/Kokoro-82M'
     SAMPLE_RATE = 24000
     N_ZEROS = 5000
     voice_files = list_repo_files(REPO_ID, repo_type="model")
@@ -39,7 +38,7 @@ class Kokoro(TTSInterface):
     ALL_VOICES = [v for voices in VOICES.values() for v in voices]
 
 
-    def __init__(self, voice: str = "zf_002"):
+    def __init__(self, voice: str = "zf_xiaoxiao(2)+zf_xiaobei(1)"):
         self.VOICE = voice if voice else choice(self.ALL_VOICES)
         print(f"Using voice: {self.VOICE}")
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
