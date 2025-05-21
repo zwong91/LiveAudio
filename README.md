@@ -65,9 +65,22 @@ LLM  Ollama 端点
 Twilio SIP
 SipTrunkID  or  BYOC Trunking ID
 ```bash
+lk cloud auth
 lk sip dispatch list
 lk sip outbound list
 lk sip inbound list
+
+lk sip inbound create inbound-trunk.json
+Using default project [voice-agent]
+SIPTrunkID: ST_KQvebhnKoTRT
+
+lk sip dispatch create dispatch-rule.json
+Using default project [voice-agent]
+SIPDispatchRuleID: SDR_zWq6fbvk43Pv
+
+lk sip outbound create outbound-trunk.json
+Using default project [voice-agent]
+SIPTrunkID: ST_Vo4wWuadYrjx
 ```
 
 https://github.com/remsky/Kokoro-FastAPI
