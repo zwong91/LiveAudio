@@ -30,6 +30,10 @@ This example demonstrates the following features:
 - Uses Krisp background voice cancellation to handle noisy environments
 
 ```bash
+
+# runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
+***PyTorch version to 2.6.0, CUDA 12.4***
+
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source $HOME/.local/bin/env
@@ -123,15 +127,6 @@ curl --silent --remote-name https://raw.githubusercontent.com/speaches-ai/speach
 export COMPOSE_FILE=compose.cuda.yaml
 
 # Soure Code
-export SPEACHES_BASE_URL="http://localhost:8000"
-
-# Listing all available STT models
-uvx speaches-cli registry ls --task automatic-speech-recognition | jq '.data | [].id'
-
-# Downloading a deepdml/faster-whisper-large-v3-turbo-ct2 model
-uvx speaches-cli model download deepdml/faster-whisper-large-v3-turbo-ct2
-
-
 git clone https://github.com/speaches-ai/speaches.git
 cd speaches
 uv venv
@@ -139,6 +134,11 @@ source .venv/bin/activate
 uv sync --all-extras
 uvicorn --factory --host 0.0.0.0 speaches.main:create_app
 
+export SPEACHES_BASE_URL="http://localhost:8000"
+# Listing all available STT models
+uvx speaches-cli registry ls --task automatic-speech-recognition | jq '.data | [].id'
+# Downloading a deepdml/faster-whisper-large-v3-turbo-ct2 model
+uvx speaches-cli model download deepdml/faster-whisper-large-v3-turbo-ct2
 
 ```
 
