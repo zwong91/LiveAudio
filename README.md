@@ -182,7 +182,7 @@ You can dispatch an agent to make a call by using the `lk` CLI:
 lk dispatch create \
   --new-room \
   --agent-name outbound-caller \
-  --metadata '{"phone_number": "sip:admin@jokerrr.sip.twilio.com", "transfer_to": "+19787084213}'
+  --metadata '{"phone_number": "+19787084213", "transfer_to": "+19787084213"}'
 ```
 
 ```python

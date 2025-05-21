@@ -212,12 +212,13 @@ async def entrypoint(ctx: JobContext):
     )
 
     # `create_sip_participant` starts dialing the user
+    # LiveKit 会通过指定的 SIP 中继向目标号码发送 INVITE 请求，发起通话
     try:
         await ctx.api.sip.create_sip_participant(
             api.CreateSIPParticipantRequest(
                 room_name=ctx.room.name,
                 sip_trunk_id=outbound_trunk_id,
-                sip_call_to=phone_number,
+                sip_call_to=phone_number, # 要拨打的目标（电话号码 or SIP 用户名）
                 participant_identity=participant_identity,
                 # function blocks until user answers the call, or if the call fails
                 wait_until_answered=True,

@@ -3,7 +3,7 @@
     "name": "My outbound trunk",
     "address": "voice-lk-trunk.pstn.twilio.com",
     "numbers": ["+12298505432"],
-    "auth_username": "admin",
+    "auth_username": "lk",
     "auth_password": "Twiliopwd123!@#"
   }
 }
