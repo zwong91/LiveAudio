@@ -29,9 +29,10 @@ This example demonstrates the following features:
 - Detecting intent to end the call
 - Uses Krisp background voice cancellation to handle noisy environments
 
-```bash
-
-***runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04***
+```
+RunPod Pytorch 2.4.0
+runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
+```
 
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -56,7 +57,7 @@ python src/inbound_agent.py download-files
 
 # Install ollama https://github.com/ollama/ollama/releases
 apt update
-apt install lshw jq vim curl ffmpeg -y
+apt install lshw jq vim curl ffmpeg libportaudio2 -y
 apt-get -qq -y install espeak-ng > /dev/null 2>&1
 
 (curl -fsSL https://ollama.com/install.sh | sh && ollama serve > ollama.log 2>&1) &
@@ -94,11 +95,6 @@ SIPTrunkID: ST_Vo4wWuadYrjx
 ```
 
 
-***https://github.com/matatonic/openedai-speech***
-```bash
-xtts custom voice clone
-```
-
 https://github.com/remsky/Kokoro-FastAPI
 ```bash
 docker run -itd -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest # CPU, or:
@@ -115,6 +111,17 @@ uv sync --all-extras
 # Or run directly via UV:
 ./start-gpu.sh  # For GPU support
 ./start-cpu.sh  # For CPU support
+
+```
+
+***https://github.com/astramind-ai/Auralis**
+```bash
+uv venv --python=python3.10 xtts
+source xtts/bin/activate
+
+uv pip install auralis
+
+auralis.openai --host 127.0.0.1 --port 8880 --model AstraMindAI/xttsv2 --gpt_model AstraMindAI/xtts2-gpt --max_concurrency 8 --vllm_logging_level warn
 
 ```
 
@@ -230,6 +237,7 @@ Wed May 21 06:26:26 2025
 +-----------------------------------------------------------------------------------------+
 
 
+# 安装 cuBLAS 和 cuDNN
 apt install -y cuda-toolkit-12-4
 
 ***https://developer.nvidia.com/cudnn-downloads***

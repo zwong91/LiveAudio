@@ -24,6 +24,13 @@ async def entrypoint(ctx: agents.JobContext):
             model="gemma3:12b",
             base_url="http://localhost:11434/v1",
         ),
+        # tts=openai.TTS(
+        #     model="kokoro",
+        #     voice="zm_yunxi",
+        #     api_key="not-needed",
+        #     base_url="http://localhost:8880/v1",
+        #     response_format="wav",
+        # ),
         tts=openai.TTS(
             model="kokoro",
             voice="zm_yunxi",
