@@ -31,8 +31,7 @@ This example demonstrates the following features:
 
 ```bash
 
-# runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
-***PyTorch version to 2.6.0, CUDA 12.4***
+***runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04***
 
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -57,7 +56,7 @@ python src/inbound_agent.py download-files
 
 # Install ollama https://github.com/ollama/ollama/releases
 apt update
-apt install lshw jq -y
+apt install lshw jq vim curl ffmpeg -y
 apt-get -qq -y install espeak-ng > /dev/null 2>&1
 
 (curl -fsSL https://ollama.com/install.sh | sh && ollama serve > ollama.log 2>&1) &
@@ -92,6 +91,12 @@ SIPDispatchRuleID: SDR_zWq6fbvk43Pv
 lk sip outbound create outbound-trunk.json
 Using default project [voice-agent]
 SIPTrunkID: ST_Vo4wWuadYrjx
+```
+
+
+***https://github.com/matatonic/openedai-speech***
+```bash
+xtts custom voice clone
 ```
 
 https://github.com/remsky/Kokoro-FastAPI
@@ -185,3 +190,46 @@ await lkapi.agent_dispatch.create_dispatch(
     )
 )
 ```
+
+### Q &A
+2025-05-21 06:24:48,284:DEBUG:urllib3.connectionpool:_make_request:546:https://huggingface.co:443 "GET /api/models/deepdml/faster-whisper-large-v3-turbo-ct2/revision/main HTTP/11" 200 2407
+2025-05-21 06:24:49,957:INFO:speaches.model_manager:_load:48:Model deepdml/faster-whisper-large-v3-turbo-ct2 loaded in 1.90s
+2025-05-21 06:24:49,957:DEBUG:speaches.model_manager:_increment_ref:56:Incremented ref count for deepdml/faster-whisper-large-v3-turbo-ct2, self.ref_count=1
+2025-05-21 06:24:49,957:INFO:faster_whisper:transcribe:839:Processing audio with duration 00:02.452
+Unable to load any of {libcudnn_ops.so.9.1.0, libcudnn_ops.so.9.1, libcudnn_ops.so.9, libcudnn_ops.so}
+Invalid handle. Cannot load symbol cudnnCreateTensorDescriptor
+Aborted (core dumped)
+
+
+(speaches) root@780f16ccf37b:/workspace/speaches# nvcc --version
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2024 NVIDIA Corporation
+Built on Thu_Mar_28_02:18:24_PDT_2024
+Cuda compilation tools, release 12.4, V12.4.131
+Build cuda_12.4.r12.4/compiler.34097967_0
+
+(speaches) root@780f16ccf37b:/workspace/speaches# nvidia-smi
+Wed May 21 06:26:26 2025
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.127.05             Driver Version: 550.127.05     CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA RTX 4000 Ada Gene...    On  |   00000000:C2:00.0 Off |                  Off |
+| 30%   31C    P8             12W /  130W |   10607MiB /  20475MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
++-----------------------------------------------------------------------------------------+
+
+
+apt install -y cuda-toolkit-12-4
+
+***https://developer.nvidia.com/cudnn-downloads***
