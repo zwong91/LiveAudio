@@ -40,6 +40,10 @@ source agent/bin/activate
 which python
 python --version
 
+git clone https://github.com/zwong91/VoiceAgent.git
+cd VoiceAgent
+git checkout lk
+
 curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python get-pip.py
 
@@ -48,9 +52,12 @@ uv pip install -r requirements.txt
 python src/inbound_agent.py download-files
 
 # Install ollama https://github.com/ollama/ollama/releases
-curl -fsSL https://ollama.com/install.sh | sh
-ollama serve
-ollama run qwen2.5:0.5b --verbose
+apt update
+apt install lshw jq -y
+apt-get -qq -y install espeak-ng > /dev/null 2>&1
+
+(curl -fsSL https://ollama.com/install.sh | sh && ollama serve > ollama.log 2>&1) &
+ollama run gemma3:12b --verbose
 
 ```
 ***OpenAI plugin for LiveKit Agents***
@@ -87,10 +94,25 @@ https://github.com/remsky/Kokoro-FastAPI
 ```bash
 docker run -itd -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest # CPU, or:
 docker run --gpus all -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-gpu:latest  #NVIDIA GPU
+
+git clone https://github.com/remsky/Kokoro-FastAPI.git
+cd Kokoro-FastAPI
+
+uv venv --python=python3.12 kokoro
+source kokoro/bin/activate
+
+# Models will auto-download, but if needed you can manually download:
+python docker/scripts/download_model.py --output api/src/models/v1_0
+
+# Or run directly via UV:
+./start-gpu.sh  # For GPU support
+./start-cpu.sh  # For CPU support
+
 ```
 
 https://speaches.ai/usage/text-to-speech/
 ```bash
+#CPU
 curl --silent --remote-name https://raw.githubusercontent.com/speaches-ai/speaches/master/compose.yaml
 curl --silent --remote-name https://raw.githubusercontent.com/speaches-ai/speaches/master/compose.cpu.yaml
 export COMPOSE_FILE=compose.cpu.yaml
@@ -100,6 +122,27 @@ docker compose up -d
 curl --silent --remote-name https://raw.githubusercontent.com/speaches-ai/speaches/master/compose.yaml
 curl --silent --remote-name https://raw.githubusercontent.com/speaches-ai/speaches/master/compose.cuda.yaml
 export COMPOSE_FILE=compose.cuda.yaml
+
+# Soure Code
+export SPEACHES_BASE_URL="http://localhost:8000"
+
+# Listing all available STT models
+uvx speaches-cli registry ls --task automatic-speech-recognition | jq '.data | [].id'
+
+# Downloading a Systran/faster-whisper-large-v3 model
+uvx speaches-cli model download Systran/faster-whisper-large-v3
+
+# Check that the model has been installed
+uvx speaches-cli model ls --task text-to-speech | jq '.data | map(select(.id == "Systran/faster-whisper-large-v3"))'
+
+
+git clone https://github.com/speaches-ai/speaches.git
+cd speaches
+uv venv --python=python3.12 speaches
+source speaches/bin/activate
+uv sync --all-extras
+uvicorn --factory --host 0.0.0.0 speaches.main:create_app
+
 
 ```
 

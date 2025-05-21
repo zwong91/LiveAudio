@@ -19,9 +19,9 @@ class Assistant(Agent):
 
 async def entrypoint(ctx: agents.JobContext):
     session = AgentSession(
-        stt=openai.STT(detect_language=True, model="openai/whisper-large-v3-turbo", base_url="http://localhost:8000/v1"),
+        stt=openai.STT(detect_language=True, model="Systran/faster-whisper-large-v3", base_url="http://localhost:8000/v1"),
         llm=openai.LLM.with_ollama(
-            model="qwen2.5:0.5b",
+            model="gemma3:12b",
             base_url="http://localhost:11434/v1",
         ),
         tts=openai.TTS(model="kokoro", voice="af_alloy", base_url="http://localhost:8880/v1"),
