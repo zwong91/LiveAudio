@@ -128,8 +128,8 @@ export SPEACHES_BASE_URL="http://localhost:8000"
 # Listing all available STT models
 uvx speaches-cli registry ls --task automatic-speech-recognition | jq '.data | [].id'
 
-# Downloading a Systran/faster-whisper-large-v3 model
-uvx speaches-cli model download Systran/faster-whisper-large-v3
+# Downloading a deepdml/faster-whisper-large-v3-turbo-ct2 model
+uvx speaches-cli model download deepdml/faster-whisper-large-v3-turbo-ct2
 
 
 git clone https://github.com/speaches-ai/speaches.git

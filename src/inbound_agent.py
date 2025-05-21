@@ -19,18 +19,12 @@ class Assistant(Agent):
 
 async def entrypoint(ctx: agents.JobContext):
     session = AgentSession(
-        stt=openai.STT(detect_language=True, model="Systran/faster-whisper-large-v3", base_url="http://localhost:8000/v1"),
+        stt=openai.STT(detect_language=True, model="deepdml/faster-whisper-large-v3-turbo-ct2", base_url="http://localhost:8000/v1"),
         llm=openai.LLM.with_ollama(
             model="gemma3:12b",
             base_url="http://localhost:11434/v1",
         ),
-        tts=openai.TTS(
-            model="kokoro",
-            voice="af_alloy",
-            api_key="not-needed",
-            base_url="http://localhost:8880/v1",
-            response_format="wav",
-        ),
+        tts=openai.TTS(model="kokoro", voice="af_alloy", base_url="http://localhost:8880/v1"),
         # stt=openai.STT(),
         # llm=openai.LLM(),
         # tts=openai.TTS(),
