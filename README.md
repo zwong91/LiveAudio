@@ -95,15 +95,14 @@ https://github.com/remsky/Kokoro-FastAPI
 docker run -itd -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest # CPU, or:
 docker run --gpus all -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-gpu:latest  #NVIDIA GPU
 
+# Scratch
 git clone https://github.com/remsky/Kokoro-FastAPI.git
 cd Kokoro-FastAPI
-
-uv venv --python=python3.12 kokoro
-source kokoro/bin/activate
-
+uv venv
+source .venv/bin/activate
+uv sync --all-extras
 # Models will auto-download, but if needed you can manually download:
-python docker/scripts/download_model.py --output api/src/models/v1_0
-
+# python docker/scripts/download_model.py --output api/src/models/v1_0
 # Or run directly via UV:
 ./start-gpu.sh  # For GPU support
 ./start-cpu.sh  # For CPU support
@@ -132,14 +131,11 @@ uvx speaches-cli registry ls --task automatic-speech-recognition | jq '.data | [
 # Downloading a Systran/faster-whisper-large-v3 model
 uvx speaches-cli model download Systran/faster-whisper-large-v3
 
-# Check that the model has been installed
-uvx speaches-cli model ls --task text-to-speech | jq '.data | map(select(.id == "Systran/faster-whisper-large-v3"))'
-
 
 git clone https://github.com/speaches-ai/speaches.git
 cd speaches
-uv venv --python=python3.12 speaches
-source speaches/bin/activate
+uv venv
+source .venv/bin/activate
 uv sync --all-extras
 uvicorn --factory --host 0.0.0.0 speaches.main:create_app
 
