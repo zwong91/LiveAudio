@@ -182,20 +182,20 @@ You can dispatch an agent to make a call by using the `lk` CLI:
 lk dispatch create \
   --new-room \
   --agent-name outbound-caller \
-  --metadata '{"phone_number": "+1234567890", "transfer_to": "+9876543210}'
+  --metadata '{"phone_number": "sip:admin@jokerrr.sip.twilio.com", "transfer_to": "+19787084213}'
 ```
 
 ```python
 await lkapi.agent_dispatch.create_dispatch(
     api.CreateAgentDispatchRequest(
         # Use the agent name you set in the WorkerOptions
-        agent_name="my-telephony-agent",
+        agent_name="outbound-caller",
 
         # The room name to use. This should be unique for each call
         room=f"outbound-{''.join(str(random.randint(0, 9)) for _ in range(10))}",
 
         # Here we use JSON to pass the phone number, and could add more information if needed.
-        metadata='{"phone_number": "+15105550123"}'
+        metadata='{"phone_number": "sip:admin@jokerrr.sip.twilio.com"}'
     )
 )
 ```
