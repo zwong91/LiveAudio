@@ -173,7 +173,7 @@ async def entrypoint(ctx: JobContext):
 
     # look up the user's phone number and appointment details
     agent = OutboundCaller(
-        name="Jayden",
+        name="jong-un",
         appointment_time="next Tuesday at 3pm",
         dial_info=dial_info,
     )
@@ -182,11 +182,17 @@ async def entrypoint(ctx: JobContext):
     session = AgentSession(
         turn_detection=MultilingualModel(),
         vad=silero.VAD.load(),
-        stt=openai.STT(detect_language=True, model="openai/whisper-large-v3-turbo", base_url="http://localhost:8000/v1"),
-        tts=openai.TTS(model="kokoro", voice="af_alloy", base_url="http://localhost:8880/v1"),
+        stt=openai.STT(detect_language=True, model="deepdml/faster-whisper-large-v3-turbo-ct2", base_url="http://localhost:8000/v1"),
         llm=openai.LLM.with_ollama(
-            model="qwen2.5:0.5b",
+            model="gemma3:12b",
             base_url="http://localhost:11434/v1",
+        ),
+        tts=openai.TTS(
+            model="kokoro",
+            voice="zm_yunxi",
+            api_key="not-needed",
+            base_url="http://localhost:8880/v1",
+            response_format="wav",
         ),
         # you can also use a speech-to-speech model like OpenAI's Realtime API
         # llm=openai.realtime.RealtimeModel()

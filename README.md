@@ -114,14 +114,16 @@ uv sync --all-extras
 
 ```
 
-***https://github.com/astramind-ai/Auralis**
+***https://github.com/phildougherty/sesame_csm_openai**
 ```bash
-uv venv --python=python3.10 xtts
-source xtts/bin/activate
+huggingface-cli download sesame/csm-1b --repo-type model --local-dir ./app/models/csm-1b
 
-uv pip install auralis
+# https://{POD_ID}-9001.proxy.runpod.net
+curl -X POST http://127.0.0.1:9001/v1/voice-cloning/clone \
+  -F "name=xxoo" \
+  -F "audio_file=@/workspace/liuyifei.wav" \
+  -F "description=love of this voice"
 
-auralis.openai --host 127.0.0.1 --port 8880 --model AstraMindAI/xttsv2 --gpt_model AstraMindAI/xtts2-gpt --max_concurrency 8 --vllm_logging_level warn
 
 ```
 
