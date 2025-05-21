@@ -32,11 +32,10 @@ async def entrypoint(ctx: agents.JobContext):
         #     response_format="wav",
         # ),
         tts=openai.TTS(
-            model="kokoro",
+            model="xttsv2",
             voice="zm_yunxi",
             api_key="not-needed",
             base_url="http://localhost:8880/v1",
-            response_format="wav",
         ),
         # stt=openai.STT(),
         # llm=openai.LLM(),
