@@ -294,7 +294,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         except asyncio.CancelledError:
             logger.info("Response generation cancelled")
-            self._send_clear(endpoint)
             raise
         except Exception as e:
             logger.error(f"Error generating response: {e}")
