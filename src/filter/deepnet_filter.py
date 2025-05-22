@@ -33,7 +33,7 @@ class DeepNetFilter(FilterInterface):
             audio_float = data.astype(np.float32) / 32768.0
 
             audio_tensor = torch.from_numpy(audio_float).float()
-
+            audio_tensor = audio_tensor.unsqueeze(0)
             # Process audio
             enhanced = enhance(
                 self.model,
@@ -43,7 +43,7 @@ class DeepNetFilter(FilterInterface):
             )
 
             # Convert back to int16
-            processed = (enhanced * 32768.0).astype(np.int16)
+            processed = (enhanced.squeeze(0).numpy() * 32768.0).astype(np.int16)
             return processed.tobytes()
 
         except Exception as e:
