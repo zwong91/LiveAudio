@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import time
+from datetime import datetime, timezone
 import logging
 from .buffering_strategy_interface import BufferingStrategyInterface
 from collections import deque
@@ -116,7 +117,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             return
 
         # 语音活动检测结束时间
-        print(f"VAD detected end at {time.time()}")
+        print(f"VAD detected end at {datetime.now(timezone.utc).isoformat()}")
         # 清理音频缓冲区
         await self._send_clear(endpoint)
 
@@ -128,14 +129,24 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         text = transcription["text"]
         print(f"Transcription result: {text}")
         # Turn taking 检测
+        # 默认使用最小的 endpoint 延迟
         endpointing_delay = self.min_endpointing_delay
-        if not await self._check_conversation_complete(eou, text):
-            # 如果没有检测到完整的对话，继续等待
-            print("Turn not complete")
-            #FIXME: 这里最大timeout是 3s, 不能无限等待如果一直未检测到完整对话
-            endpointing_delay = self.max_endpointing_delay
 
+        # 如果是第一次说话，记录时间
+        if self.last_speaking_time == 0:
+            self.last_speaking_time = time.time()
+        else:
+            # 检查当前这轮对话是否完成（end of utterance）
+            is_complete = await self._check_conversation_complete(eou, text)
+
+            if not is_complete:
+                print("Turn not complete")  # 尚未检测到完整对话
+                # FIXME: 这里最大等待时间应为 3 秒，不能无限等待
+                endpointing_delay = self.max_endpointing_delay
+
+        # 计算还需要额外等待的时间
         extra_delay = self.last_speaking_time + endpointing_delay - time.time()
+
         if max(extra_delay, 0) > 0:
             print(f"Waiting for {extra_delay:.2f} seconds before processing new chunk")
             return
@@ -397,8 +408,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.client.history = updated_history
         self.client.scratch_buffer.clear()
         self.client.increment_file_counter()
-
-        self.last_speaking_time = time.time()
 
     def _prepare_messages(self, transcription_text: str) -> list:
         """准备要发送给 LLM 的消息并更新历史"""

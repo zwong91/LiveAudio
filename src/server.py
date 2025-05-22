@@ -549,9 +549,9 @@ class Server:
     async def handle_outgoing_call(self, request: Request):
         """Handle outgoing call and return TwiML response to connect to Media Stream."""
         response = VoiceResponse()
-        response.say("稍等一下哦，正在召唤全宇宙最聪明的AI语音助理……")
-        response.pause(length=1)
-        response.say("好了，它上线啦！想说啥尽管说吧~")
+        # response.say("稍等一下哦，正在召唤全宇宙最聪明的AI语音助理……")
+        # response.pause(length=1)
+        # response.say("好了，它上线啦！想说啥尽管说吧~")
 
         connect = Connect()
         connect.stream(url=f'wss://{request.url.hostname}/media-stream')
