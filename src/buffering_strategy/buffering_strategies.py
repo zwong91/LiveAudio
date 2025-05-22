@@ -126,24 +126,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         #self.client.scratch_buffer.clear()
         await self._send_clear(endpoint)
 
-        # # Turn taking 检测
-        # # 默认使用最小的 endpoint 延迟
-        # endpointing_delay = self.min_endpointing_delay
-        # # 检查当前这轮对话是否完成（end of utterance）
-        # is_complete = await self._check_conversation_complete(eou, text)
-
-        # if not is_complete:
-        #     print("Turn not complete yet")  # 尚未检测到完整对话
-        #     # FIXME: 这里最大等待时间应为 3 秒，不能无限等待
-        #     endpointing_delay = self.max_endpointing_delay
-
-        # # 计算还需要额外等待的时间
-        # extra_delay = self.last_speaking_time + endpointing_delay - time.time()
-
-        # if max(extra_delay, 0) > 0:
-        #     print(f"Waiting for {extra_delay:.2f} seconds before processing new chunk")
-        #     return
-
         # 如果是第一次说话，记录时间
         if self.last_speaking_time == 0:
             self.last_speaking_time = time.time()
@@ -166,6 +148,24 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
             text = transcription["text"]
             print(f"Transcription result: {text}")
+
+            # Turn taking 检测
+            # 默认使用最小的 endpoint 延迟
+            endpointing_delay = self.min_endpointing_delay
+            # 检查当前这轮对话是否完成（end of utterance）
+            is_complete = await self._check_conversation_complete(eou, text)
+
+            if not is_complete:
+                print("Turn not complete yet")  # 尚未检测到完整对话
+                # FIXME: 这里最大等待时间应为 3 秒，不能无限等待
+                endpointing_delay = self.max_endpointing_delay
+
+            # 计算还需要额外等待的时间
+            extra_delay = self.last_speaking_time + endpointing_delay - time.time()
+
+            if max(extra_delay, 0) > 0:
+                print(f"Waiting for {extra_delay:.2f} seconds before processing new chunk")
+                return
 
             # 生成和播放响应
             await self._generate_and_play_response(
