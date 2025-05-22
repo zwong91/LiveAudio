@@ -126,13 +126,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         #self.client.scratch_buffer.clear()
         await self._send_clear(endpoint)
 
-        # 语音转文字
-        transcription = await self._transcribe_audio(asr)
-        if not transcription:
-            return
-
-        text = transcription["text"]
-        print(f"Transcription result: {text}")
         # # Turn taking 检测
         # # 默认使用最小的 endpoint 延迟
         # endpointing_delay = self.min_endpointing_delay
@@ -165,6 +158,15 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """异步处理音频并生成响应"""
         start = time.time()
         try:
+            # 转录音频
+            transcription = await self._transcribe_audio(asr)
+            if not transcription:
+                self._clear_buffers()
+                return
+
+            text = transcription["text"]
+            print(f"Transcription result: {text}")
+
             # 生成和播放响应
             await self._generate_and_play_response(
                 endpoint, use_webrtc, llm, tts, text
@@ -175,7 +177,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             raise
         finally:
             end = time.time()
-            #print(f"Total processing time: {end - start:.2f}s")
+            print(f"Total processing time: {end - start:.2f}s")
             self._clear_buffers()
 
     async def _handle_vad_detection(self, vad):
