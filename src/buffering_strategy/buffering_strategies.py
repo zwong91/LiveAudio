@@ -108,10 +108,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if not self._should_process_new_chunk():
             return
 
-        # 开始处理新的音频块
-        self.client.scratch_buffer.extend(self.client.buffer)
-        self.client.buffer.clear()
-
         # VAD 检测
         if not await self._handle_vad_detection(vad):
             return
@@ -129,6 +125,14 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # 如果是第一次说话，记录时间
         if self.last_speaking_time == 0:
             self.last_speaking_time = time.time()
+
+        # 上一个job 处理
+        if self.processing_task and not self.processing_task.done():
+            return
+
+        # 开始处理新的音频块
+        self.client.scratch_buffer.extend(self.client.buffer)
+        self.client.buffer.clear()
 
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
