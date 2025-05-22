@@ -336,6 +336,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.client.config["is_simultaneous"]
             ):
                 await self._send(endpoint, use_webrtc, chunk)
+                await self._send_mark(endpoint)
 
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")
@@ -364,7 +365,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 endpoint.send(chunk)
             else:
                 await endpoint.send_json(audio_delta)
-                await self._send_mark(endpoint)
         except Exception as e:
             logger.error(f"发送失败: {e}")
             raise
