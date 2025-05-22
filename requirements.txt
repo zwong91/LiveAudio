@@ -23,7 +23,7 @@ elevenlabs==1.58.1
 pydub
 pyaudio
 onnx
-onnxruntime>=1.15.1
+onnxruntime-gpu>=1.22.0
 onnxconverter_common
 numpy>=1.24.3
 pyloudnorm

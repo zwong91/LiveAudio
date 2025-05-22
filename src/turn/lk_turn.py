@@ -52,7 +52,10 @@ class LKTurn(TurnInterface):
 
             self._unlikely_threshold = unlikely_threshold
             # Initialize session and tokenizer
-            self.session = ort.InferenceSession(local_path, providers=["CPUExecutionProvider"])
+            self.session = ort.InferenceSession(local_path, providers=["CUDAExecutionProvider", "CPUExecutionProvider"])
+            print("ONNX Runtime providers:", self.session.get_providers())
+            print("Current provider:", self.session.get_provider_options())
+
             self.tokenizer = AutoTokenizer.from_pretrained(
                 HG_MODEL,
                 revision=MODEL_REVISION,
