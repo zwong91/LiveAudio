@@ -95,8 +95,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
     def _should_process_new_chunk(self):
         """判断是否需要处理新的音频块"""
-        # TODO: 打断AI发言的逻辑
-
         chunk_length_in_bytes = (
             self.chunk_length_seconds
             * self.client.sampling_rate
@@ -366,9 +364,21 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 endpoint.send(chunk)
             else:
                 await endpoint.send_json(audio_delta)
+                await self._send_mark(endpoint)
         except Exception as e:
             logger.error(f"发送失败: {e}")
             raise
+
+    async def _send_mark(self, endpoint):
+        stream_sid = self.client.stream_sid()
+        if stream_sid:
+            mark_event = {
+                "event": "mark",
+                "streamSid": stream_sid,
+                "mark": {"name": "responsePart"}
+            }
+            await endpoint.send_json(mark_event)
+            self.client.append_mark('responsePart')
 
     async def _send_clear(self, endpoint):
         stream_sid = self.client.get_sid()
