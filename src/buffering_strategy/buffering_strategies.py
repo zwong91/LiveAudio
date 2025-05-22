@@ -108,7 +108,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if not self._should_process_new_chunk():
             return
 
-
         # 上一个job 处理
         if self.processing_task and not self.processing_task.done():
             return
