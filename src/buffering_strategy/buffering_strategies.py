@@ -269,7 +269,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                         use_webrtc,
                         tts,
                         sentence,
-                        first_chunk=(seg_idx == 1)
                     )
                     seg_idx += 1
 
@@ -289,7 +288,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     use_webrtc,
                     tts,
                     buffer,
-                    first_chunk=(seg_idx == 1)
                 )
 
         except asyncio.CancelledError:
@@ -316,7 +314,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         use_webrtc,
         tts,
         text: str,
-        first_chunk: bool = True
     ):
         """流式处理文本到语音转换
 
@@ -329,6 +326,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if not text.strip():
             return
 
+        print("tts is:", type(tts), tts)
+
         try:
             async for chunk in tts.text_to_speech_stream(
                 text,
@@ -337,7 +336,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             ):
                 await self._send(endpoint, use_webrtc, chunk)
                 # 发送标记事件
-                await self._send_mark(endpoint)
+                #await self._send_mark(endpoint)
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")
             raise

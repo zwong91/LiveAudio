@@ -561,7 +561,7 @@ class Server:
     async def handle_audio(self, client, websocket):
         sessionid = None
         latest_media_timestamp = 0
-        mark_queue = []
+
         while True:
             try:
                 text = await websocket.receive_text()
