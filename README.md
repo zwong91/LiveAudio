@@ -39,8 +39,8 @@ python get-pip.py
 uv pip install -r requirements.txt
 
 # Install ollama https://github.com/ollama/ollama/releases
-curl -fsSL https://ollama.com/install.sh | sh
-ollama serve
+(curl -fsSL https://ollama.com/install.sh | sh && ollama serve > ollama.log 2>&1) &
+
 ollama run gemma3:12b --verbose
 ```
 
@@ -58,7 +58,7 @@ curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
   && apt update \
   && apt install ngrok
 
-ngrok config add-authtoken 2q0o5XSi73aG9m4KyMxHB0pmEXi_2mUYW4R1wDsanPzWgCWrW
+ngrok config add-authtoken <token>
 
 ngrok http 8765
 ```
@@ -110,7 +110,7 @@ Keep in mind that each time you run the `ngrok http` command, a new URL will be 
     time you re-run the container. If you don't need this, just use:
 
     ```bash
-    sudo docker run --gpus all -p 19999:19999 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' VoiceAgent
+    sudo docker run --gpus all -p 8765:8765 -e PYANNOTE_AUTH_TOKEN='VAD_TOKEN_HERE' VoiceAgent
     ```
 
 ## Usage
@@ -154,6 +154,7 @@ GPT 模型的输出被传递给解码器模型，输出音频信号。使用扩�
 4. Kokoro TTS
 Alternative to Coqui AI XTTS-v2, Kokoro TTS is a text-to-speech (TTS) system that uses a combination of neural networks and deep learning techniques to generate high-quality speech from text input. It is designed to produce natural-sounding speech with a focus on expressiveness and emotional intonation.
 Kokoro TTS is built on top of the Tacotron architecture, which is a sequence-to-sequence model that converts text to mel-spectrograms. The mel-spectrograms are then converted to audio waveforms using a vocoder, such as WaveGlow or HiFi-GAN.
+
 
 Resources
 ---------
