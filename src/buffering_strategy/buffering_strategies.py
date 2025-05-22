@@ -115,6 +115,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if not await self._handle_vad_detection(vad):
             return
 
+        # 语音活动检测结束时间
+        print(f"VAD detected end at {time.time()}")
         # 清理音频缓冲区
         await self._send_clear(endpoint)
 
@@ -141,8 +143,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # Interrupt handling/AI preemption 如果AI正在说话且检测到用户插话（新语音），执行中断
         # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
         #FIXME: 清除流缓冲区并发送 truncate like openai？
-        await self.stop_processing_task()
-        self.client.scratch_buffer.clear()
+        #await self.stop_processing_task()
+        #self.client.scratch_buffer.clear()
 
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
