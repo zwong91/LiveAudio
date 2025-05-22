@@ -17,7 +17,7 @@ class DeepNetFilter(FilterInterface):
 
         try:
             # Initialize model
-            self.df_state = init_df()
+            self.model, self.df_state, _ = init_df()
         except Exception as e:
             logger.error(f"Failed to load DeepNetFilter: {e}")
             self._filtering = False
@@ -33,8 +33,9 @@ class DeepNetFilter(FilterInterface):
 
             # Process audio
             enhanced = enhance(
-                audio_float,
+                self.model,
                 self.df_state,
+                audio_float,
                 atten_lim_db=6, #噪声衰减限制（attenuation limit）
             )
 
