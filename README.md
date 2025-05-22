@@ -183,6 +183,11 @@ lk dispatch create \
   --new-room \
   --agent-name outbound-caller \
   --metadata '{"phone_number": "sip:lk@jokerrr.sip.twilio.com", "transfer_to": "+19787084213"}'
+
+lk dispatch create \
+  --new-room \
+  --agent-name outbound-caller \
+  --metadata '{"phone_number": "sip:lk@jokerrr.sip.twilio.com"}'
 ```
 
 ```python
