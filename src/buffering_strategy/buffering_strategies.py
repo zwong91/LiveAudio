@@ -142,6 +142,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         #FIXME: 清除流缓冲区并发送 truncate like openai？
         await self.stop_processing_task()
         self.client.scratch_buffer.clear()
+        # 清理音频缓冲区
+        await self._send_clear(endpoint)
 
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
