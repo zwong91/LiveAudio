@@ -309,6 +309,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     "content": "".join(response_buffer)
                 })
                 self._update_client_state(self.client.history)
+                await self._send_mark(endpoint)
 
     async def _stream_tts(
         self,
@@ -336,7 +337,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.client.config["is_simultaneous"]
             ):
                 await self._send(endpoint, use_webrtc, chunk)
-                await self._send_mark(endpoint)
 
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")
