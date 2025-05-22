@@ -59,6 +59,17 @@ class ElevenlabTTS(TTSInterface):
                     print(f"Time to first chunk: {time_to_first_chunk:.4f}s")
                     first_chunk = False
 
-                yield chunk
+                # 使用 BytesIO 来读取音频数据
+                with io.BytesIO(chunk) as audio_io:
+                    audio: AudioSegment = AudioSegment.from_file(audio_io, format="mp3")
+                    # 处理音频，重采样到22050Hz，单声道，16bit
+                    audio_resampled = (
+                        audio.set_frame_rate(16000)
+                            .set_channels(1)
+                            .set_sample_width(2)  # 16bit sample_width (16/8=2)
+                    )
+                    pcm_data_16K = audio_resampled.raw_data
+                    # 发送处理后的数据
+                    yield pcm_data_16K
 
         print(f"ElevenLabs TTS time: {time.time() - start_time:.4f}s")
