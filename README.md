@@ -23,10 +23,6 @@ apt install curl ffmpeg libopenblas-dev vim git-lfs \
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source $HOME/.local/bin/env
 
-# Create directory
-mkdir -p /asset
-chmod 777 /asset/
-
 ```
 
 ### Environment Setup
