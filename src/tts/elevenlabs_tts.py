@@ -14,6 +14,7 @@ from pydub import AudioSegment
 from dotenv import load_dotenv
 from elevenlabs import stream
 from elevenlabs.client import ElevenLabs
+from src.utils.audio_utils import wave_header_chunk
 
 load_dotenv()
 
@@ -57,6 +58,6 @@ class ElevenlabTTS(TTSInterface):
                     time_to_first_chunk = time.time() - start_time
                     print(f"Time to first chunk: {time_to_first_chunk:.4f}s")
                     first_chunk = False
-                yield chunk
+                yield wave_header_chunk(chunk, 1, 2, 16000)
 
         print(f"ElevenLabs TTS time: {time.time() - start_time:.4f}s")
