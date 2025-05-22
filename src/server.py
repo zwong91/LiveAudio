@@ -588,6 +588,7 @@ class Server:
                     )
                     latest_media_timestamp = 0
                 elif data['event'] == 'mark':
+                    print(f"Received mark: {data['mark']}")
                     client.pop_mark_queue()
                 elif data['event'] == 'stop':
                     print(f"Call ended, stream {stream_sid} stopped")

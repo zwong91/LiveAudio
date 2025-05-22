@@ -117,6 +117,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         if not await self._handle_vad_detection(vad):
             return
 
+        # 清理音频缓冲区
+        await self._send_clear(endpoint)
+
         # 语音转文字
         transcription = await self._transcribe_audio(asr)
         if not transcription:
@@ -142,8 +145,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         #FIXME: 清除流缓冲区并发送 truncate like openai？
         await self.stop_processing_task()
         self.client.scratch_buffer.clear()
-        # 清理音频缓冲区
-        await self._send_clear(endpoint)
 
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
@@ -377,6 +378,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 "streamSid": stream_sid,
             }
             await endpoint.send_json(clear_event)
+            self.client.clear_mark_queue()
 
     def _update_client_state(self, updated_history):
         """Update client state after TTS process ends."""
