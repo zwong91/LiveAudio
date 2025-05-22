@@ -5,9 +5,9 @@ from .filter_interface import FilterInterface
 logger = logging.getLogger(__name__)
 
 try:
-    from deepfilternet.enhance import enhance, init_df, load_audio
+    from df.enhance import enhance, init_df, load_audio
 except ModuleNotFoundError as e:
-    logger.error(f"Missing deepfilterlib: {e}")
+    logger.error(f"Missing deepfilter: {e}")
     raise Exception("Please install deepfilterlib: pip install deepfilternet")
 
 

@@ -7,7 +7,7 @@ Welcome to the VoiceAgent repository! This project hosts exciting applications l
 ### Prerequisites
 
 ```sh
-
+#runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
 # Clone repository
 git clone https://github.com/zwong91/VoiceAgent.git
 cd VoiceAgent
@@ -34,6 +34,7 @@ source va/bin/activate
 
 curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python get-pip.py
+pip install deepfilternet
 
 # Install dependencies using uv
 uv pip install -r requirements.txt
