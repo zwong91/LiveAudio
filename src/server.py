@@ -46,6 +46,8 @@ TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
 twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
 ngrok.set_auth_token(os.getenv("NGROK_AUTHTOKEN"))
+NGROK_URL = os.getenv("NGROK_URL", "https://ngrok.io")
+
 
 if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN or not TWILIO_PHONE_NUMBER:
     raise ValueError('Missing Twilio configuration. Please set it in the .env file.')
@@ -724,8 +726,8 @@ class Server:
     async def health(self):
         return {"status": "ojbk"}
 
-    async def start_server(self):
-        """Start the Uvicorn server as a coroutine."""
+
+    async def proxy(self):
         # Open Ngrok tunnel
         listener = await ngrok.forward(f"http://localhost:{self.port}")
         print(f"Ngrok tunnel opened at {listener.url()} for port {self.port}")
@@ -744,6 +746,8 @@ class Server:
             updated_domain = twilio_client.sip.domains(domain.sid).update(voice_url=f"{NGROK_URL}{INCOMING_CALL_ROUTE}")
             print(f"SIP 域名 '{updated_domain.domain_name}' 的 voice_url 已更新为: {updated_domain.voice_url}")
 
+    async def start_server(self):
+        """Start the Uvicorn server as a coroutine."""
         uvicorn_config = uvicorn.Config(
             self.app,
             host="0.0.0.0",
@@ -794,5 +798,6 @@ class Server:
         """Start both the server and tasks concurrently."""
         await asyncio.gather(
             self.start_server(),  # Run Uvicorn server
+            self.proxy(),         # Start Ngrok tunnel
             #self.run_tasks()      # Run additional logic
         )

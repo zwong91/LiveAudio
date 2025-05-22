@@ -16,23 +16,23 @@ import asyncio
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Audio AI Server: Real-time audio conversation "
-                    "using self-hosted Sensevoice and WebSocket/WebRTC."
+                    "using self-hosted STT,LLM,TTS pipeline and WebSocket/WebRTC."
     )
     parser.add_argument("--vad-type", type=str, default="silero", help="VAD pipeline type")
     parser.add_argument("--vad-args", type=str, default='{"auth_token": "huggingface_token"}', help="VAD args (JSON string)")
     parser.add_argument("--turn-type", type=str, default="livekit", help="turn taking type")
-    parser.add_argument("--filter-type", type=str, default='deepfilter', help="Filter type for audio processing")
+    parser.add_argument("--filter-type", type=str, default='noisereduce', help="Filter noise type")
     parser.add_argument("--asr-type", type=str, default="whisper", help="ASR pipeline type")
     parser.add_argument("--asr-args", type=str, default='{"model_size": "large-v3-turbo"}', help="ASR args (JSON string)")
     parser.add_argument("--llm-type", type=str, default="ollama", help="OPENAI pipeline type")
-    parser.add_argument("--tts-type", type=str, default="kokoro", help="TTS pipeline type")
+    parser.add_argument("--tts-type", type=str, default="elevenlabs", help="TTS pipeline type")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host for the WebSocket server")
     parser.add_argument("--port", type=int, default=8765, help="Port for the WebSocket server")
     parser.add_argument("--certfile", type=str, default=None, help="Path to SSL certificate file")
     parser.add_argument("--keyfile", type=str, default=None, help="Path to SSL key file")
     parser.add_argument('--transport', type=str, default='webrtc')
     parser.add_argument('--whip_url', type=str, default='http://108.137.9.108:1985/rtc/v1/whip/?app=live&stream=livestream')
-    parser.add_argument("--log-level", type=str, default="debug", choices=["debug", "info", "warning", "error"], help="Logging level")
+    parser.add_argument("--log-level", type=str, default="info", choices=["debug", "info", "warning", "error"], help="Logging level")
     return parser.parse_args()
 
 def main():
