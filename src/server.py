@@ -748,7 +748,7 @@ class Server:
         to_phone_number = "sip:abc@jokerrr.sip.twilio.com"
         try:
             call = twilio_client.calls.create(
-                url=f"{NGROK_URL}/outgoing-call",
+                url=f"{NGROK_URL}/twilio/outbound_call",
                 to=to_phone_number,
                 from_=TWILIO_PHONE_NUMBER
             )
