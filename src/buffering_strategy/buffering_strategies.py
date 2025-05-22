@@ -294,6 +294,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         except asyncio.CancelledError:
             logger.info("Response generation cancelled")
+            self._send_clear(endpoint)
             raise
         except Exception as e:
             logger.error(f"Error generating response: {e}")
@@ -368,13 +369,19 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             logger.error(f"发送失败: {e}")
             raise
 
-    def _truncate_messages(self, max_history=10):
-        """保持消息历史在合理长度"""
-
+    async def _send_clear(self, endpoint):
+        stream_sid = self.client.stream_sid()
+        if stream_sid:
+            clear_event = {
+                "event": "clear",
+                "streamSid": stream_sid,
+            }
+            await endpoint.send_json(clear_event)
+            self.client.clear_mark_queue()
 
     def _update_client_state(self, updated_history):
         """Update client state after TTS process ends."""
-        self.client.history = updated_history[-10:]
+        self.client.history = updated_history
         self.client.scratch_buffer.clear()
         self.client.increment_file_counter()
 
