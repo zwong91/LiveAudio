@@ -59,6 +59,6 @@ class ElevenlabTTS(TTSInterface):
                     print(f"Time to first chunk: {time_to_first_chunk:.4f}s")
                     first_chunk = False
 
-            yield chunk
+                yield chunk
 
         print(f"ElevenLabs TTS time: {time.time() - start_time:.4f}s")
