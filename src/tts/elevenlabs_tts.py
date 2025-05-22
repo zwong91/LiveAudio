@@ -13,7 +13,7 @@ import langid
 from pydub import AudioSegment
 from dotenv import load_dotenv
 from elevenlabs import stream
-from elevenlabs.client import ElevenLabs
+from elevenlabs.client import AsyncElevenLabs
 
 load_dotenv()
 
@@ -24,7 +24,7 @@ class ElevenlabTTS(TTSInterface):
 
         api_key = os.getenv("ELEVENLABS_API_KEY")
         self.api_key = api_key
-        self.client = ElevenLabs(
+        self.async_client = AsyncElevenLabs(
             api_key=api_key,
         )
 
@@ -42,17 +42,17 @@ class ElevenlabTTS(TTSInterface):
     async def text_to_speech_stream(self, text: str, vc_uid: str, simultaneous: bool) -> AsyncGenerator[bytes, None]:
         start_time = time.time()
         first_chunk = True
-        # response = await self.client.voices.get_all()
+        # response = await self.async_client.voices.get_all()
         # print(response.voices)
 
-        audio_stream = self.client.text_to_speech.convert_as_stream(
+        results = self.async_client.text_to_speech.stream(
             text=text,
             voice_id=self.voice_id,
             model_id=self.model_id,
             output_format="pcm_16000",
         )
 
-        for chunk in audio_stream:
+        async for chunk in results:
             if isinstance(chunk, bytes):
                 if first_chunk:
                     time_to_first_chunk = time.time() - start_time
