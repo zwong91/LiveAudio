@@ -66,7 +66,7 @@ class OllamaLLM(LLMInterface):
                 messages=messages,
                 stream=True,
                 options={
-                    'num_predict': 256,
+                    'num_predict': 128,
                     'temperature': 1,
                 }
             )
