@@ -165,6 +165,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             end = time.time()
             #print(f"Total processing time: {end - start:.2f}s")
             self._clear_buffers()
+            # 清理音频缓冲区
+            await self._send_clear(endpoint)
 
     async def _handle_vad_detection(self, vad):
         """处理 VAD 检测结果"""
@@ -373,7 +375,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 "streamSid": stream_sid,
             }
             await endpoint.send_json(clear_event)
-            self.client.clear_mark_queue()
 
     def _update_client_state(self, updated_history):
         """Update client state after TTS process ends."""
