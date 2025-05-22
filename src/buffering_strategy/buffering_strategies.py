@@ -370,7 +370,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             raise
 
     async def _send_mark(self, endpoint):
-        stream_sid = self.client.stream_sid()
+        stream_sid = self.client.get_sid()
         if stream_sid:
             mark_event = {
                 "event": "mark",
