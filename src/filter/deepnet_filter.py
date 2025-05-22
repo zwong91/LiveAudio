@@ -13,7 +13,6 @@ except ModuleNotFoundError as e:
 
 class DeepNetFilter(FilterInterface):
     def __init__(self, **kwargs):
-        self._sample_rate = 16000
         self._filtering = True
 
         try:
@@ -36,8 +35,7 @@ class DeepNetFilter(FilterInterface):
             enhanced = enhance(
                 audio_float,
                 self.df_state,
-                sr=self._sample_rate,
-                atten_lim_db=6,
+                atten_lim_db=6, #噪声衰减限制（attenuation limit）
             )
 
             # Convert back to int16
