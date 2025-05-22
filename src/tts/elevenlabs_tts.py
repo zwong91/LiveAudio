@@ -45,14 +45,14 @@ class ElevenlabTTS(TTSInterface):
         # response = await self.client.voices.get_all()
         # print(response.voices)
 
-        audio_stream = self.client.text_to_speech.convert_as_stream(
+        audio_stream = self.client.text_to_speech.stream(
             text=text,
             voice_id=self.voice_id,
             model_id=self.model_id,
             output_format="pcm_16000",
         )
 
-        async for chunk in audio_stream:
+        for chunk in audio_stream:
             if isinstance(chunk, bytes):
                 if first_chunk:
                     time_to_first_chunk = time.time() - start_time
