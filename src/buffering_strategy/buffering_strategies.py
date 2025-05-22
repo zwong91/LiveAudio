@@ -118,7 +118,12 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         # 语音活动检测结束时间
         print(f"VAD detected end at {datetime.now(timezone.utc).isoformat()}")
-        # 清理音频缓冲区
+
+        # Interrupt handling/AI preemption 如果AI正在说话且检测到用户插话（新语音），执行中断
+        # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
+        #FIXME: 清除流缓冲区并发送 truncate like openai？
+        #await self.stop_processing_task()
+        #self.client.scratch_buffer.clear()
         await self._send_clear(endpoint)
 
         # 语音转文字
@@ -128,34 +133,27 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         text = transcription["text"]
         print(f"Transcription result: {text}")
-        # Turn taking 检测
-        # 默认使用最小的 endpoint 延迟
-        endpointing_delay = self.min_endpointing_delay
+        # # Turn taking 检测
+        # # 默认使用最小的 endpoint 延迟
+        # endpointing_delay = self.min_endpointing_delay
+        # # 检查当前这轮对话是否完成（end of utterance）
+        # is_complete = await self._check_conversation_complete(eou, text)
+
+        # if not is_complete:
+        #     print("Turn not complete yet")  # 尚未检测到完整对话
+        #     # FIXME: 这里最大等待时间应为 3 秒，不能无限等待
+        #     endpointing_delay = self.max_endpointing_delay
+
+        # # 计算还需要额外等待的时间
+        # extra_delay = self.last_speaking_time + endpointing_delay - time.time()
+
+        # if max(extra_delay, 0) > 0:
+        #     print(f"Waiting for {extra_delay:.2f} seconds before processing new chunk")
+        #     return
 
         # 如果是第一次说话，记录时间
         if self.last_speaking_time == 0:
             self.last_speaking_time = time.time()
-        else:
-            # 检查当前这轮对话是否完成（end of utterance）
-            is_complete = await self._check_conversation_complete(eou, text)
-
-            if not is_complete:
-                print("Turn not complete")  # 尚未检测到完整对话
-                # FIXME: 这里最大等待时间应为 3 秒，不能无限等待
-                endpointing_delay = self.max_endpointing_delay
-
-        # 计算还需要额外等待的时间
-        extra_delay = self.last_speaking_time + endpointing_delay - time.time()
-
-        if max(extra_delay, 0) > 0:
-            print(f"Waiting for {extra_delay:.2f} seconds before processing new chunk")
-            return
-
-        # Interrupt handling/AI preemption 如果AI正在说话且检测到用户插话（新语音），执行中断
-        # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
-        #FIXME: 清除流缓冲区并发送 truncate like openai？
-        #await self.stop_processing_task()
-        #self.client.scratch_buffer.clear()
 
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
