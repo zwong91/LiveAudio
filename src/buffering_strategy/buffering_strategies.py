@@ -132,11 +132,11 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         if self.processing_task is None or self.processing_task.done():
             self.processing_task = asyncio.create_task(
-                self.process_audio_async(endpoint, use_webrtc, asr, llm, tts)
+                self.process_audio_async(endpoint, use_webrtc, asr, eou, llm, tts)
             )
 
 
-    async def process_audio_async(self, endpoint, use_webrtc, asr, llm, tts):
+    async def process_audio_async(self, endpoint, use_webrtc, asr, eou, llm, tts):
         """异步处理音频并生成响应"""
         start = time.time()
         try:
