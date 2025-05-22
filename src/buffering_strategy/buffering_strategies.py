@@ -165,8 +165,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             end = time.time()
             #print(f"Total processing time: {end - start:.2f}s")
             self._clear_buffers()
-            # 清理音频缓冲区
-            #await self._send_clear(endpoint)
 
     async def _handle_vad_detection(self, vad):
         """处理 VAD 检测结果"""
@@ -296,6 +294,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         except asyncio.CancelledError:
             logger.info("Response generation cancelled")
+            # 清理音频缓冲区
+            await self._send_clear(endpoint)
             raise
         except Exception as e:
             logger.error(f"Error generating response: {e}")
