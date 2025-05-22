@@ -744,6 +744,18 @@ class Server:
             updated_domain = twilio_client.sip.domains(domain.sid).update(voice_url=f"{NGROK_URL}{INCOMING_CALL_ROUTE}")
             print(f"SIP 域名 '{updated_domain.domain_name}' 的 voice_url 已更新为: {updated_domain.voice_url}")
 
+        # outgoing call test
+        to_phone_number = "sip:abc@jokerrr.sip.twilio.com"
+        try:
+            call = twilio_client.calls.create(
+                url=f"{NGROK_URL}/outgoing-call",
+                to=to_phone_number,
+                from_=TWILIO_PHONE_NUMBER
+            )
+            print(f"Call initiated with SID: {call.sid}")
+        except Exception as e:
+            print(f"Error initiating call: {e}")
+
     async def start_server(self):
         """Start the Uvicorn server as a coroutine."""
         uvicorn_config = uvicorn.Config(
