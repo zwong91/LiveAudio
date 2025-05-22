@@ -165,6 +165,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             end = time.time()
             #print(f"Total processing time: {end - start:.2f}s")
             self._clear_buffers()
+            # 发送清除事件
+            await self._send_clear(endpoint)
 
     async def _handle_vad_detection(self, vad):
         """处理 VAD 检测结果"""
@@ -293,8 +295,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         except asyncio.CancelledError:
             # 向客户端发送清除事件
             logger.info("Response generation cancelled")
-            self._send_clear(endpoint)
-
             raise
         except Exception as e:
             logger.error(f"Error generating response: {e}")
@@ -335,8 +335,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.client.config["is_simultaneous"]
             ):
                 await self._send(endpoint, use_webrtc, chunk)
-                # 发送标记事件
-                await self._send_mark(endpoint)
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")
             raise
