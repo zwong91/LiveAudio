@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import logging
 from .filter_interface import FilterInterface
 
@@ -31,11 +32,13 @@ class DeepNetFilter(FilterInterface):
             data = np.frombuffer(audio, dtype=np.int16)
             audio_float = data.astype(np.float32) / 32768.0
 
+            audio_tensor = torch.from_numpy(audio_float).float()
+
             # Process audio
             enhanced = enhance(
                 self.model,
                 self.df_state,
-                audio_float,
+                audio_tensor,
                 atten_lim_db=6, #噪声衰减限制（attenuation limit）
             )
 
