@@ -46,6 +46,7 @@ TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
 twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
 ngrok.set_auth_token(os.getenv("NGROK_AUTHTOKEN"))
+NGROK_URL = os.getenv("NGROK_URL", "https://ngrok.io")
 
 if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN or not TWILIO_PHONE_NUMBER:
     raise ValueError('Missing Twilio configuration. Please set it in the .env file.')
@@ -557,8 +558,7 @@ class Server:
         return HTMLResponse(content=str(response), media_type="application/xml")
 
     async def handle_audio(self, client, websocket):
-        sessionid = None  # To store the sessionid
-        stream_sid = None
+        sessionid = None
         latest_media_timestamp = 0
         mark_queue = []
         while True:
@@ -588,12 +588,12 @@ class Server:
                     )
                     latest_media_timestamp = 0
                 elif data['event'] == 'mark':
-                    if mark_queue:
-                        mark_queue.pop(0)
+                    client.pop_mark_queue()
                 elif data['event'] == 'stop':
-                    print(f"Incoming stream has stopped {stream_sid}")
+                    print(f"Call ended, stream {stream_sid} stopped")
                     client.set_stream_sid(None)
                     client.clear_buffer()
+                    await websocket.close()
                 else:
                     await websocket.send_json({"type": "error", "message": f"Unknown message type: {data['event']}"})
 

@@ -293,7 +293,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 )
 
         except asyncio.CancelledError:
+            # 向客户端发送清除事件
             logger.info("Response generation cancelled")
+            self._send_clear(endpoint)
+
             raise
         except Exception as e:
             logger.error(f"Error generating response: {e}")
@@ -333,10 +336,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.client.config["is_simultaneous"]
             ):
                 await self._send(endpoint, use_webrtc, chunk)
-                # 控制播放节奏（按chunk的时长休眠）
-                #chunk_duration_seconds = len(chunk) / (16000 * 2)  # 16kHz, 16-bit = 2 bytes/sample
-                #await asyncio.sleep(chunk_duration_seconds * 0.9)  # 90% of chunk duration
-
+                # 发送标记事件
+                await self._send_mark(endpoint)
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")
             raise
@@ -368,13 +369,30 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             logger.error(f"发送失败: {e}")
             raise
 
-    def _truncate_messages(self, max_history=10):
-        """保持消息历史在合理长度"""
+    async def _send_mark(self, endpoint):
+        stream_sid = self.client.stream_sid()
+        if stream_sid:
+            mark_event = {
+                "event": "mark",
+                "streamSid": stream_sid,
+                "mark": {"name": "responsePart"}
+            }
+            await endpoint.send_json(mark_event)
+            self.client.append_mark('responsePart')
 
+
+    async def _send_clear(self, endpoint):
+        stream_sid = self.client.stream_sid()
+        if stream_sid:
+            clear_event = {
+                "event": "clear",
+                "streamSid": stream_sid,
+            }
+            await endpoint.send_json(clear_event)
+            self.client.clear_mark_queue()
 
     def _update_client_state(self, updated_history):
         """Update client state after TTS process ends."""
-        self.client.history = updated_history[-10:]
         self.client.scratch_buffer.clear()
         self.client.increment_file_counter()
 
