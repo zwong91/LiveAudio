@@ -56,6 +56,7 @@ class Client:
         )
         self.vc_uid = "c9cf4e49"
         self.stream_sid = None
+        self.last_media_timestamp = None
         self.mark_queue = []
 
     def update_config(self, config_data):
@@ -73,6 +74,24 @@ class Client:
 
     def get_sid(self):
         return self.stream_sid
+
+    def set_last_media_timestamp(self, timestamp):
+        """
+        Set the last media timestamp for the client.
+
+        Args:
+            timestamp (float): The last media timestamp.
+        """
+        self.last_media_timestamp = timestamp
+
+    def get_last_media_timestamp(self):
+        """
+        Get the last media timestamp for the client.
+
+        Returns:
+            float: The last media timestamp.
+        """
+        return getattr(self, "last_media_timestamp", None)
 
     def append_mark(self, mark):
         """

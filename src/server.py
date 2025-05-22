@@ -560,7 +560,6 @@ class Server:
 
     async def handle_audio(self, client, websocket):
         stream_sid = None
-        latest_media_timestamp = 0
         while True:
             try:
                 text = await websocket.receive_text()
@@ -568,10 +567,12 @@ class Server:
                 if data['event'] == 'media':
                     latest_media_timestamp = int(data['media']['timestamp'])
                     chunk = data['media']['payload']
+                    print(f"Received media chunk: {chunk[:10]}...")
                     #TODO: g711_ulaw format
                     pcm_chunk = ulaw_to_pcm16k(base64.b64decode(chunk))
                     filtered_chunk = await self.filter.filter(pcm_chunk)
                     client.append_audio_data(filtered_chunk, 0)
+                    client.set_last_media_timestamp(latest_media_timestamp)
                     # 异步task处理音频
                     await client.process_audio(
                         websocket, self.asr, self.vad, self.eou, self.llm, self.tts
@@ -581,12 +582,11 @@ class Server:
                     stream_sid = data['start']['streamSid']
                     print(f"Incoming stream has started {stream_sid}")
                     client.set_sid(stream_sid)
-
+                    client.set_last_media_timestamp(0)
                     first_messgae = "您好！請問您最近还好吗？你想要老婆不要?"
                     await client.send_initial_conversation(
                         websocket, first_messgae, self.llm, self.tts
                     )
-                    latest_media_timestamp = 0
                 elif data['event'] == 'mark':
                     #print(f"Received mark: {data['mark']}")
                     client.pop_mark_queue()
