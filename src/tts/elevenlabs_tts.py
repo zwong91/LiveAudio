@@ -13,7 +13,7 @@ import langid
 from pydub import AudioSegment
 from dotenv import load_dotenv
 from elevenlabs import stream
-from elevenlabs.client import AsyncElevenLabs
+from elevenlabs.client import ElevenLabs
 
 load_dotenv()
 
@@ -24,8 +24,8 @@ class ElevenlabTTS(TTSInterface):
 
         api_key = os.getenv("ELEVENLABS_API_KEY")
         self.api_key = api_key
-        self.client = AsyncElevenLabs(
-        api_key=api_key,
+        self.client = ElevenLabs(
+            api_key=api_key,
         )
 
     def get_stream_info(self) -> dict:
@@ -45,7 +45,7 @@ class ElevenlabTTS(TTSInterface):
         # response = await self.client.voices.get_all()
         # print(response.voices)
 
-        audio_stream = await self.client.text_to_speech.convert_as_stream(
+        audio_stream = self.client.text_to_speech.convert_as_stream(
             text=text,
             voice_id=self.voice_id,
             model_id=self.model_id,
