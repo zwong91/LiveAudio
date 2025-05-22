@@ -49,7 +49,6 @@ class ElevenlabTTS(TTSInterface):
             text=text,
             voice_id=self.voice_id,
             model_id=self.model_id,
-            output_format="pcm_16000",
         )
 
         async for chunk in results:
