@@ -55,6 +55,8 @@ class Client:
             )
         )
         self.vc_uid = "c9cf4e49"
+        self.stream_sid = None
+        self.mark_queue = []
 
     def update_config(self, config_data):
         self.config.update(config_data)
@@ -67,10 +69,33 @@ class Client:
         )
 
     def set_stream_sid(self, sid):
-        self.sid = sid
+        self.stream_sid = sid
 
     def stream_sid(self):
-        return self.sid
+        return self.stream_sid
+
+    def append_mark(self, mark):
+        """
+        Append a mark to the mark queue.
+
+        Args:
+            mark (str): The mark to be appended.
+        """
+        self.mark_queue.append(mark)
+
+    def pop_mark_queue(self):
+        """
+        Clear the mark queue.
+        """
+        if self.mark_queue:
+            self.mark_queue.pop(0)
+
+    def clear_mark_queue(self):
+        """
+        Clear the mark queue.
+        """
+        self.mark_queue.clear()
+        self.mark_queue = []
 
     def append_audio_data(self, audio_data, vc_uid):
         self.buffer.extend(audio_data)

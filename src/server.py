@@ -559,10 +559,8 @@ class Server:
         return HTMLResponse(content=str(response), media_type="application/xml")
 
     async def handle_audio(self, client, websocket):
-        sessionid = None  # To store the sessionid
         stream_sid = None
         latest_media_timestamp = 0
-        mark_queue = []
         while True:
             try:
                 text = await websocket.receive_text()
@@ -590,12 +588,12 @@ class Server:
                     )
                     latest_media_timestamp = 0
                 elif data['event'] == 'mark':
-                    if mark_queue:
-                        mark_queue.pop(0)
+                    client.pop_mark_queue()
                 elif data['event'] == 'stop':
-                    print(f"Incoming stream has stopped {stream_sid}")
+                    print(f"Call ended, stream {stream_sid} stopped")
                     client.set_stream_sid(None)
                     client.clear_buffer()
+                    await websocket.close()
                 else:
                     await websocket.send_json({"type": "error", "message": f"Unknown message type: {data['event']}"})
 
