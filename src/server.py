@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import ssl
+import subprocess
 import uuid
 import base64
 import uvicorn
@@ -724,10 +725,9 @@ class Server:
     async def health(self):
         return {"status": "ojbk"}
 
-    async def start_server(self):
-        """Start the Uvicorn server as a coroutine."""
+    def proxy(self):
         # Open Ngrok tunnel
-        listener = await ngrok.forward(f"http://localhost:{self.port}")
+        listener = ngrok.forward(f"http://localhost:{self.port}")
         print(f"Ngrok tunnel opened at {listener.url()} for port {self.port}")
         NGROK_URL = listener.url()
         INCOMING_CALL_ROUTE = "/twilio/inbound_call"
@@ -744,6 +744,10 @@ class Server:
             updated_domain = twilio_client.sip.domains(domain.sid).update(voice_url=f"{NGROK_URL}{INCOMING_CALL_ROUTE}")
             print(f"SIP 域名 '{updated_domain.domain_name}' 的 voice_url 已更新为: {updated_domain.voice_url}")
 
+
+    async def start_server(self):
+        """Start the Uvicorn server as a coroutine."""
+        self.proxy()
         uvicorn_config = uvicorn.Config(
             self.app,
             host="0.0.0.0",
