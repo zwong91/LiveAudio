@@ -8,14 +8,13 @@ from uuid import uuid4
 from io import BytesIO
 
 from .tts_interface import TTSInterface
-from src.utils.audio_utils import wave_header_chunk
 from kokoro import KModel, KPipeline
 from huggingface_hub import list_repo_files
 from pydub import AudioSegment
 from random import choice
 
 class Kokoro(TTSInterface):
-    REPO_ID = 'hexgrad/Kokoro-82M-v1.1-zh'
+    REPO_ID = 'hexgrad/Kokoro-82M'
     SAMPLE_RATE = 24000
     N_ZEROS = 5000
     voice_files = list_repo_files(REPO_ID, repo_type="model")
@@ -39,8 +38,8 @@ class Kokoro(TTSInterface):
     ALL_VOICES = [v for voices in VOICES.values() for v in voices]
 
 
-    def __init__(self, voice: str = "zf_094"):
-        self.VOICE = voice if voice else choice(self.ALL_VOICES)
+    def __init__(self, voice: str = "zm_yunxi"):
+        self.VOICE = voice
         print(f"Using voice: {self.VOICE}")
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self._init_pipeline()
@@ -123,20 +122,17 @@ class Kokoro(TTSInterface):
                     .set_sample_width(2)
             )
 
-        if first_chunk:
-            time_to_first_chunk = time.time() - start_time
-            original_sample_rate_for_rtf = self.SAMPLE_RATE
-            real_time_factor_first_chunk = time_to_first_chunk / (wav.shape[0] / original_sample_rate_for_rtf)
+            if first_chunk:
+                time_to_first_chunk = time.time() - start_time
+                original_sample_rate_for_rtf = self.SAMPLE_RATE
+                real_time_factor_first_chunk = time_to_first_chunk / (wav.shape[0] / original_sample_rate_for_rtf)
 
-            print(f"==== 首次 Chunk 信息 ====")
-            print(f"Time to get first chunk: {time_to_first_chunk:.4f}s")
-            print(f"First chunk raw wav shape: {wav.shape}, sample rate: {original_sample_rate_for_rtf} Hz")
-            print(f"First chunk length (seconds based on raw shape): {wav.shape[0] / original_sample_rate_for_rtf:.4f}s")
-            print(f"Real-time factor (RTF) for first chunk: {real_time_factor_first_chunk:.4f}")
-            print(f"Total elapsed time at first chunk: {time.time() - start_time:.4f}s")
-            print(f"========================")
+                print(f"Time to get first chunk: {time_to_first_chunk:.4f}s")
+                print(f"First chunk raw wav shape: {wav.shape}, sample rate: {original_sample_rate_for_rtf} Hz")
+                print(f"First chunk length (seconds based on raw shape): {wav.shape[0] / original_sample_rate_for_rtf:.4f}s")
+                print(f"Real-time factor (RTF) for first chunk: {real_time_factor_first_chunk:.4f}")
 
-            first_chunk = False
-        yield audio_resampled.raw_data
+                first_chunk = False
+            yield audio_resampled.raw_data
 
         print(f"Kokoro TTS time: {time.time() - start_time:.4f}s")
