@@ -166,7 +166,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             #print(f"Total processing time: {end - start:.2f}s")
             self._clear_buffers()
             # 清理音频缓冲区
-            await self._send_clear(endpoint)
+            #await self._send_clear(endpoint)
 
     async def _handle_vad_detection(self, vad):
         """处理 VAD 检测结果"""
@@ -353,7 +353,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         audio_payload = base64.b64encode(pcm16k_to_ulaw(chunk)).decode('utf-8')
         audio_delta = {
             "event": "media",
-            "streamSid": self.client.stream_sid(),
+            "streamSid": self.client.get_sid(),
             "media": {
                 "payload": audio_payload
             }
@@ -368,7 +368,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             raise
 
     async def _send_clear(self, endpoint):
-        stream_sid = self.client.stream_sid()
+        stream_sid = self.client.get_sid()
         if stream_sid:
             clear_event = {
                 "event": "clear",

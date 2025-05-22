@@ -580,7 +580,7 @@ class Server:
                 elif data['event'] == 'start':
                     stream_sid = data['start']['streamSid']
                     print(f"Incoming stream has started {stream_sid}")
-                    client.set_stream_sid(stream_sid)
+                    client.set_sid(stream_sid)
 
                     first_messgae = "您好！請問您最近还好吗？你想要老婆不要?"
                     await client.send_initial_conversation(
@@ -591,7 +591,7 @@ class Server:
                     client.pop_mark_queue()
                 elif data['event'] == 'stop':
                     print(f"Call ended, stream {stream_sid} stopped")
-                    client.set_stream_sid(None)
+                    client.set_sid(None)
                     client.clear_buffer()
                     await websocket.close()
                 else:

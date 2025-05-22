@@ -68,10 +68,10 @@ class Client:
             )
         )
 
-    def set_stream_sid(self, sid):
+    def set_sid(self, sid):
         self.stream_sid = sid
 
-    def stream_sid(self):
+    def get_sid(self):
         return self.stream_sid
 
     def append_mark(self, mark):
