@@ -567,7 +567,7 @@ class Server:
                 if data['event'] == 'media':
                     latest_media_timestamp = int(data['media']['timestamp'])
                     chunk = data['media']['payload']
-                    print(f"Received media chunk: {chunk[:10]}...")
+                    #print(f"Received media chunk: {chunk[:10]}...")
                     #TODO: g711_ulaw format
                     pcm_chunk = ulaw_to_pcm16k(base64.b64decode(chunk))
                     filtered_chunk = await self.filter.filter(pcm_chunk)
