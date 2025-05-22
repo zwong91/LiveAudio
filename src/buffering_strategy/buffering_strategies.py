@@ -336,7 +336,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             ):
                 await self._send(endpoint, use_webrtc, chunk)
                 # 发送标记事件
-                #await self._send_mark(endpoint)
+                await self._send_mark(endpoint)
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")
             raise
@@ -365,7 +365,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             else:
                 await endpoint.send_json(audio_delta)
         except Exception as e:
-            logger.error(f"发送失败: {e}")
+            logger.error(f"send errorr: {e}")
             raise
 
     async def _send_mark(self, endpoint):
