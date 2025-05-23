@@ -135,11 +135,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     if self.last_speaking_time == 0:
                         self.last_speaking_time = time.time()
 
-                    # if self.processing_task is None or self.processing_task.done():
-                    #     self.processing_task = asyncio.create_task(
-                    #         self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
-                    #     )
-                    await self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
+                    if self.processing_task is None or self.processing_task.done():
+                        self.processing_task = asyncio.create_task(
+                            self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
+                        )
                     print("hah")
                 # ✅ 正确标记任务完成
                 self.client.recv_q.task_done()
@@ -150,8 +149,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 raise
             except Exception as e:
                 logging.error(f"Error receiving audio chunk: {e}")
-            finally:
-                pass
 
     async def process_audio_async(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
         """异步处理音频并生成响应"""
