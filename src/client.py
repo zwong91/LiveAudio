@@ -1,4 +1,5 @@
 # isort: skip_file
+import asyncio
 
 from src.buffering_strategy.buffering_strategy_factory import (
     BufferingStrategyFactory,
