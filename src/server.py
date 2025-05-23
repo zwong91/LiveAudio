@@ -566,10 +566,10 @@ class Server:
                 data = json.loads(text)
                 if data['event'] == 'media':
                     latest_media_timestamp = int(data['media']['timestamp'])
-                    chunk = data['media']['payload']
+                    chunk = base64.b64decode(data['media']['payload'])
                     #print(f"Received media chunk: {chunk[:10]}...")
                     #TODO: g711_ulaw format
-                    pcm_chunk = ulaw_to_pcm16k(base64.b64decode(chunk))
+                    pcm_chunk = ulaw_to_pcm16k(chunk)
                     filtered_chunk = await self.filter.filter(pcm_chunk)
                     client.append_audio_data(filtered_chunk, 0)
                     client.set_last_media_timestamp(latest_media_timestamp)

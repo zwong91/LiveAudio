@@ -94,56 +94,58 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         finally:
             self.processing_task = None
 
-    def _should_process_new_chunk(self):
-        """判断是否需要处理新的音频块"""
-        chunk_length_in_bytes = (
-            self.chunk_length_seconds
-            * self.client.sampling_rate
-            * self.client.samples_width
-        )
-        return len(self.client.buffer) > chunk_length_in_bytes
 
     async def process_audio(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
         """处理音频数据，管理任务状态"""
-        if not self._should_process_new_chunk():
-            return
-
-        # 上一个job 处理
-        if self.processing_task and not self.processing_task.done():
-            return
-
+        buffer_size = 4096
+        chunk_timeout = 1.0
         # 开始处理新的音频块
-        self.client.scratch_buffer.extend(self.client.buffer)
-        self.client.buffer.clear()
+        try:
+            # 🌀 读取音频数据（异步）
+            chunk = await self.client.recv_q.get()
+            self.client.recv_q.task_done()
 
-        # VAD 检测
-        if not await self._handle_vad_detection(vad):
-            return
+            self.client.scratch_buffer.extend(chunk)
 
-        # 语音活动检测结束时间
-        print(f"VAD detected end at {datetime.now(timezone.utc).isoformat()}")
+            # 第一次说话时间记录
+            if self.last_speaking_time == 0:
+                self.last_speaking_time = time.time()
 
-        # Interrupt handling/AI preemption 如果AI正在说话且检测到用户插话（新语音），执行中断
-        # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
-        #FIXME: 清除流缓冲区并发送 truncate like openai？
-        #await self.stop_processing_task()
-        #self.client.scratch_buffer.clear()
-        await self._send_clear(endpoint)
+            # 💡 达到足够的 buffer 大小后触发处理流程
+            if len(self.client.scratch_buffer) >= buffer_size:
+                # 如果是第一次说话，记录时间
+                if self.last_speaking_time == 0:
+                    self.last_speaking_time = time.time()
 
-        # 如果是第一次说话，记录时间
-        if self.last_speaking_time == 0:
-            self.last_speaking_time = time.time()
-
-        if self.processing_task is None or self.processing_task.done():
-            self.processing_task = asyncio.create_task(
-                self.process_audio_async(endpoint, use_webrtc, asr, eou, llm, tts)
-            )
-
+                if self.processing_task is None or self.processing_task.done():
+                    self.processing_task = asyncio.create_task(
+                        self.process_audio_async(endpoint, use_webrtc, asr, eou, llm, tts)
+                    )
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logging.error(f"Error receiving audio chunk: {e}")
+            continue
+        finally:
 
     async def process_audio_async(self, endpoint, use_webrtc, asr, eou, llm, tts):
         """异步处理音频并生成响应"""
         start = time.time()
         try:
+            # VAD 检测
+            if not await self._handle_vad_detection(vad):
+                return
+
+            # Interrupt handling/AI preemption 如果AI正在说话且检测到用户插话（新语音），执行中断
+            # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
+            #FIXME: 清除流缓冲区并发送 truncate like openai？
+            #await self.stop_processing_task()
+            if self.client.mark_queue_size():
+                await self._send_clear(endpoint)
+
+            # 语音活动检测结束时间
+            print(f"VAD detected end at {datetime.now(timezone.utc).isoformat()}")
+
             # 转录音频
             transcription = await self._transcribe_audio(asr)
             if not transcription:
@@ -312,8 +314,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
         except asyncio.CancelledError:
             logger.info("Response generation cancelled")
-            # 清理音频缓冲区
-            await self._send_clear(endpoint)
             raise
         except Exception as e:
             logger.error(f"Error generating response: {e}")
@@ -326,7 +326,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     "content": "".join(response_buffer)
                 })
                 self._update_client_state(self.client.history)
-                await self._send_mark(endpoint)
 
     async def _stream_tts(
         self,
@@ -354,6 +353,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.client.config["is_simultaneous"]
             ):
                 await self._send(endpoint, use_webrtc, chunk)
+                await self._send_mark(endpoint)
 
         except asyncio.CancelledError:
             logger.info(f"TTS stream cancelled: {text[:30]}...")

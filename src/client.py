@@ -32,14 +32,14 @@ class Client:
         self.client_id = client_id
         self.history = []
         self.speaker = None
-        self.buffer = bytearray()        # Stores incoming audio data
+        self.recv_q = asyncio.Queue()
         self.scratch_buffer = bytearray() # Used for processing chunks
         self.config = {
             "is_simultaneous": False,
             "target_lang": None,
             "processing_strategy": "silence_at_end_of_chunk",
             "processing_args": {
-                "chunk_length_seconds": 0.5,
+                "chunk_length_seconds": 1,
                 "chunk_offset_seconds": 0.1,
             },
         }
@@ -104,10 +104,13 @@ class Client:
 
     def pop_mark_queue(self):
         """
-        Clear the mark queue.
+        Pop the mark queue.
         """
         if self.mark_queue:
             self.mark_queue.pop(0)
+
+    def mark_queue_size(self):
+        return len(self.mark_queue)
 
     def clear_mark_queue(self):
         """
@@ -116,10 +119,9 @@ class Client:
         self.mark_queue.clear()
         self.mark_queue = []
 
-    def append_audio_data(self, audio_data, vc_uid):
-        self.buffer.extend(audio_data)
-        self.total_samples += len(audio_data) / self.samples_width
-
+    def append_audio_data(self, chunk, vc_uid):
+        self.recv_q.put_nowait(chunk)
+        self.total_samples += len(chunk) / self.samples_width
         self.vc_uid = vc_uid
 
     def clear_buffer(self):
