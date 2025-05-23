@@ -18,8 +18,8 @@ def parse_args():
         description="Audio AI Server: Real-time audio conversation "
                     "using self-hosted STT,LLM,TTS pipeline and WebSocket/WebRTC."
     )
-    parser.add_argument("--vad-type", type=str, default="silero", help="VAD pipeline type")
-    parser.add_argument("--vad-args", type=str, default='{"auth_token": "huggingface_token"}', help="VAD args (JSON string)")
+    parser.add_argument("--vad-type", type=str, default="pyannote", help="VAD pipeline type")
+    parser.add_argument("--vad-args", type=str, default='{"auth_token": "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"}', help="VAD args (JSON string)")
     parser.add_argument("--turn-type", type=str, default="livekit", help="turn taking type")
     parser.add_argument("--filter-type", type=str, default='noisereduce', help="Filter noise type")
     parser.add_argument("--asr-type", type=str, default="whisper", help="ASR pipeline type")
