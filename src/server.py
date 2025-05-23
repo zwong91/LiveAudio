@@ -602,6 +602,7 @@ class Server:
 
     async def handle_audio(self, client, websocket):
         stream_sid = None
+        call_sid = None
         while True:
             try:
                 text = await websocket.receive_text()
@@ -621,7 +622,8 @@ class Server:
                     )
                 elif data['event'] == 'start':
                     stream_sid = data['start']['streamSid']
-                    print(f"Incoming stream has started {stream_sid}")
+                    call_sid = data['start']['callSid']
+                    print(f"Incoming stream has started {stream_sid}, call_sid: {call_sid}")
                     client.set_sid(stream_sid)
                     client.set_last_media_timestamp(0)
                     first_messgae = "您好！請問您最近还好吗？你想要老婆不要?"
