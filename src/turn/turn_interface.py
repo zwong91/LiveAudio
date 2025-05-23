@@ -6,6 +6,7 @@ class TurnInterface:
         self,
         context: Optional[List[Dict[str, str]]] = None,
         last_language: str = "zh",
+        trans_len: str = 0,
         audio: Optional[bytearray] = None
     ) -> Dict[str, Any]:
         """检测当前轮次是否完成

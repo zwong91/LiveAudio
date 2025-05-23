@@ -18,9 +18,10 @@ from .turn_interface import TurnInterface
 # Constants
 HG_MODEL = "livekit/turn-detector"
 ONNX_FILENAME = "model_q8.onnx"
-MODEL_REVISION = "v0.1.0-intl"
+MODEL_REVISION = "v0.2.0-intl"
 MAX_HISTORY_TURNS = 6
 MAX_HISTORY_TOKENS = 128
+MIN_LANGUAGE_DETECTION_LENGTH = 5
 
 class LKTurn(TurnInterface):
     def __init__(
@@ -61,6 +62,7 @@ class LKTurn(TurnInterface):
                 local_files_only=False,# 本地没有就下载
                 truncation_side="left",
             )
+            self._last_language = None
             logging.info(f"Loaded LKTurn model from {local_path}")
             logging.info(f"Using tokenizer: {self.tokenizer.name_or_path}")
             logging.info(f"Model inputs: {self.session.get_inputs()}")
@@ -125,7 +127,7 @@ class LKTurn(TurnInterface):
         return self.unlikely_threshold(language) is not None
 
 
-    async def predict_endpoint(self, context: Optional[List[Dict[str, str]]], last_language: str, audio: Optional[bytearray])-> Dict[str, Any]:
+    async def predict_endpoint(self, context: Optional[List[Dict[str, str]]], language: str, trans_len: str, audio: Optional[bytearray])-> Dict[str, Any]:
         """
         Predict whether the current turn is complete.
 
@@ -138,16 +140,22 @@ class LKTurn(TurnInterface):
         if context is not None and not isinstance(context, list):
             raise ValueError("context must be a list of messages")
 
-        if not self.supports_language(last_language):
-            print("Turn detector does not support language %s", last_language)
+        if not self.supports_language(language):
+            print("Turn detector does not support language %s", language)
 
-        unlikely_threshold = self.unlikely_threshold(last_language)
+        unlikely_threshold = self.unlikely_threshold(language)
         if unlikely_threshold is None:
-            print("Turn detector does not support language %s", last_language)
+            print("Turn detector does not support language %s", language)
             return {
                 "prediction": 1,
                 "probability": 0.0,
             }
+
+        if not self._last_language or (
+            language and len(trans_len) > MIN_LANGUAGE_DETECTION_LENGTH
+        ):
+            self._last_language = language
+
         start_time = time.perf_counter()
         formatted_text = self.format_chat_ctx(context[-MAX_HISTORY_TURNS:])
 
@@ -161,7 +169,7 @@ class LKTurn(TurnInterface):
 
         outputs = self.session.run(None, {"input_ids": inputs["input_ids"].astype("int64")})
         print(f"Model outputs: {outputs}")
-        eou_probability = outputs[0][0]
+        eou_probability = outputs[0].flatten()[-1]
         end_time = time.perf_counter()
 
         print(f"End of turn probability: {float(eou_probability):.4f}, unlikely_threshold: {unlikely_threshold} ,duration: {end_time - start_time:.4f} seconds")
