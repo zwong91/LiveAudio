@@ -59,7 +59,7 @@ class LKTurn(TurnInterface):
             self.tokenizer = AutoTokenizer.from_pretrained(
                 HG_MODEL,
                 revision=MODEL_REVISION,
-                local_files_only=True,# 本地没有就下载
+                local_files_only=True,
                 truncation_side="left",
             )
             self._last_language = None
