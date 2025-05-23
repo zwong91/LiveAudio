@@ -157,6 +157,9 @@ class Client:
             endpoint, self.use_webrtc, text, llm, tts
         )
 
+    async def send_summary(self):
+        await self.buffering_strategy.summary(endpoint, llm)
+
     async def process_audio(self, endpoint, asr, vad, eou, llm, tts):
         """
         Process the audio data in the buffer using the provided ASR, VAD, EOU,

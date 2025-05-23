@@ -69,6 +69,34 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # 语音处理状态
         self.processing_task = None
 
+    # async def summary(self, endpoint, llm):
+    #     # 构建GPT消息
+    #     text = f"Please summarize the following conversation between You and an assistant:\n\n{convo}"
+    #     # 获取对话内容
+    #     messages = self._prepare_messages(text)
+    #     response_buffer = []
+    #     # 创建并开始 LLM 生成流
+    #     stream = llm.generate_stream(
+    #         self.history,
+    #         text,
+    #         self.client.config["is_simultaneous"],
+    #         self.client.config["target_lang"]
+    #     )
+    #     # 实时处理 LLM 输出
+    #     async for delta in stream:
+    #         response_buffer.append(delta)
+
+    #     summary = "".join(response_buffer)
+    #     # 发送摘要短信
+    #     sms_info = self.sms_data[call_sid]
+    #     twilio_client.messages.create(
+    #         to=sms_info['to'],
+    #         from_=sms_info['from'],
+    #         body=summary
+    #     )
+
+    #     logging.info(f"摘要短信已发送给 {sms_info['to']}")
+
 
     async def send_initial_conversation(self, endpoint, use_webrtc, text, llm, tts):
         await self._stream_tts(

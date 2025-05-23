@@ -48,6 +48,14 @@ twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 ngrok.set_auth_token(os.getenv("NGROK_AUTHTOKEN"))
 NGROK_URL = os.getenv("NGROK_URL", "https://ngrok.io")
 
+SYSTEM_MESSAGE_CONTENT = """
+你是一个接到陌生销售电话的潜在客户。随机扮演一个角色，
+比如一个犹豫不决的买家、一个好奇的客户，或者一个困惑的用户。
+请根据需要估计或编造你自己和你所在公司的具体信息。
+提问、表达疑虑或发表简短评论。你的回复应简洁专业，保持在1-2句话为宜。
+像“好吧”、“我明白了”或“请详细说说”这样的简单回应也非常合适。
+可以加入一些语气词，比如“嗯”、“这个”、“啊”等。
+"""
 
 if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN or not TWILIO_PHONE_NUMBER:
     raise ValueError('Missing Twilio configuration. Please set it in the .env file.')
@@ -214,6 +222,7 @@ class Server:
         self.app.websocket("/media-stream")(self.websocket_endpoint)
 
         self.app.post("/twilio/inbound_call")(self.handle_incoming_call)
+        self.app.post("/twilio/sms")(self.handle_sms)
 
         self.app.add_api_route(
             "/twilio/outbound_call",
@@ -523,14 +532,50 @@ class Server:
     """
     async def handle_incoming_call(self, request: Request):
         """Handle incoming call and return TwiML response to connect to Media Stream."""
+        call_sid = request.form.get('CallSid')
+        from_number = request.form.get("From")
+        to_number = request.form.get("To")
+        sms_data = {
+            'from': to_number,
+            'to': from_number,
+        }
+        logging.info(f"接收到来电，CallSid: {call_sid}, From: {from_number}, To: {to_number}")
+
+        # 存储数据
+        self.sms_data[call_sid] = {'from': to_number, 'to': from_number}
+        self.convos[call_sid] = ''
+
         response = VoiceResponse()
-        # <Say> punctuation to improve text-to-speech flow
-        response = VoiceResponse()
-        #response.say("Ahoy,稍等一下哦，正在为你接通你的AI girlfriends", voice='Google.cmn-TW-Wavenet-A', language='cmn-TW')
+        # 给来电者语音提示（支持中文语音）
+        response.say("您好，正在为您接通 AI 女友，请稍候...",
+                     voice='Google.cmn-CN-Wavenet-A',
+                     language='cmn-CN')
         connect = Connect()
-        connect.stream(url=f'wss://{request.url.hostname}/media-stream')
+        stream_url = f'wss://{request.url.hostname}/media-stream'
+        logging.info('Got websocket URL: %s', stream_url)
+        connect.stream(url=stream_url)
         response.append(connect)
         return HTMLResponse(content=str(response), media_type="application/xml")
+
+    async def handle_sms(request: Request) -> web.Response:
+        """Handle incoming SMS messages."""
+        try:
+            data = await request.json()
+            from_number = data.get("From")
+            message_body = data.get('Body')
+
+            logging.info('Received SMS from %s with message: %s', from_number, message_body)
+            # Set configuration from SMS.
+            SYSTEM_MESSAGE_CONTENT = message_body
+            logging.info('SMS received and updated configuration saved!')
+
+            # Send a response back to Twilio.
+            twiml_response = "<Response></Response>"
+            return Response(twiml_response, mimetype="application/xml")
+
+        except Exception as e:
+            logging.error('Error handling SMS: %s', str(e))
+            raise
 
     async def make_call(self, request: Request):
         """Make an outgoing call to the specified phone number."""
@@ -549,10 +594,6 @@ class Server:
     async def handle_outgoing_call(self, request: Request):
         """Handle outgoing call and return TwiML response to connect to Media Stream."""
         response = VoiceResponse()
-        # response.say("稍等一下哦，正在召唤全宇宙最聪明的AI语音助理……")
-        # response.pause(length=1)
-        # response.say("好了，它上线啦！想说啥尽管说吧~")
-
         connect = Connect()
         connect.stream(url=f'wss://{request.url.hostname}/media-stream')
         response.append(connect)
@@ -577,7 +618,6 @@ class Server:
                     await client.process_audio(
                         websocket, self.asr, self.vad, self.eou, self.llm, self.tts
                     )
-
                 elif data['event'] == 'start':
                     stream_sid = data['start']['streamSid']
                     print(f"Incoming stream has started {stream_sid}")
@@ -594,6 +634,7 @@ class Server:
                     print(f"Call ended, stream {stream_sid} stopped")
                     client.set_sid(None)
                     client.clear_recv_queue()
+                    await client.send_summary()
                     await websocket.close()
                 else:
                     await websocket.send_json({"type": "error", "message": f"Unknown message type: {data['event']}"})
