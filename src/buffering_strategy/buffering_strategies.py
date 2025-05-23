@@ -149,7 +149,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             # 转录音频
             transcription = await self._transcribe_audio(asr)
             if not transcription:
-                self._clear_buffers()
                 return
 
             text = transcription["text"]
@@ -411,6 +410,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.client.history = updated_history
         self.client.scratch_buffer.clear()
         self.client.increment_file_counter()
+        self.processing_task = None
 
     def _prepare_messages(self, transcription_text: str) -> list:
         """准备要发送给 LLM 的消息并更新历史"""
@@ -440,9 +440,3 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.client.history = history + [user_message]
 
         return messages
-
-    def _clear_buffers(self):
-        """清理所有缓冲区和状态"""
-        # 清理音频缓冲
-        self.client.scratch_buffer.clear()
-        self.processing_task = None
