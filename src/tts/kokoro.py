@@ -40,7 +40,7 @@ class Kokoro(TTSInterface):
 
 
     def __init__(self, voice: str = "zm_yunxi"):
-        self.VOICE = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "zm_yunxi(2)+af_sky(1).pt")
+        self.VOICE = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "voices")), "af_nova.pt")
         print(f"Using voice: {self.VOICE}")
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self._init_pipeline()
