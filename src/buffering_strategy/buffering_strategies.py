@@ -184,7 +184,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         finally:
             end = time.time()
             #print(f"Total processing time: {end - start:.2f}s")
-            self._clear_buffers()
 
     async def _handle_vad_detection(self, vad):
         """处理 VAD 检测结果"""
