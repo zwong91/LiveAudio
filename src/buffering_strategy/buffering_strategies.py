@@ -121,37 +121,35 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         buffer_size = 4096
         chunk_timeout = 1.0
         # 开始处理新的音频块
-        while True:
-            try:
-                # 🌀 读取音频数据(异步) - 添加超时控制
-                chunk = await asyncio.wait_for(
-                    self.client.recv_q.get(),
-                    timeout=chunk_timeout
-                )
-                self.client.scratch_buffer.extend(chunk)
-                # 💡 达到足够的 buffer 大小后触发处理流程
-                if len(self.client.scratch_buffer) >= buffer_size:
-                    # 如果是第一次说话，记录时间
-                    if self.last_speaking_time == 0:
-                        self.last_speaking_time = time.time()
+        try:
+            # 🌀 读取音频数据(异步) - 添加超时控制
+            chunk = await asyncio.wait_for(
+                self.client.recv_q.get(),
+                timeout=chunk_timeout
+            )
+            self.client.scratch_buffer.extend(chunk)
+            # 💡 达到足够的 buffer 大小后触发处理流程
+            if len(self.client.scratch_buffer) >= buffer_size:
+                # 如果是第一次说话，记录时间
+                if self.last_speaking_time == 0:
+                    self.last_speaking_time = time.time()
 
-                    # if self.processing_task is None or self.processing_task.done():
-                    #     self.processing_task = asyncio.create_task(
-                    #         self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
-                    #     )
-                    await self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
-                # ✅ 正确标记任务完成
-                self.client.recv_q.task_done()
-                print("hhhahha")
-                await asyncio.sleep(0.01)
-            except asyncio.TimeoutError:
-                continue
-            except asyncio.CancelledError:
-                raise
-            except Exception as e:
-                logging.error(f"Error receiving audio chunk: {e}")
-            finally:
-                pass
+                # if self.processing_task is None or self.processing_task.done():
+                #     self.processing_task = asyncio.create_task(
+                #         self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
+                #     )
+                await self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
+            # ✅ 正确标记任务完成
+            self.client.recv_q.task_done()
+            await asyncio.sleep(0.01)
+        except asyncio.TimeoutError:
+            continue
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logging.error(f"Error receiving audio chunk: {e}")
+        finally:
+            pass
 
     async def process_audio_async(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
         """异步处理音频并生成响应"""

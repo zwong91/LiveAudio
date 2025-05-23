@@ -616,6 +616,9 @@ class Server:
                     filtered_chunk = await self.filter.filter(pcm_chunk)
                     client.append_audio_data(filtered_chunk, 0)
                     client.set_last_media_timestamp(latest_media_timestamp)
+                    asyncio.create_task(
+                        client.process_audio(websocket, self.asr, self.vad, self.eou, self.llm, self.tts)
+                    )
                 elif data['event'] == 'start':
                     stream_sid = data['start']['streamSid']
                     call_sid = data['start']['callSid']
@@ -625,9 +628,6 @@ class Server:
                     first_messgae = "您好！請問您最近还好吗？你想要老婆不要?"
                     asyncio.create_task(
                         client.send_initial_conversation(websocket, first_messgae, self.llm, self.tts)
-                    ),
-                    asyncio.create_task(
-                        client.process_audio(websocket, self.asr, self.vad, self.eou, self.llm, self.tts)
                     )
                 elif data['event'] == 'mark':
                     #print(f"Received mark: {data['mark']}")
