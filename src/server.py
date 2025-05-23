@@ -557,7 +557,7 @@ class Server:
         response.append(connect)
         return HTMLResponse(content=str(response), media_type="application/xml")
 
-    async def handle_sms(request: Request) -> web.Response:
+    async def handle_sms(request: Request):
         """Handle incoming SMS messages."""
         try:
             data = await request.json()
@@ -588,8 +588,16 @@ class Server:
             to=to_phone_number,
             from_=TWILIO_PHONE_NUMBER
         )
-        print(f"Call started with SID: {call.sid}")
-        return {"call_sid": call.sid}
+        sms_data = {
+            'from': TWILIO_PHONE_NUMBER,
+            'to': from_number,
+        }
+        logging.info(f"接收到来电，CallSid: {call_sid}, From: {from_number}, To: {to_number}")
+
+        # 存储数据
+        self.sms_data[call_sid] = {'from': to_number, 'to': from_number}
+        self.convos[call_sid] = ''
+        return {"Call started with SID": call.sid}
 
     async def handle_outgoing_call(self, request: Request):
         """Handle outgoing call and return TwiML response to connect to Media Stream."""
