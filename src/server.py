@@ -204,6 +204,7 @@ class Server:
             allow_headers=["*"],
         )
 
+        self.sms_data = {}
         self.tts_manager = TTSManager(tts)
         self.templates = Jinja2Templates(directory="templates")
 
@@ -544,7 +545,6 @@ class Server:
 
         # 存储数据
         self.sms_data[call_sid] = {'from': to_number, 'to': from_number}
-        self.convos[call_sid] = ''
 
         response = VoiceResponse()
         # 给来电者语音提示（支持中文语音）
@@ -589,15 +589,7 @@ class Server:
             to=to_phone_number,
             from_=TWILIO_PHONE_NUMBER
         )
-        sms_data = {
-            'from': TWILIO_PHONE_NUMBER,
-            'to': from_number,
-        }
-        logging.info(f"接收到来电，CallSid: {call_sid}, From: {from_number}, To: {to_number}")
 
-        # 存储数据
-        self.sms_data[call_sid] = {'from': to_number, 'to': from_number}
-        self.convos[call_sid] = ''
         return {"Call started with SID": call.sid}
 
     async def handle_outgoing_call(self, request: Request):
@@ -812,7 +804,14 @@ class Server:
                 to=to_phone_number,
                 from_=TWILIO_PHONE_NUMBER
             )
-            print(f"Call initiated with SID: {call.sid}")
+            sms_data = {
+                'from': TWILIO_PHONE_NUMBER,
+                'to': to_phone_number,
+            }
+            logging.info(f"外打电话，CallSid: {call.sid}, From: {TWILIO_PHONE_NUMBER}, To: {to_phone_number}")
+
+            # 存储数据
+            self.sms_data[call.sid] = {'from': TWILIO_PHONE_NUMBER, 'to': to_phone_number}
         except Exception as e:
             print(f"Error initiating call: {e}")
 
