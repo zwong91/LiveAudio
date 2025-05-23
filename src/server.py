@@ -623,15 +623,12 @@ class Server:
                     client.set_sid(stream_sid)
                     client.set_last_media_timestamp(0)
                     first_messgae = "您好！請問您最近还好吗？你想要老婆不要?"
-                    tasks = [
-                        asyncio.create_task(
-                            client.send_initial_conversation(websocket, first_messgae, self.llm, self.tts)
-                        ),
-                        asyncio.create_task(
-                            client.process_audio(websocket, self.asr, self.vad, self.eou, self.llm, self.tts)
-                        ),
-                    ]
-                    await asyncio.gather(*tasks)
+                    asyncio.create_task(
+                        client.send_initial_conversation(websocket, first_messgae, self.llm, self.tts)
+                    ),
+                    asyncio.create_task(
+                        client.process_audio(websocket, self.asr, self.vad, self.eou, self.llm, self.tts)
+                    )
                 elif data['event'] == 'mark':
                     #print(f"Received mark: {data['mark']}")
                     client.pop_mark_queue()
