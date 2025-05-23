@@ -124,8 +124,9 @@ class Client:
         self.total_samples += len(chunk) / self.samples_width
         self.vc_uid = vc_uid
 
-    def clear_buffer(self):
-        self.buffer.clear()
+    def clear_recv_queue(self):
+        old_queue = self.recv_q
+        self.recv_q = asyncio.Queue()
 
     def increment_file_counter(self):
         self.file_counter += 1

@@ -593,7 +593,7 @@ class Server:
                 elif data['event'] == 'stop':
                     print(f"Call ended, stream {stream_sid} stopped")
                     client.set_sid(None)
-                    client.clear_buffer()
+                    client.clear_recv_queue()
                     await websocket.close()
                 else:
                     await websocket.send_json({"type": "error", "message": f"Unknown message type: {data['event']}"})
