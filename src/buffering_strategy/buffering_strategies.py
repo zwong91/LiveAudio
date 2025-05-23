@@ -115,17 +115,26 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         finally:
             self.processing_task = None
 
+    def _should_process_new_chunk(self):
+        """判断是否需要处理新的音频块"""
+        chunk_length_in_bytes = (
+            self.chunk_length_seconds
+            * self.client.sampling_rate
+            * self.client.samples_width
+        )
+        return len(self.client.scratch_buffer) > chunk_length_in_bytes
 
     async def process_audio(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
         """处理音频数据，管理任务状态"""
+        if not self._should_process_new_chunk():
+            return
         buffer_size = 4096
-        chunk_timeout = 1.0
         # 开始处理新的音频块
         try:
             # 🌀 读取音频数据(异步) - 添加超时控制
             chunk = await asyncio.wait_for(
                 self.client.recv_q.get(),
-                timeout=chunk_timeout
+                timeout=1.0
             )
             self.client.scratch_buffer.extend(chunk)
             # 💡 达到足够的 buffer 大小后触发处理流程
