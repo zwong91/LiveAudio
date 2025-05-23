@@ -125,7 +125,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             raise
         except Exception as e:
             logging.error(f"Error receiving audio chunk: {e}")
-            continue
         finally:
             pass
 
