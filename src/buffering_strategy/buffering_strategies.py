@@ -118,7 +118,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
     async def process_audio(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
         """处理音频数据，管理任务状态"""
-        buffer_size = 16000
+        buffer_size = 4096
         chunk_timeout = 1.0
         # 开始处理新的音频块
         try:

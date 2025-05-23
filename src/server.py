@@ -616,10 +616,6 @@ class Server:
                     filtered_chunk = await self.filter.filter(pcm_chunk)
                     client.append_audio_data(filtered_chunk, 0)
                     client.set_last_media_timestamp(latest_media_timestamp)
-                    # 异步task处理音频
-                    await client.process_audio(
-                        websocket, self.asr, self.vad, self.eou, self.llm, self.tts
-                    )
                 elif data['event'] == 'start':
                     stream_sid = data['start']['streamSid']
                     call_sid = data['start']['callSid']
@@ -627,9 +623,15 @@ class Server:
                     client.set_sid(stream_sid)
                     client.set_last_media_timestamp(0)
                     first_messgae = "您好！請問您最近还好吗？你想要老婆不要?"
-                    await client.send_initial_conversation(
-                        websocket, first_messgae, self.llm, self.tts
-                    )
+                    tasks = [
+                        asyncio.create_task(
+                            client.send_initial_conversation(websocket, first_messgae, self.llm, self.tts)
+                        ),
+                        asyncio.create_task(
+                            client.process_audio(websocket, self.asr, self.vad, self.eou, self.llm, self.tts)
+                        ),
+                    ]
+                    await asyncio.gather(*tasks)
                 elif data['event'] == 'mark':
                     #print(f"Received mark: {data['mark']}")
                     client.pop_mark_queue()
@@ -637,22 +639,21 @@ class Server:
                     print(f"Call ended, stream {stream_sid} stopped")
                     client.set_sid(None)
                     client.clear_recv_queue()
-                    summary = await client.llm_summary(self.llm)
-                    # 发送摘要短信
-                    sms_info = self.sms_data[call_sid]
-                    twilio_client.messages.create(
-                        to=sms_info['to'],
-                        from_=sms_info['from'],
-                        body=summary
-                    )
-                    logging.info(f"摘要短信已发送给 {sms_info['to']}")
-
                     await websocket.close()
                 else:
                     await websocket.send_json({"type": "error", "message": f"Unknown message type: {data['event']}"})
 
             except WebSocketDisconnect as e:
                 logging.error(f"Connection with {client.client_id} closed: {e}")
+                summary = await client.llm_summary(self.llm)
+                # 发送摘要短信
+                sms_info = self.sms_data[call_sid]
+                twilio_client.messages.create(
+                    to=sms_info['to'],
+                    from_=sms_info['from'],
+                    body=summary
+                )
+                logging.info(f"摘要短信已发送给 {sms_info['to']}")
                 break
             except Exception as e:
                 logging.error(f"Error handling audio for {client.client_id}: {e}")
