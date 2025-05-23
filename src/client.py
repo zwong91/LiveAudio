@@ -158,7 +158,7 @@ class Client:
         )
 
     async def llm_summary(self):
-        await self.buffering_strategy.llm_summary(endpoint, llm)
+        await self.buffering_strategy.llm_summary(llm)
 
     async def process_audio(self, endpoint, asr, vad, eou, llm, tts):
         """

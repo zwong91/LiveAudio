@@ -635,7 +635,7 @@ class Server:
                     print(f"Call ended, stream {stream_sid} stopped")
                     client.set_sid(None)
                     client.clear_recv_queue()
-                    summary = await client.llm_summary()
+                    summary = await client.llm_summary(self.llm)
                     # 发送摘要短信
                     sms_info = self.sms_data[call_sid]
                     twilio_client.messages.create(

@@ -69,7 +69,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         # 语音处理状态
         self.processing_task = None
 
-    async def llm_summary(self, endpoint, llm):
+    async def llm_summary(self, llm):
         # 构建GPT消息
         text = f"Please summarize the following conversation between You and an assistant:\n\n"
         # 获取对话内容
