@@ -435,7 +435,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
     def _prepare_messages(self, text: str) -> list:
         """准备要发送给 LLM 的消息并更新历史"""
-        if not transcription_text:
+        if not text:
             return []
 
         # 系统提示词
