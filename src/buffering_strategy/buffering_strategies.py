@@ -97,13 +97,13 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
 
     async def process_audio(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
         """处理音频数据，管理任务状态"""
-        buffer_size = 4096
+        buffer_size = 16000
         chunk_timeout = 1.0
         # 开始处理新的音频块
         try:
             # 🌀 读取音频数据（异步）
             chunk = await self.client.recv_q.get()
-            self.client.recv_q.task_done()
+            #self.client.recv_q.task_done()
 
             self.client.scratch_buffer.extend(chunk)
 
@@ -183,7 +183,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             raise
         finally:
             end = time.time()
-            print(f"Total processing time: {end - start:.2f}s")
+            #print(f"Total processing time: {end - start:.2f}s")
             self._clear_buffers()
 
     async def _handle_vad_detection(self, vad):
