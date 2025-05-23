@@ -40,7 +40,7 @@ class Kokoro(TTSInterface):
 
 
     def __init__(self, voice: str = "zm_yunxi"):
-        self.VOICE = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "af_alloy.pt")
+        self.VOICE = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "zf_xiaoxiao(2)+af_xiaoyi(1)+af_nova(1).pt")
         print(f"Using voice: {self.VOICE}")
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self._init_pipeline()
@@ -127,7 +127,7 @@ class Kokoro(TTSInterface):
                 time_to_first_chunk = time.time() - start_time
                 original_sample_rate_for_rtf = self.SAMPLE_RATE
                 real_time_factor_first_chunk = time_to_first_chunk / (wav.shape[0] / original_sample_rate_for_rtf)
-
+                # First token latency @ chunksize 第一个令牌延迟 @ 块大小 ~300ms (GPU) @ 400
                 print(f"Time to get first chunk: {time_to_first_chunk:.4f}s")
                 print(f"First chunk raw wav shape: {wav.shape}, sample rate: {original_sample_rate_for_rtf} Hz")
                 print(f"First chunk length (seconds based on raw shape): {wav.shape[0] / original_sample_rate_for_rtf:.4f}s")
