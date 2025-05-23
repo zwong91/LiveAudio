@@ -43,6 +43,13 @@ uv pip install -r requirements.txt
 (curl -fsSL https://ollama.com/install.sh | sh && ollama serve > ollama.log 2>&1) &
 
 ollama run gemma3:12b --verbose
+
+# download files
+HF_ENDPOINT=https://hf-mirror.com huggingface-cli download \
+  livekit/turn-detector \
+  --filename onnx/model_q8.onnx \
+  --revision v0.2.0-intl
+
 ```
 
 ### Open an ngrok tunnel
