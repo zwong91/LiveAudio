@@ -532,9 +532,10 @@ class Server:
     """
     async def handle_incoming_call(self, request: Request):
         """Handle incoming call and return TwiML response to connect to Media Stream."""
-        call_sid = request.form.get('CallSid')
-        from_number = request.form.get("From")
-        to_number = request.form.get("To")
+        form_data = await request.form()
+        call_sid = form_data.get('CallSid')
+        from_number = form_data.get("From")
+        to_number = form_data.get("To")
         sms_data = {
             'from': to_number,
             'to': from_number,
