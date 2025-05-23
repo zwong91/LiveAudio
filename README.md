@@ -29,8 +29,8 @@ source $HOME/.local/bin/env
 
 ```sh
 # Create and activate Python 3.10 virtual environment named 'va'
-uv venv --python=python3.10 va
-source va/bin/activate
+uv venv --python=python3.10 koko
+source koko/bin/activate
 
 curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python get-pip.py

@@ -25,14 +25,18 @@ response = requests.post(
     }
 )
 
+# Save the .pt file
+with open("zm_yunxi(2)+af_sky(1).pt", "wb") as f:
+    f.write(response.content)
+
 # Example 3: Download combined voice as .pt file
 response = requests.post(
     "http://localhost:8880/v1/audio/voices/combine",
-    json="zf_xiaoxiao(2)+af_xiaoyi(1)+af_nova(1)"  # 2:1 ratio = 67%/33%
+    json="zf_xiaoxiao(2)+zf_xiaoyi(1)+af_nova(1)"  # 2:1 ratio = 67%/33%
 )
 
 # Save the .pt file
-with open("zf_xiaoxiao(2)+af_xiaoyi(1)+af_nova(1).pt", "wb") as f:
+with open("zf_xiaoxiao(2)+zf_xiaoyi(1)+af_nova(1).pt", "wb") as f:
     f.write(response.content)
 
 # Use the downloaded voice file
@@ -40,7 +44,7 @@ response = requests.post(
     "http://localhost:8880/v1/audio/speech",
     json={
         "input": "Hello world!",
-        "voice": "combined_voice",  # Use the saved voice file
+        "voice": "zf_xiaoxiao(2)+zf_xiaoyi(1)+af_nova(1)",  # Use the saved voice file
         "response_format": "mp3"
     }
 )
