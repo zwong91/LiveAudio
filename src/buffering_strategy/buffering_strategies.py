@@ -143,7 +143,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             self.client.recv_q.task_done()
             print("hah")
         except asyncio.TimeoutError:
-            continue
+            pass
         except asyncio.CancelledError:
             raise
         except Exception as e:
