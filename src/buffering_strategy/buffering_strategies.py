@@ -141,7 +141,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 await self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
             # ✅ 正确标记任务完成
             self.client.recv_q.task_done()
-            await asyncio.sleep(0.01)
+            print("hah")
         except asyncio.TimeoutError:
             continue
         except asyncio.CancelledError:
