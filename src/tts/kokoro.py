@@ -14,7 +14,7 @@ from pydub import AudioSegment
 from random import choice
 
 class Kokoro(TTSInterface):
-    REPO_ID = 'hexgrad/Kokoro-82M'
+    REPO_ID = 'hexgrad/Kokoro-82M-v1.1-zh'
     SAMPLE_RATE = 24000
     N_ZEROS = 5000
     voice_files = list_repo_files(REPO_ID, repo_type="model")
@@ -39,7 +39,7 @@ class Kokoro(TTSInterface):
 
 
     def __init__(self, voice: str = "zm_yunxi"):
-        self.VOICE = voice
+        self.VOICE = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "assets")), "af_alloy.pt")
         print(f"Using voice: {self.VOICE}")
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self._init_pipeline()
