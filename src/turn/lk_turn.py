@@ -53,8 +53,7 @@ class LKTurn(TurnInterface):
 
             self._unlikely_threshold = unlikely_threshold
             # Initialize session and tokenizer
-            self.session = ort.InferenceSession(local_path, providers=["CUDAExecutionProvider", "CPUExecutionProvider"])
-            print(self.session.get_providers())  # 确保CUDA在前面
+            self.session = ort.InferenceSession(local_path, providers=["CPUExecutionProvider"])
 
             self.tokenizer = AutoTokenizer.from_pretrained(
                 HG_MODEL,
@@ -168,7 +167,7 @@ class LKTurn(TurnInterface):
         )
 
         outputs = self.session.run(None, {"input_ids": inputs["input_ids"].astype("int64")})
-        print(f"Model outputs: {outputs}")
+        #print(f"Model outputs: {outputs}")
         eou_probability = outputs[0].flatten()[-1]
         end_time = time.perf_counter()
 
