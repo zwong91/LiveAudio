@@ -128,17 +128,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     self.client.recv_q.get(),
                     timeout=chunk_timeout
                 )
-
-                # ✅ 正确标记任务完成
-                self.client.recv_q.task_done()
-                print("hhhahha")
-
                 self.client.scratch_buffer.extend(chunk)
-
-                # 第一次说话时间记录
-                if self.last_speaking_time == 0:
-                    self.last_speaking_time = time.time()
-
                 # 💡 达到足够的 buffer 大小后触发处理流程
                 if len(self.client.scratch_buffer) >= buffer_size:
                     # 如果是第一次说话，记录时间
@@ -150,7 +140,10 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                     #         self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
                     #     )
                     await self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
-
+                # ✅ 正确标记任务完成
+                self.client.recv_q.task_done()
+                print("hhhahha")
+                await asyncio.sleep(0.01)
             except asyncio.TimeoutError:
                 continue
             except asyncio.CancelledError:
