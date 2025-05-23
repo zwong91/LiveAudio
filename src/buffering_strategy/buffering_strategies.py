@@ -128,7 +128,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         """处理音频数据，管理任务状态"""
         if not self._should_process_new_chunk():
             return
-        buffer_size = 4096
+
         # 开始处理新的音频块
         try:
             # # 🌀 读取音频数据(异步) - 添加超时控制
@@ -147,8 +147,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
                 self.processing_task = asyncio.create_task(
                     self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
                 )
-            # ✅ 正确标记任务完成
-            self.client.recv_q.task_done()
+            # # ✅ 正确标记任务完成
+            # self.client.recv_q.task_done()
         except asyncio.CancelledError:
             raise
         except Exception as e:
