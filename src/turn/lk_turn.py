@@ -39,14 +39,14 @@ class LKTurn(TurnInterface):
                 filename=ONNX_FILENAME,
                 subfolder="onnx",
                 revision=MODEL_REVISION,
-                local_files_only=True,
+                local_files_only=False,
             )
 
             config_fname = hf_hub_download(
                 repo_id=HG_MODEL,
                 filename="languages.json",
                 revision=MODEL_REVISION,
-                local_files_only=True,
+                local_files_only=False,
             )
             with open(config_fname) as f:
                 self.languages = json.load(f)
@@ -58,7 +58,7 @@ class LKTurn(TurnInterface):
             self.tokenizer = AutoTokenizer.from_pretrained(
                 HG_MODEL,
                 revision=MODEL_REVISION,
-                local_files_only=True,
+                local_files_only=False,
                 truncation_side="left",
             )
             self._last_language = None
