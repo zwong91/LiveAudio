@@ -157,7 +157,7 @@ class Client:
             endpoint, self.use_webrtc, text, llm, tts
         )
 
-    async def llm_summary(self):
+    async def llm_summary(self, llm):
         await self.buffering_strategy.llm_summary(llm)
 
     async def process_audio(self, endpoint, asr, vad, eou, llm, tts):
