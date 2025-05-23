@@ -634,7 +634,16 @@ class Server:
                     print(f"Call ended, stream {stream_sid} stopped")
                     client.set_sid(None)
                     client.clear_recv_queue()
-                    await client.send_summary()
+                    summary = await client.llm_summary()
+                    # 发送摘要短信
+                    sms_info = self.sms_data[call_sid]
+                    twilio_client.messages.create(
+                        to=sms_info['to'],
+                        from_=sms_info['from'],
+                        body=summary
+                    )
+                    logging.info(f"摘要短信已发送给 {sms_info['to']}")
+
                     await websocket.close()
                 else:
                     await websocket.send_json({"type": "error", "message": f"Unknown message type: {data['event']}"})
