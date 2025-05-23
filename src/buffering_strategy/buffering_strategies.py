@@ -127,6 +127,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             logging.error(f"Error receiving audio chunk: {e}")
             continue
         finally:
+            pass
 
     async def process_audio_async(self, endpoint, use_webrtc, asr, eou, llm, tts):
         """异步处理音频并生成响应"""

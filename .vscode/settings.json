@@ -122,5 +122,8 @@
     "plaintext": true,
     "scminput": true
   },
-  "github.copilot.chat.editor.temporalContext.enabled": true
+  "github.copilot.chat.editor.temporalContext.enabled": true,
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  }
 }
