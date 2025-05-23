@@ -29,8 +29,8 @@ source $HOME/.local/bin/env
 
 ```sh
 # Create and activate Python 3.10 virtual environment named 'va'
-uv venv --python=python3.10 koko
-source koko/bin/activate
+uv venv --python=python3.10 agent
+source agent/bin/activate
 
 curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python get-pip.py
@@ -39,7 +39,6 @@ python get-pip.py
 uv pip install -r requirements.txt
 
 # Install ollama https://github.com/ollama/ollama/releases
-# Install ollama https://github.com/ollama/ollama/releases
 (curl -fsSL https://ollama.com/install.sh | sh && ollama serve > ollama.log 2>&1) &
 
 ollama run gemma3:12b --verbose
@@ -47,7 +46,7 @@ ollama run gemma3:12b --verbose
 # download files
 HF_ENDPOINT=https://hf-mirror.com huggingface-cli download \
   livekit/turn-detector \
-  --filename onnx/model_q8.onnx \
+  onnx/model_q8.onnx \
   --revision v0.2.0-intl
 
 ```
@@ -131,7 +130,7 @@ Keep in mind that each time you run the `ngrok http` command, a new URL will be 
 
 ``` sh
 # runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
-HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --llm-type openai
+HF_ENDPOINT=https://hf-mirror.com python3 -m src.main --tts-type elevenlabs
 ```
 
 ***test***
