@@ -34,6 +34,7 @@ class Client:
         self.history = []
         self.speaker = None
         self.recv_q = asyncio.Queue()
+        self.buffer = bytearray()
         self.scratch_buffer = bytearray() # Used for processing chunks
         self.config = {
             "is_simultaneous": False,
@@ -121,13 +122,15 @@ class Client:
         self.mark_queue = []
 
     def append_audio_data(self, chunk, vc_uid):
-        self.recv_q.put_nowait(chunk)
+        #self.recv_q.put_nowait(chunk)
+        self.buffer.extend(chunk)
         self.total_samples += len(chunk) / self.samples_width
         self.vc_uid = vc_uid
 
     def clear_recv_queue(self):
         old_queue = self.recv_q
         self.recv_q = asyncio.Queue()
+        self.buffer.clear()
 
     def increment_file_counter(self):
         self.file_counter += 1

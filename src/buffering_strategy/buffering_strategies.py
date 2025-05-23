@@ -122,7 +122,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             * self.client.sampling_rate
             * self.client.samples_width
         )
-        return len(self.client.scratch_buffer) > chunk_length_in_bytes
+        return len(self.client.buffer) > chunk_length_in_bytes
 
     async def process_audio(self, endpoint, use_webrtc, asr, vad, eou, llm, tts):
         """处理音频数据，管理任务状态"""
@@ -131,22 +131,22 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         buffer_size = 4096
         # 开始处理新的音频块
         try:
-            # 🌀 读取音频数据(异步) - 添加超时控制
-            chunk = await asyncio.wait_for(
-                self.client.recv_q.get(),
-                timeout=1.0
-            )
+            # # 🌀 读取音频数据(异步) - 添加超时控制
+            # chunk = await asyncio.wait_for(
+            #     self.client.recv_q.get(),
+            #     timeout=1.0
+            # )
             self.client.scratch_buffer.extend(chunk)
+            self.client.buffer.clear()
             # 💡 达到足够的 buffer 大小后触发处理流程
-            if len(self.client.scratch_buffer) >= buffer_size:
-                # 如果是第一次说话，记录时间
-                if self.last_speaking_time == 0:
-                    self.last_speaking_time = time.time()
+            # 如果是第一次说话，记录时间
+            if self.last_speaking_time == 0:
+                self.last_speaking_time = time.time()
 
-                if self.processing_task is None or self.processing_task.done():
-                    self.processing_task = asyncio.create_task(
-                        self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
-                    )
+            if self.processing_task is None or self.processing_task.done():
+                self.processing_task = asyncio.create_task(
+                    self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
+                )
             # ✅ 正确标记任务完成
             self.client.recv_q.task_done()
         except asyncio.CancelledError:
