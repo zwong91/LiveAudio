@@ -136,7 +136,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             #     self.client.recv_q.get(),
             #     timeout=1.0
             # )
-            self.client.scratch_buffer.extend(chunk)
+            self.client.scratch_buffer.extend(self.client.buffer)
             self.client.buffer.clear()
             # 💡 达到足够的 buffer 大小后触发处理流程
             # 如果是第一次说话，记录时间
