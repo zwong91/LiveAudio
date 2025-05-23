@@ -77,7 +77,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         response_buffer = []
         # 创建并开始 LLM 生成流
         stream = llm.generate_stream(
-            self.history,
+            self.client.history,
             text,
             self.client.config["is_simultaneous"],
             self.client.config["target_lang"]
