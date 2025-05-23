@@ -139,10 +139,6 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             self.client.scratch_buffer.extend(self.client.buffer)
             self.client.buffer.clear()
             # 💡 达到足够的 buffer 大小后触发处理流程
-            # 如果是第一次说话，记录时间
-            if self.last_speaking_time == 0:
-                self.last_speaking_time = time.time()
-
             if self.processing_task is None or self.processing_task.done():
                 self.processing_task = asyncio.create_task(
                     self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
@@ -161,7 +157,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             # VAD 检测
             if not await self._handle_vad_detection(vad):
                 return
-
+            # 如果是第一次说话，记录时间
+            if self.last_speaking_time == 0:
+                self.last_speaking_time = time.time()
             # Interrupt handling/AI preemption 如果AI正在说话且检测到用户插话（新语音），执行中断
             # Trigger an interruption. Your use case might work better using input_audio_buffer speech_stopped
             #FIXME: 清除流缓冲区并发送 truncate like openai？
