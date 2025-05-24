@@ -139,7 +139,7 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             self.client.scratch_buffer.extend(self.client.buffer)
             self.client.buffer.clear()
             # 💡 达到足够的 buffer 大小后触发处理流程
-            if self.processing_task is None or self.processing_task.done():
+            if not self.processing_task:
                 self.processing_task = asyncio.create_task(
                     self.process_audio_async(endpoint, use_webrtc, asr, vad, eou, llm, tts)
                 )
@@ -233,8 +233,14 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         last_language, _ = langid.classify(text)
         messages = self._prepare_messages(text)
         print(f"Detected language: {last_language}")
-        result = await eou.predict_endpoint(messages, last_language, len(text), self.client.scratch_buffer)
-
+        try:
+            result = await asyncio.wait_for(
+                eou.predict_endpoint(messages, last_language, len(text), self.client.scratch_buffer),
+                timeout=2.0
+            )
+        except asyncio.TimeoutError:
+            logger.warning("predict_endpoint timeout")
+            return False
         if not result["prediction"]:
             logger.debug(f"User hasn't finished speaking (prob: {result['probability']:.3f})")
             return False
